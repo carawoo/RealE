@@ -194,13 +194,13 @@
     steps: {
       '매매': [
         { key:'예산', unit:'억', choices:['3','4','5','6','7','8','10'] , required:true },
-        { key:'보유', unit:'천', choices:['3','5','8','10','15','20'] , required:true },
+        { key:'보유금액', unit:'천', choices:['3','5','8','10','15','20'] , required:true },
         { key:'기간', unit:'년', choices:['10','20','30'] , required:true },
         { key:'상환', choices:['고정','변동','체증식'], required:false },
       ],
       '전세': [
         { key:'전세가', unit:'억', choices:['2','3','4','5','6','7','8'] , required:true },
-        { key:'보유', unit:'천', choices:['1','2','3','5','8','10'] , required:true },
+        { key:'보유금액', unit:'천', choices:['1','2','3','5','8','10'] , required:true },
         { key:'기간', unit:'년', choices:['2','3','4'] , required:true },
       ],
       '월세': [
@@ -260,9 +260,9 @@
     };
 
     if(it==='매매'){
-      add('예산'); add('보유'); add('기간'); if(d['상환']) msg += `, ${d['상환']} 선호`;
+      add('예산'); add('보유금액'); add('기간'); if(d['상환']) msg += `, ${d['상환']} 선호`;
     } else if(it==='전세'){
-      add('전세가'); add('보유'); add('기간');
+      add('전세가'); add('보유금액'); add('기간');
     } else if(it==='월세'){
       // 보증금 최소 100 보정(프론트 UX)
       const dep = Math.max(100, parseInt(String(d['보증금']||'0').replace(/\D/g,'' )||'0',10));
