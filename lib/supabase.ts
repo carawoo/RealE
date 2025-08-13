@@ -3,12 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 
 export const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE!, // 서버 전용
+  process.env.SUPABASE_SERVICE_ROLE!, // 서버 전용 키
   { auth: { persistSession: false } }
 );
 
 export const supabasePublic = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // 클라이언트/서버 공용 읽기
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // 읽기용
   { auth: { persistSession: false } }
 );
