@@ -101,6 +101,7 @@ async function extractWithLLM(message: string) {
       `문장: ${message}`
     ].join("\n"),
     response_format: { type: "json_schema", json_schema: schema }
+  } as any);   // ← 이 한 줄 추가
   });
 
   const txt = resp.output_text || "{}";
