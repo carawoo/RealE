@@ -113,6 +113,48 @@
   </div>
 
   <script>
+    // 현실적인 옵션(서울/수도권 기준의 보편 범위)
+window.REALISTIC_STEPS = {
+  공통: {
+    지역: ["서울", "수도권", "광역시", "기타"],
+  },
+  매매: [
+    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
+    { key: "예산", type: "choice", unit: "억", choices: ["3", "4", "5", "6", "7", "8", "10", "12"], required: true },
+    { key: "보유", type: "choice", unit: "천", choices: ["3","5","8","10","12","15","20"], required: true },
+    { key: "연소득", type: "choice", unit: "만원", choices: ["3000","4000","5000","7000","9000","12000"] },
+    { key: "재직", type: "choice", unit: "개월", choices: ["6","10","12","24","36"] },
+    { key: "지역", type: "choice", choices: window.REALISTIC_STEPS_지역 || ["서울","수도권","광역시","기타"] },
+    { key: "기간", type: "choice", unit: "년", choices: ["10","20","30"], required: true },
+    { key: "상환", type: "choice", choices: ["고정","변동","체증식"] }
+  ],
+  전세: [
+    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
+    { key: "전세가", type: "choice", unit: "억", choices: ["2","3","4","5","6","7","8"], required: true },
+    { key: "보유", type: "choice", unit: "천", choices: ["1","2","3","5","8","10"], required: true },
+    { key: "지역", type: "choice", choices: ["서울","수도권","광역시","기타"] },
+    { key: "기간", type: "choice", unit: "년", choices: ["2","3","4"] }
+  ],
+  월세: [
+    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
+    { key: "보증금", type: "choice", unit: "만", choices: ["100","300","500","1000","2000","3000","5000"], required: true }, // 최소 100만
+    { key: "월세", type: "choice", unit: "만", choices: ["40","50","60","70","80","90","120","150"], required: true },
+    { key: "지역", type: "choice", choices: ["서울","수도권","광역시","기타"] },
+    { key: "기간", type: "choice", unit: "년", choices: ["1","2","3"] }
+  ]
+};
+
+// 월세 유효성 보정(보증금 100만 미만 → 100만)
+window.ensureValidForWolse = function ensureValidForWolse(summaryText) {
+  // summaryText 예: "월세, 보증금 50만, 월세 70만, 2년"
+  if (/월세/.test(summaryText)) {
+    const m = /보증금\s*(\d+)\s*만/.exec(summaryText);
+    if (m && parseInt(m[1],10) < 100) {
+      return summaryText.replace(/보증금\s*\d+\s*만/, "보증금 100만");
+    }
+  }
+  return summaryText;
+};
     const messageInput = document.getElementById('messageInput');
     const chatMessages = document.getElementById('chatMessages');
     const sendButton   = document.getElementById('sendButton');
