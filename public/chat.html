@@ -38,7 +38,6 @@
     .input-wrapper{flex:1;position:relative;background:#374151;border:1px solid #4b5563;border-radius:12px;display:flex;align-items:center}
     .input-wrapper:focus-within{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.2)}
     textarea{width:100%;min-height:44px;max-height:120px;padding:12px 48px 12px 14px;border:none;border-radius:12px;background:transparent;color:#f9fafb;resize:none;outline:none;font-size:16px}
-    .emoji-button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;font-size:18px;color:#cbd5e1;cursor:pointer}
     .send-button{width:48px;border:none;border-radius:14px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(100,116,255,.25);cursor:pointer;padding:0 0}
     .send-button:disabled{opacity:.5;cursor:not-allowed}
     .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .9s linear infinite}
@@ -58,8 +57,7 @@
     <div class="chat-input-container">
       <div class="input-row">
         <div class="input-wrapper">
-          <textarea id="messageInput" placeholder="직접 입력하거나, 위 칩을 눌러 진행해요." rows="1"></textarea>
-          <button class="emoji-button" id="emojiBtn">😊</button>
+          <textarea id="messageInput" placeholder="궁금한 점은 언제든 물어보세요!" rows="1"></textarea>
         </div>
         <button class="send-button" id="sendButton">
           <i class="fas fa-arrow-up"></i>
