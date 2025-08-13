@@ -126,6 +126,27 @@
       // 결과 카드
       if (resp && (resp.cards || resp.checklist || resp.share_url)) {
         renderResult(resp);
+        // ...기존 카드 렌더 아래에 이어서 추가...
+if (Array.isArray(resp.policies) && resp.policies.length) {
+  const pol = document.createElement('div');
+  pol.className = 'result-card';
+  pol.innerHTML = `
+    <div class="title">최근 정책/금리 요약</div>
+    <ul style="margin-top:8px; padding-left:18px;">
+      ${resp.policies.map((p) => `
+        <li style="margin-bottom:10px;">
+          <div style="font-weight:600;">${p.title || "정책"}</div>
+          <div style="font-size:13px; color:#9ca3af;">
+            ${p.source ? `[${p.source}] ` : ""}${p.date || ""}
+          </div>
+          <div style="margin-top:4px;">${p.summary || ""}</div>
+          ${p.url ? `<div style="margin-top:6px;"><a href="${p.url}" target="_blank" style="color:#a5b4fc; text-decoration:underline;">원문 보기</a></div>` : ""}
+        </li>
+      `).join("")}
+    </ul>
+  `;
+  wrap.appendChild(pol);
+}
       }
 
       // 요약/설명 텍스트(있을 때만 추가)
