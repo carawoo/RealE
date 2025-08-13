@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
@@ -191,6 +191,16 @@
     function toggleEmoji(){
       const emojis = ['😊','👍','❤️','🤔','💡','🏠','🔑','📊'];
       const e = emojis[Math.floor(Math.random()*emojis.length)];
+      function setLoading(on) {
+        if (on) {
+          sendButton.classList.add('loading');
+          sendButton.disabled = true; // 로딩 중 클릭 방지
+        } else {
+          sendButton.classList.remove('loading');
+          // 버튼 활성화는 입력창에 문자가 있을 때만: 아래 한 줄로 현재 상태 반영
+          sendButton.disabled = messageInput.value.trim() === '';
+        }
+      }
       messageInput.value += e; messageInput.focus();
       sendButton.disabled = messageInput.value.trim()==='';
     }
