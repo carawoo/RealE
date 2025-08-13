@@ -265,6 +265,29 @@
       if (!text) return;
       addMessage(text, 'user');
       messageInput.value = ''; messageInput.style.height='auto'; sendButton.disabled = true;
+      async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user');
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        sendButton.disabled = true;
+
+        setLoading(true);        // ← 추가
+        showTyping();
+        try {
+          const resp = await callApi(text);
+          hideTyping();
+          renderResult(resp);
+          addMessage(resp.reply || '요약', 'assistant');
+        } catch (e) {
+          hideTyping();
+          addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant');
+        } finally {
+          setLoading(false);     // ← 추가
+        }
+      }
       showTyping();
       try{
         const resp = await callApi(text);
