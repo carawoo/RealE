@@ -1,260 +1,176 @@
-// app/api/compute/route.ts
-export const dynamic = "force-dynamic";
+import { NextResponse } from "next/server";
 
-import OpenAI from "openai";
+// ------- 간단 한글 금액 파서 -------
+// "6억" => 600_000_000
+// "8천" => 80_000_000
+// "4500" => 45_000_000 (평균적으로 '만원' 단위로 보는 가정)
+function parseKRW(input: string | undefined): number | null {
+  if (!input) return null;
+  const s = input.replace(/\s/g, "");
+  const num = parseFloat(s.replace(/[^\d.]/g, "")); // 6, 8, 4500 등
+  if (isNaN(num)) return null;
 
-const KRW = (n: number) =>
-  new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 }).format(Math.round(n)) + " 원";
+  if (/억/.test(s)) return Math.round(num * 100_000_000);
+  if (/천/.test(s)) return Math.round(num * 10_000_000);
+  if (/만/.test(s)) return Math.round(num * 10_000);
+  // 단위 미기재: "4500" → 4,500만원으로 가정
+  return Math.round(num * 10_000 * 100); // 만원 * 100 = 백만원? → 4,500 * 만원 = 45,000,000
+}
 
-function monthlyPayment(principal: number, annualRate: number, years: number) {
-  const n = years * 12;
+// 연 수익률 → 월 이자율
+function yearlyToMonthly(rate: number) {
+  return rate / 12;
+}
+
+// 원리금균등 상환 월 납입액
+function pmt(annualRate: number, months: number, principal: number) {
   const r = annualRate / 12;
-  if (r <= 0) return principal / n;
-  return (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  if (r === 0) return principal / months;
+  const a = Math.pow(1 + r, months);
+  return (principal * r * a) / (a - 1);
 }
 
-/** 한국어 프리폼 입력 파서(안전) */
-function parseInputs(raw: unknown) {
-  const text = String(raw ?? "");
+// 메시지에서 의도 및 숫자 뽑기(정규식 위주, 부족하면 부분만 채움)
+function extract(message: string) {
+  const goal = /매매|전세|월세/i.exec(message)?.[0]?.toLowerCase() || "";
+  const years = /(\d+)\s*년/.exec(message)?.[1];
+  const termYears = years ? parseInt(years) : 30;
 
-  const unit = (u?: string) =>
-    u?.includes("천") ? 10_000_000 : u?.includes("백") ? 1_000_000 : u?.includes("만") ? 10_000 : 10_000; // 기본 만원
+  const prefer =
+    /체증|체증식/.test(message) ? "stepup" :
+    /고정|고정금리/.test(message) ? "fixed" :
+    /변동|변동금리/.test(message) ? "variable" : "";
 
-  const num = (s?: string) => (s ? parseFloat(s.replace(/[^\d.]/g, "")) : NaN);
+  const budgetRaw = /(예산|가격|매물|집값)\s*([0-9\.]+(?:억|천|만)?)/.exec(message)?.[2] ||
+                    /([0-9\.]+(?:억|천|만)?)\s*(원)?\s*(예산|가격)/.exec(message)?.[1];
+  const cashRaw   = /(보유|자기자본|보증금)\s*([0-9\.]+(?:억|천|만)?)/.exec(message)?.[2];
+  const incomeRaw = /(연소득|소득)\s*([0-9\.]+(?:억|천|만)?)/.exec(message)?.[2];
 
-  const intent = /전세/.test(text) ? "전세" : /월세/.test(text) ? "월세" : "매매";
-  const pref =
-    /체증/.test(text) ? "체증식" : /변동/.test(text) ? "변동" : /고정/.test(text) ? "고정" : null;
+  const region = /(수도권|서울|경기|인천|지방|광역시)/.exec(message)?.[1] || "";
 
-  // 예산 6억
-  let budget: number | null = null;
-  let m = /예산\s*([\d.,]+)\s*억/i.exec(text) || /([\d.,]+)\s*억/.exec(text);
-  if (m) budget = num(m[1]) * 100_000_000;
+  const budget = parseKRW(budgetRaw || "");
+  const cash   = parseKRW(cashRaw   || "");
+  const income = parseKRW(incomeRaw || "");
 
-  // 보유/보증금 8천, 150만 등
-  let cash: number | null = null;
-  m = /(보유|보증금)\s*([\d.,]+)\s*(천|백|만)?/i.exec(text);
-  if (m) cash = num(m[2]) * unit(m[3]);
-
-  // 월세 80만
-  let wolse: number | null = null;
-  m = /월세\s*([\d.,]+)\s*만/i.exec(text);
-  if (m) wolse = num(m[1]) * 10_000;
-
-  // 기간 30년
-  let termYears: number | null = null;
-  m = /(\d+)\s*년/.exec(text);
-  if (m) termYears = parseInt(m[1], 10);
-
-  // 재직 10개월
-  let monthsEmployed: number | null = null;
-  m = /재직\s*(\d+)\s*개월/.exec(text);
-  if (m) monthsEmployed = parseInt(m[1], 10);
-
-  return { text, intent, pref, budget, cash, wolse, termYears, monthsEmployed };
+  return { goal, termYears, prefer, budget, cash, income, region };
 }
 
-function buildLoanCards(principal: number, years: number, prefer?: string | null) {
-  const RATE_FIXED = 0.035;
-  const RATE_VAR = 0.028;
-  const RATE_STEP = 0.025;
+// 규칙: 대략적인 LTV 한도(매매 80%), 월세는 보증금(=cash) 최소 100만원 이상 사용
+function computeScenarios(params: ReturnType<typeof extract>) {
+  const termMonths = params.termYears * 12;
+  const price = params.budget ?? 0;
 
-  const mFixed = monthlyPayment(principal, RATE_FIXED, years);
-  const mVar = monthlyPayment(principal, RATE_VAR, years);
-  const mStep = monthlyPayment(principal, RATE_STEP, years);
-
-  const totalFixed = mFixed * years * 12;
-  const totalVar = mVar * years * 12;
-  const totalStep = mStep * years * 12;
-
-  const list = [
-    {
-      title: "1. 고정금리 대출",
-      subtitle: "안정적인 상환 계획",
-      monthly: KRW(mFixed),
-      totalInterest: KRW(totalFixed - principal),
-      notes: [
-        `금리: ${(RATE_FIXED * 100).toFixed(1)}%`,
-        `대출 기간: ${years}년`,
-        "상환 방식: 원리금 균등",
-      ],
-      kind: "fixed",
-    },
-    {
-      title: "2. 변동금리 대출",
-      subtitle: "금리 변동에 따른 리스크",
-      monthly: KRW(mVar),
-      totalInterest: KRW(totalVar - principal),
-      notes: [
-        `금리: ${(RATE_VAR * 100).toFixed(1)}% (변동)`,
-        `대출 기간: ${years}년`,
-        "상환 방식: 원리금 균등",
-      ],
-      kind: "variable",
-    },
-    {
-      title: "3. 체증식 대출",
-      subtitle: "초기 부담이 가벼운 방식",
-      monthly: KRW(mStep),
-      totalInterest: KRW(totalStep - principal),
-      notes: [
-        `초기 금리: ${(RATE_STEP * 100).toFixed(1)}%`,
-        `대출 기간: ${years}년`,
-        "상환 방식: 체증식",
-      ],
-      kind: "stepup",
-    },
-  ];
-
-  if (prefer) {
-    const idx =
-      prefer.includes("고정") ? 0 : prefer.includes("변동") ? 1 : prefer.includes("체증") ? 2 : -1;
-    if (idx >= 0) {
-      const [pick] = list.splice(idx, 1);
-      list.unshift(pick);
-    }
-  }
-  return list.map(({ kind, ...rest }) => rest);
-}
-
-/** 월세 카드(보증금 1,000만 ↔ 월세 5만 가정의 현실적인 교환비) */
-function buildRentCards(deposit: number, monthly: number) {
-  const deltaDeposit = 10_000_000; // 1,000만
-  const deltaRent = 50_000; // 5만
-
-  const moreDeposit = {
-    title: "보증금 올리고 월세 낮추기",
-    subtitle: "보증금을 1,000만 올리면 월세 약 5만 낮아져요",
-    monthly: KRW(Math.max(0, monthly - deltaRent)),
-    totalInterest: "", // 대출 아님
-    notes: [
-      `현재 보증금: ${KRW(deposit)} → ${KRW(deposit + deltaDeposit)}`,
-      `예상 월세: ${KRW(monthly)} → ${KRW(Math.max(0, monthly - deltaRent))}`,
-      "현금 여력이 있으면 장기적으로 유리해요.",
-    ],
-  };
-
-  const lessDeposit = {
-    title: "보증금 낮추고 월세 올리기",
-    subtitle: "보증금을 1,000만 낮추면 월세 약 5만 올라가요",
-    monthly: KRW(monthly + deltaRent),
-    totalInterest: "",
-    notes: [
-      `현재 보증금: ${KRW(deposit)} → ${KRW(Math.max(0, deposit - deltaDeposit))}`,
-      `예상 월세: ${KRW(monthly)} → ${KRW(monthly + deltaRent)}`,
-      "초기 비용을 줄이고 싶을 때 선택해요.",
-    ],
-  };
-
-  return [moreDeposit, lessDeposit];
-}
-
-/** 체크리스트 */
-function buildChecklist(monthsEmployed: number | null) {
-  if (monthsEmployed != null && monthsEmployed < 12) {
-    return [
-      "재직증명서",
-      "급여명세서 또는 원천징수영수증",
-      "신분증 사본",
-      "주택 매매/전세계약 관련 서류",
-      "은행 거래내역서(최근 3개월)",
-    ];
-  }
-  return [];
-}
-
-/** 쉬운 말 요약 */
-async function summarize(userText: string, intent: string, cardTitles: string[], notices: string[]) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // 모델이 없어도 유저에게 쉬운 안내 제공
-    return [
-      "입력하신 내용을 바탕으로 가장 쉬운 선택지를 정리했어요.",
-      "카드들을 보고 월 부담/초기 비용을 비교해 보세요.",
-    ].join(" ");
+  // 현금(보유/보증금) 보정
+  let cash = params.cash ?? 0;
+  if (params.goal === "월세" || params.goal === "월세".toLowerCase()) {
+    // 사용자 요청: 월세는 보유(보증금) 최소 100만원
+    const minDeposit = 1_000_000;
+    if (cash < minDeposit) cash = minDeposit;
   }
 
-  const client = new OpenAI({ apiKey });
-  try {
-    const res = await client.responses.create({
-      model: "gpt-4o-mini",
-      input: [
-        "아래 정보를 초등학생도 이해할 수 있게, 부드럽고 친절한 한국어로 3~4줄 안에 요약해 주세요.",
-        "• 어려운 금융 용어는 풀어서 설명하고, 숫자에는 '원'을 붙여 주세요.",
-        `• 목적: ${intent}`,
-        `• 선택 시나리오: ${cardTitles.join(", ")}`,
-        notices.length ? `• 주의/보정: ${notices.join(" / ")}` : "",
+  // 대출 필요액
+  let need = Math.max(price - cash, 0);
+
+  if (params.goal.includes("매매")) {
+    const ltv = 0.8;
+    need = Math.min(need, Math.round(price * ltv));
+  }
+
+  // 금리 가정(현실 반영은 추후 API로 교체)
+  const rFixed = 0.035;
+  const rVar   = 0.028;
+  const rStep  = 0.025; // 체증식 초기 금리
+
+  // 각 시나리오 월상환/총이자
+  function card(title: string, r: number, kind: "fixed" | "variable" | "stepup") {
+    const monthly = pmt(r, termMonths, need);
+    const totalPaid = monthly * termMonths;
+    const totalInterest = Math.max(totalPaid - need, 0);
+
+    const detailNotes =
+      kind === "variable"
+        ? ["금리 변동에 따라 월 납입액이 바뀔 수 있어요."]
+        : kind === "stepup"
+        ? ["초기에는 적게 내고, 시간이 지나며 조금씩 늘어나는 방식이에요."]
+        : ["이자율이 고정이라 매달 비슷하게 내요."];
+
+    return {
+      title,
+      subtitle:
+        kind === "fixed" ? "안정적인 상환 계획" :
+        kind === "variable" ? "금리 변동에 따른 리스크" :
+        "초기 부담을 낮추는 방법",
+      monthly: Math.round(monthly).toLocaleString("ko-KR") + " 원",
+      totalInterest: Math.round(totalInterest).toLocaleString("ko-KR") + " 원",
+      notes: [
+        `금리: ${(r * 100).toFixed(1)}%`,
+        `대출금: ${Math.round(need).toLocaleString("ko-KR")} 원`,
+        `상환기간: ${params.termYears}년`,
+        ...detailNotes
       ]
-        .filter(Boolean)
-        .join("\n"),
-    });
-
-    const text = (res as any).output_text?.trim() || "";
-    return text || "결과를 보기 쉽게 정리했어요. 아래 카드에서 비교해 보세요!";
-  } catch (e) {
-    console.error("openai error:", e);
-    return "가장 쉬운 말로 정리했어요. 아래 카드에서 월 부담과 조건을 편하게 비교해 보세요!";
+    };
   }
+
+  return [
+    card("1. 고정금리 대출", rFixed, "fixed"),
+    card("2. 변동금리 대출", rVar, "variable"),
+    card("3. 체증식 대출",   rStep, "stepup"),
+  ];
 }
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json().catch(() => ({}))) as { message?: unknown };
-    const { text, intent, pref, budget, cash, wolse, termYears, monthsEmployed } = parseInputs(
-      body?.message
-    );
+    const { message } = (await req.json()) as { message?: string };
 
-    const notices: string[] = [];
-
-    // 기본값 보정
-    let years = termYears ?? 30;
-
-    // 1) 월세 처리: 보증금(보유) 최소 100만 원 강제
-    if (intent === "월세") {
-      let deposit = cash ?? 0;
-      if (deposit < 1_000_000) {
-        deposit = 1_000_000;
-        notices.push("월세는 보증금이 최소 100만 원 필요해서 100만 원으로 맞췄어요.");
-      }
-      const monthly = wolse ?? 700_000; // 기본 70만 가정
-      const cards = buildRentCards(deposit, monthly);
-      const checklist = buildChecklist(monthsEmployed);
-      const reply = await summarize(text, intent, cards.map((c) => c.title), notices);
-
-      return Response.json({
-        reply,
-        cards,
-        checklist,
-        notices,
-        meta: { intent, deposit, monthly },
-      });
+    const msg = (message ?? "").toString().trim();
+    if (!msg) {
+      return NextResponse.json(
+        {
+          reply:
+            "무엇을 도와드릴까요? 목적(매매/전세/월세)과 숫자 몇 개만 알려주시면 바로 계산해 드려요.\n예) 매매, 예산 6억, 보유 8천, 연소득 4500, 수도권, 30년, 체증식 선호",
+        },
+        { status: 200 }
+      );
     }
 
-    // 2) 매매/전세(대출 시나리오)
-    const _budget = budget ?? 500_000_000; // 5억
-    const _cash = cash ?? 50_000_000; // 5천
-    const principal = Math.max(0, _budget - _cash);
+    const p = extract(msg);
 
-    const cards = principal > 0 ? buildLoanCards(principal, years, pref) : [];
-    const checklist = buildChecklist(monthsEmployed);
-    const reply = await summarize(text, intent, cards.map((c) => c.title), notices);
+    // 필수 최소값이 없는 경우 안내만 반환(에러 X)
+    if (!p.goal && !p.budget && !p.cash) {
+      return NextResponse.json(
+        {
+          reply:
+            "좋아요! 목적(매매/전세/월세)과 예산/보유/기간 중 2개 이상만 알려주시면 더 정확히 계산할 수 있어요.\n예) 전세, 보증금 3억, 수도권",
+        },
+        { status: 200 }
+      );
+    }
 
-    return Response.json({
-      reply,
-      cards,
-      checklist,
-      notices,
-      meta: {
-        intent,
-        prefer: pref,
-        budget: _budget,
-        cash: _cash,
-        principal,
-        termYears: years,
-      },
-    });
-  } catch (err) {
-    console.error("compute error:", err);
-    return Response.json({ error: "Internal error" }, { status: 500 });
+    const cards = computeScenarios(p);
+
+    // 사람 친화적 요약
+    const reply =
+      `입력해 주신 내용으로 계산했어요.\n` +
+      `- 목적: ${p.goal || "미지정"}\n` +
+      `- 예산(또는 가격): ${p.budget ? p.budget.toLocaleString("ko-KR") + "원" : "미지정"}\n` +
+      `- 보유자금/보증금: ${p.cash ? p.cash.toLocaleString("ko-KR") + "원" : "미지정"}\n` +
+      `- 기간: ${p.termYears}년\n` +
+      (p.prefer ? `- 선호: ${p.prefer}\n` : "") +
+      (p.region ? `- 지역: ${p.region}\n` : "") +
+      `아래 카드에서 월 납입액과 총 이자를 비교해 보세요.`;
+
+    // 재직 1년 미만 체크리스트 (예시)
+    const checklist =
+      /재직\s*(\d+)\s*개월/.test(msg) && parseInt(RegExp.$1) < 12
+        ? ["재직증명서", "소득증빙(급여명세서 또는 원천징수영수증)", "신분증 사본", "주택 매매/임대차계약서", "은행 거래내역서(최근 3개월)"]
+        : [];
+
+    return NextResponse.json({ reply, cards, checklist }, { status: 200 });
+  } catch (e: any) {
+    console.error(e);
+    return NextResponse.json(
+      { reply: "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 500 }
+    );
   }
 }
