@@ -92,8 +92,30 @@ export async function POST(req: Request) {
       input: [system, user].join("\n\n"),
       response_format: { type: "json_schema", json_schema: schema },
     };
-    const resp = await openai.responses.create(reqBody);
+// --- 기존의 reqBody / responses.create 부분을 전부 지우고 아래로 교체 ---
 
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o-mini", // 사용 중인 모델로 유지/수정
+  messages: [
+    { role: "system", content: systemPrompt },         // 기존 시스템 프롬프트 변수
+    { role: "user", content: userPromptString }        // 기존 유저 프롬프트 문자열
+  ],
+  // JSON 스키마까지 강제하려면 타입정의가 꼬일 수 있어 우선 json_object로 안정 처리
+  response_format: { type: "json_object" },
+});
+
+// 모델이 돌려준 JSON 문자열
+const txt = completion.choices?.[0]?.message?.content ?? "{}";
+
+// 파싱 실패 방어
+let out: any;
+try {
+  out = JSON.parse(txt);
+} catch {
+  out = {};
+}
+
+// 이후 out.reply / out.cards / out.checklist ... 사용
     // 6) 출력 회수(여러 케이스 방어)
     const txt =
       (resp as any).output_text ??
