@@ -370,11 +370,7 @@
       sendMessage();
     }
   });
-  document.getElementById('emojiBtn').addEventListener('click', ()=>{
-    const arr=['😊','👍','❤️','🤔','💡','🏠','🔑','📊']; 
-    $input.value += (arr[Math.floor(Math.random()*arr.length)] || '😊');
-    autoGrow(); $input.focus();
-  });
+
 
   // 시작!
   startWizard();
