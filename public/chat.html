@@ -225,7 +225,7 @@
   }
 
   function askIntent(){
-    const b = botBubble(`<div style="font-weight:700">빠르게 추천만원을 시작할게요.</div>
+    const b = botBubble(`<div style="font-weight:700">빠르게 나에게 맞는 대출과 실행 시점을 알려드려요.</div>
       <div class="small" style="margin-top:6px">먼저 목적을 골라 주세요.</div>`);
     renderChips(b, FLOW.intent.choices, (val)=>{
       userBubble(val);
