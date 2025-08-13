@@ -182,87 +182,106 @@
       }
     });
 
-    // === 메시지 전송 ===
     async function sendMessage() {
-      const message = messageInput.value.trim();
-      if (!message) return;
+    const message = messageInput.value.trim();
+    if (!message) return;
 
-      addMessage(message, 'user');
-      messageInput.value = '';
-      messageInput.style.height = 'auto';
-      sendButton.disabled = true;
-      hideWelcomeSection();
+    addMessage(message, 'user');
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    sendButton.disabled = true;
+    hideWelcomeSection();
 
-      showTyping();
-      const reply = await callApi(message);
-      hideTyping();
-      addMessage(reply, 'assistant');
-    }
+    showTyping();
+    const resp = await callApi(message);
+    hideTyping();
+
+    renderResult(resp);  // ← 카드 렌더
+    addMessage(resp.reply || '요약', 'assistant'); // 텍스트 요약도 함께
+  }
 
     async function sendQuickMessage(message) {
-      addMessage(message, 'user');
-      hideWelcomeSection();
+    addMessage(message, 'user');
+    hideWelcomeSection();
 
-      showTyping();
-      const reply = await callApi(message);
-      hideTyping();
-      addMessage(reply, 'assistant');
-    }
+    showTyping();
+    const resp = await callApi(message);
+    hideTyping();
 
-    // === 서버 API 호출 (/api/compute) ===
+    renderResult(resp);
+    addMessage(resp.reply || '요약', 'assistant');
+  }
+
     async function callApi(userMessage) {
-      try {
-        const res = await fetch('/api/compute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMessage })
-        });
-        const data = await res.json();
-        return String(data.reply ?? '답변이 없습니다.');
-      } catch (e) {
-        console.error(e);
-        return '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
-      }
-    }
+    const res = await fetch('/api/compute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage })
+    });
+    return await res.json(); // { reply, cards, checklist, share_url }
+  }
 
-    function addMessage(message, sender) {
-      const messagesContainer = chatMessages.querySelector('.messages-container') || createMessagesContainer();
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${sender}`;
-      messageDiv.innerHTML = `
-        <div class="message-avatar"></div>
-        <div class="message-content">${message.replace(/\n/g, '<br>')}</div>
+    function renderResult(resp){
+    const wrap = document.createElement('div');
+    wrap.className = 'result-cards';
+
+    // 카드들
+    (resp.cards || []).forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'result-card';
+      el.innerHTML = `
+        <div class="title">${c.title}</div>
+        <div class="sub">${c.subtitle || ''}</div>
+        <div class="big">${c.monthly || ''}</div>
+        <div>${c.totalInterest || ''}</div>
+        ${Array.isArray(c.notes) ? `<ul>${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul>` : ''}
       `;
-      messagesContainer.appendChild(messageDiv);
-      scrollToBottom();
+      wrap.appendChild(el);
+    });
+
+    // 체크리스트
+    if (Array.isArray(resp.checklist) && resp.checklist.length){
+      const el = document.createElement('div');
+      el.className = 'result-card';
+      el.innerHTML = `
+        <div class="title">서류 체크리스트 (재직 1년 미만)</div>
+        <ul>${resp.checklist.map(n=>`<li>${n}</li>`).join('')}</ul>
+      `;
+      wrap.appendChild(el);
     }
 
-    function createMessagesContainer() {
-      const container = document.createElement('div');
-      container.className = 'messages-container';
-      chatMessages.appendChild(container);
-      return container;
+    // 공유
+    if (resp.share_url){
+      const el = document.createElement('div');
+      el.className = 'result-card';
+      const full = location.origin + resp.share_url;
+      el.innerHTML = `
+        <div class="title">공유</div>
+        <div class="share-box">
+          <input class="share-input" value="${full}" readonly />
+          <button class="quick-option" style="padding:8px 12px;" onclick="navigator.clipboard.writeText('${full}')">복사</button>
+          <a class="quick-option" style="padding:8px 12px; text-decoration:none;" href="${full}" target="_blank">열기</a>
+        </div>
+      `;
+      wrap.appendChild(el);
     }
 
-    function showTyping(){ typingIndicator.style.display = 'block'; scrollToBottom(); }
-    function hideTyping(){ typingIndicator.style.display = 'none'; }
-    function hideWelcomeSection(){
-      const welcomeSection = document.querySelector('.welcome-section');
-      if (welcomeSection) welcomeSection.style.display = 'none';
-    }
-    function scrollToBottom(){ setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 100); }
-
-    function toggleEmoji() {
-      const emojis = ['😊','👍','❤️','🤔','💡','🏠','🔑','📊'];
-      const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-      messageInput.value += randomEmoji;
-      messageInput.focus();
-      sendButton.disabled = messageInput.value.trim() === '';
-    }
-
-    // 초기 상태
-    sendButton.disabled = true;
-    window.addEventListener('resize', scrollToBottom);
-  </script>
+    // 메시지 영역 아래에 붙임
+    const messagesContainer = chatMessages.querySelector('.messages-container') || createMessagesContainer();
+    messagesContainer.appendChild(wrap);
+    scrollToBottom();
+  }
+</script>
 </body>
 </html>
+/* 결과 카드 레이아웃 */
+.result-cards{ max-width:768px; margin:16px auto 0; display:grid; gap:12px; }
+.result-card{
+  background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb;
+}
+.result-card .title{ font-weight:600; }
+.result-card .sub{ color:#9ca3af; font-size:14px; }
+.result-card .big{ margin-top:8px; font-size:18px; }
+.result-card ul{ margin-top:8px; padding-left:18px; }
+.share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
+.share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
