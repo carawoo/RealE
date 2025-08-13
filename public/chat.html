@@ -46,8 +46,8 @@
 
     .messages-container { max-width:768px; margin:0 auto; padding:40px 0 0; }
 
-    .message{ margin-bottom:24px; display:flex; align-items:flex-start; gap:0; } /* gap 0으로 아바타 제거시 여백 제거 */
-    .message-avatar{ display:none !important; } /* 아바타 숨김 */
+    .message{ margin-bottom:24px; display:flex; align-items:flex-start; gap:0; }
+    .message-avatar{ display:none !important; }
 
     .message-content{ flex:1; font-size:15px; line-height:1.6; color:#f9fafb; }
     .message.user .message-content{
@@ -57,18 +57,17 @@
     .message.assistant .message-content{
       background:#1f2937; padding:16px; border-radius:12px; max-width:80%; border:1px solid #374151;
     }
-    .message-time{ font-size:12px; color:#9ca3af; margin-top:4px; }
 
     .chat-input-container{
       position:fixed; bottom:0; left:0; right:0; background:#1f2937; padding:16px 20px;
       border-top:1px solid #374151; z-index:100;
     }
     .chat-input{
-      display:flex; align-items:stretch; gap:12px; max-width:768px; margin:0 auto; /* stretch로 동일 높이 */
+      display:flex; align-items:stretch; gap:12px; max-width:768px; margin:0 auto;
     }
     .input-wrapper{
       flex:1; position:relative; background:#374151; border:1px solid #4b5563; border-radius:12px;
-      transition:all .2s ease; display:flex; align-items:center; /* textarea 높이에 맞춰 래퍼도 늘림 */
+      transition:all .2s ease; display:flex; align-items:center;
     }
     .input-wrapper:focus-within{ border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.2); }
     .chat-input textarea{
@@ -91,11 +90,11 @@
     }
     .send-button:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 8px 25px rgba(139,92,246,.4); }
     .send-button:disabled{ background:#4b5563; cursor:not-allowed; transform:none; box-shadow:none; }
-    .send-button i{ display:inline-flex; align-items:center; justify-content:center; line-height:1; vertical-align:middle; height:1em; width:1em; transform:translateY(1px); }
+    .send-button i{ display:inline-grid; place-items:center; line-height:1; vertical-align:middle; }
 
     .typing-indicator{ display:none; padding:0 16px 16px; }
-    .typing-container{ max-width:768px; margin:0 auto; display:flex; align-items:flex-start; gap:0; } /* gap 0 */
-    .typing-avatar{ display:none !important; } /* 타이핑 아바타도 숨김 */
+    .typing-container{ max-width:768px; margin:0 auto; display:flex; align-items:flex-start; gap:0; }
+    .typing-avatar{ display:none !important; }
     .typing-bubble{ background:#1f2937; border:1px solid #374151; padding:12px 16px; border-radius:12px; display:flex; align-items:center; gap:4px; }
     .typing-dots{ display:flex; gap:4px; }
     .typing-dots span{ width:6px; height:6px; background:#8b5cf6; border-radius:50%; animation:typing 1.4s infinite; }
@@ -107,6 +106,18 @@
     .chat-messages::-webkit-scrollbar-track{ background:transparent; }
     .chat-messages::-webkit-scrollbar-thumb{ background:rgba(156,163,175,.5); border-radius:3px; }
     .chat-messages::-webkit-scrollbar-thumb:hover{ background:rgba(156,163,175,.7); }
+
+    /* 결과 카드 레이아웃 */
+    .result-cards{ max-width:768px; margin:16px auto 0; display:grid; gap:12px; }
+    .result-card{
+      background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb;
+    }
+    .result-card .title{ font-weight:600; }
+    .result-card .sub{ color:#9ca3af; font-size:14px; }
+    .result-card .big{ margin-top:8px; font-size:18px; }
+    .result-card ul{ margin-top:8px; padding-left:18px; }
+    .share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
+    .share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
 
     @media (min-width:768px){
       .chat-container{ max-width:100%; margin:0 auto; }
@@ -163,8 +174,8 @@
 
   <script>
     const messageInput = document.getElementById('messageInput');
-    const chatMessages = document.getElementById('chatMessages');
-    const sendButton = document.getElementById('sendButton');
+    const chatMessages  = document.getElementById('chatMessages');
+    const sendButton    = document.getElementById('sendButton');
     const typingIndicator = document.getElementById('typingIndicator');
 
     // textarea auto-grow + 버튼 활성/비활성
@@ -182,106 +193,171 @@
       }
     });
 
+    // -------- 전송 플로우 --------
     async function sendMessage() {
-    const message = messageInput.value.trim();
-    if (!message) return;
+      const message = messageInput.value.trim();
+      if (!message) return;
 
-    addMessage(message, 'user');
-    messageInput.value = '';
-    messageInput.style.height = 'auto';
-    sendButton.disabled = true;
-    hideWelcomeSection();
+      addMessage(message, 'user');
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      sendButton.disabled = true;
+      hideWelcomeSection();
 
-    showTyping();
-    const resp = await callApi(message);
-    hideTyping();
-
-    renderResult(resp);  // ← 카드 렌더
-    addMessage(resp.reply || '요약', 'assistant'); // 텍스트 요약도 함께
-  }
+      showTyping();
+      try {
+        const resp = await callApi(message); // { reply, cards, checklist, share_url }
+        renderResult(resp);                  // 카드 렌더
+        addMessage(resp?.reply || '요약', 'assistant');
+      } catch (e) {
+        console.error(e);
+        addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant');
+      } finally {
+        hideTyping();
+      }
+    }
 
     async function sendQuickMessage(message) {
-    addMessage(message, 'user');
-    hideWelcomeSection();
+      addMessage(message, 'user');
+      hideWelcomeSection();
 
-    showTyping();
-    const resp = await callApi(message);
-    hideTyping();
+      showTyping();
+      try {
+        const resp = await callApi(message);
+        renderResult(resp);
+        addMessage(resp?.reply || '요약', 'assistant');
+      } catch (e) {
+        console.error(e);
+        addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant');
+      } finally {
+        hideTyping();
+      }
+    }
 
-    renderResult(resp);
-    addMessage(resp.reply || '요약', 'assistant');
-  }
-
+    // -------- API 호출 --------
     async function callApi(userMessage) {
-    const res = await fetch('/api/compute', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMessage })
-    });
-    return await res.json(); // { reply, cards, checklist, share_url }
-  }
+      const res = await fetch('/api/compute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
+      if (!res.ok) throw new Error('API ' + res.status);
+      return await res.json();
+    }
 
+    // -------- 결과 카드 렌더 --------
     function renderResult(resp){
-    const wrap = document.createElement('div');
-    wrap.className = 'result-cards';
+      const wrap = document.createElement('div');
+      wrap.className = 'result-cards';
 
-    // 카드들
-    (resp.cards || []).forEach(c => {
-      const el = document.createElement('div');
-      el.className = 'result-card';
-      el.innerHTML = `
-        <div class="title">${c.title}</div>
-        <div class="sub">${c.subtitle || ''}</div>
-        <div class="big">${c.monthly || ''}</div>
-        <div>${c.totalInterest || ''}</div>
-        ${Array.isArray(c.notes) ? `<ul>${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul>` : ''}
-      `;
-      wrap.appendChild(el);
-    });
+      // 카드들
+      (resp?.cards || []).forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'result-card';
+        el.innerHTML = `
+          <div class="title">${escapeHtml(c.title || '')}</div>
+          <div class="sub">${escapeHtml(c.subtitle || '')}</div>
+          <div class="big">${escapeHtml(c.monthly || '')}</div>
+          <div>${escapeHtml(c.totalInterest || '')}</div>
+          ${
+            Array.isArray(c.notes)
+              ? `<ul>${c.notes.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`
+              : ''
+          }
+        `;
+        wrap.appendChild(el);
+      });
 
-    // 체크리스트
-    if (Array.isArray(resp.checklist) && resp.checklist.length){
-      const el = document.createElement('div');
-      el.className = 'result-card';
-      el.innerHTML = `
-        <div class="title">서류 체크리스트 (재직 1년 미만)</div>
-        <ul>${resp.checklist.map(n=>`<li>${n}</li>`).join('')}</ul>
-      `;
-      wrap.appendChild(el);
+      // 체크리스트
+      if (Array.isArray(resp?.checklist) && resp.checklist.length){
+        const el = document.createElement('div');
+        el.className = 'result-card';
+        el.innerHTML = `
+          <div class="title">서류 체크리스트 (재직 1년 미만)</div>
+          <ul>${resp.checklist.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>
+        `;
+        wrap.appendChild(el);
+      }
+
+      // 공유
+      if (resp?.share_url){
+        const el = document.createElement('div');
+        el.className = 'result-card';
+        const full = location.origin + resp.share_url;
+        el.innerHTML = `
+          <div class="title">공유</div>
+          <div class="share-box">
+            <input class="share-input" value="${escapeHtml(full)}" readonly />
+            <button class="quick-option" style="padding:8px 12px;" onclick="navigator.clipboard.writeText('${full}')">복사</button>
+            <a class="quick-option" style="padding:8px 12px; text-decoration:none;" href="${full}" target="_blank" rel="noopener">열기</a>
+          </div>
+        `;
+        wrap.appendChild(el);
+      }
+
+      const messagesContainer = chatMessages.querySelector('.messages-container') || createMessagesContainer();
+      messagesContainer.appendChild(wrap);
+      scrollToBottom();
     }
 
-    // 공유
-    if (resp.share_url){
-      const el = document.createElement('div');
-      el.className = 'result-card';
-      const full = location.origin + resp.share_url;
-      el.innerHTML = `
-        <div class="title">공유</div>
-        <div class="share-box">
-          <input class="share-input" value="${full}" readonly />
-          <button class="quick-option" style="padding:8px 12px;" onclick="navigator.clipboard.writeText('${full}')">복사</button>
-          <a class="quick-option" style="padding:8px 12px; text-decoration:none;" href="${full}" target="_blank">열기</a>
-        </div>
-      `;
-      wrap.appendChild(el);
+    // -------- 메시지 버블 --------
+    function addMessage(message, sender) {
+      const messagesContainer = chatMessages.querySelector('.messages-container') || createMessagesContainer();
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+
+      const safe = escapeHtml(message).replace(/\n/g, '<br>');
+      if (sender === 'user') {
+        messageDiv.innerHTML = `
+          <div class="message-avatar">You</div>
+          <div class="message-content">${safe}</div>
+        `;
+      } else {
+        messageDiv.innerHTML = `
+          <div class="message-avatar">AI</div>
+          <div class="message-content">${safe}</div>
+        `;
+      }
+      messagesContainer.appendChild(messageDiv);
+      scrollToBottom();
     }
 
-    // 메시지 영역 아래에 붙임
-    const messagesContainer = chatMessages.querySelector('.messages-container') || createMessagesContainer();
-    messagesContainer.appendChild(wrap);
-    scrollToBottom();
-  }
-</script>
+    function createMessagesContainer() {
+      const container = document.createElement('div');
+      container.className = 'messages-container';
+      chatMessages.appendChild(container);
+      return container;
+    }
+
+    // -------- UI 보조 --------
+    function showTyping(){ typingIndicator.style.display = 'block'; scrollToBottom(); }
+    function hideTyping(){ typingIndicator.style.display = 'none'; }
+    function hideWelcomeSection(){
+      const el = document.querySelector('.welcome-section');
+      if (el) el.style.display = 'none';
+    }
+    function scrollToBottom(){
+      setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 50);
+    }
+    function toggleEmoji(){
+      const emojis = ['😊','👍','❤️','🤔','💡','🏠','🔑','📊'];
+      const e = emojis[Math.floor(Math.random()*emojis.length)];
+      messageInput.value += e;
+      messageInput.focus();
+      sendButton.disabled = messageInput.value.trim() === '';
+    }
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+
+    // 초기화
+    sendButton.disabled = true;
+    window.addEventListener('resize', scrollToBottom);
+  </script>
 </body>
 </html>
-/* 결과 카드 레이아웃 */
-.result-cards{ max-width:768px; margin:16px auto 0; display:grid; gap:12px; }
-.result-card{
-  background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb;
-}
-.result-card .title{ font-weight:600; }
-.result-card .sub{ color:#9ca3af; font-size:14px; }
-.result-card .big{ margin-top:8px; font-size:18px; }
-.result-card ul{ margin-top:8px; padding-left:18px; }
-.share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
-.share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
