@@ -14,7 +14,17 @@
     .messages-container{max-width:768px;margin:0 auto}
     .message{margin:12px 0;display:flex;gap:10px}
     .message.user{justify-content:flex-end}
-    .message .bubble{max-width:80%;border-radius:14px;padding:14px 16px;line-height:1.6}
+    /* ✅ 말풍선 최소 너비 50vw 보장 + 줄바꿈 개선 */
+    .message .bubble{
+      display:inline-block;                 /* 내용 길이에 맞추되…   */
+      max-width:80%;                        /* 컨테이너의 80%를 상한  */
+      min-width:min(50vw, 80%);             /* 화면 50%를 하한(컨테이너 이내) */
+      border-radius:14px;
+      padding:14px 16px;
+      line-height:1.6;
+      overflow-wrap:anywhere;               /* 긴 숫자/URL도 줄바꿈   */
+      word-break:keep-all;                  /* 한글 단어는 가급적 보존 */
+    }
     .message.user .bubble{background:linear-gradient(135deg,#1f2a44,#26334f);border:1px solid #2f3b5a}
     .message.assistant .bubble{background:#1f2937;border:1px solid #374151}
     .chips{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
