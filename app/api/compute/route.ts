@@ -1,75 +1,153 @@
 // app/api/compute/route.ts
 import OpenAI from "openai";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// export const runtime = "edge"; // 원하면 엣지로
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+type Card = {
+  title: string;
+  subtitle?: string;
+  monthly?: string;
+  totalInterest?: string;
+  notes?: string[];
+};
 
-const systemPrompt = `
-당신은 한국 부동산 상담사 RealE입니다.
-항상 JSON으로만 답합니다: { "reply": string, "cards": [{ "title": string, "subtitle"?: string, "monthly"?: string, "totalInterest"?: string, "notes"?: string[] }], "checklist"?: string[] }
-- 사용자가 자유롭게 말해도 핵심(매매/전세/월세, 예산, 지역, 기간 등)을 추출해서 안내하세요.
-- 부동산과 무관한 질문이면 정중히 리다이렉트하는 안내문을 reply에 넣고 cards는 비웁니다.
-- 월세일 때 보증금이 비현실적으로 낮으면(예: 100 미만) 보증금 가이드(예: "최소 100만 원 이상…")를 reply에 친절히 설명하세요.
-- 초보자도 이해하기 쉽게, 쉬운 어휘와 짧은 문장으로 설명하세요.
-`;
+type ApiOut = {
+  reply: string;
+  cards?: Card[];
+  checklist?: string[];
+  share_url?: string;
+};
 
-export async function POST(req: NextRequest) {
+function extractJSON(text: string | null | undefined): Partial<ApiOut> | null {
+  if (!text) return null;
+
+  // ```json ... ``` 안의 내용 우선 추출
+  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
+  const raw = fence ? fence[1] : text;
+
+  // 가장 바깥 { ... } 범위만 뽑아서 파싱 시도
+  const first = raw.indexOf("{");
+  const last = raw.lastIndexOf("}");
+  if (first >= 0 && last > first) {
+    const slice = raw.slice(first, last + 1);
+    try {
+      const obj = JSON.parse(slice);
+      if (obj && typeof obj === "object") return obj as Partial<ApiOut>;
+    } catch {
+      /* fallthrough */
+    }
+  }
+  return null;
+}
+
+function sanitize(out: Partial<ApiOut>, fallbackText: string): ApiOut {
+  const reply =
+    typeof out.reply === "string" && out.reply.trim()
+      ? out.reply.trim()
+      : (fallbackText || "분석 결과를 정리했어요.");
+
+  const cards = Array.isArray(out.cards)
+    ? out.cards
+        .filter((c) => c && typeof c === "object")
+        .map((c) => ({
+          title: String((c as any).title ?? "").trim(),
+          subtitle: (c as any).subtitle ? String((c as any).subtitle) : undefined,
+          monthly: (c as any).monthly ? String((c as any).monthly) : undefined,
+          totalInterest: (c as any).totalInterest ? String((c as any).totalInterest) : undefined,
+          notes: Array.isArray((c as any).notes)
+            ? (c as any).notes.map((n: any) => String(n))
+            : undefined,
+        }))
+        .filter((c) => c.title)
+    : undefined;
+
+  const checklist = Array.isArray(out.checklist)
+    ? out.checklist.map((n: any) => String(n))
+    : undefined;
+
+  const share_url =
+    typeof out.share_url === "string" && out.share_url.startsWith("/")
+      ? out.share_url
+      : undefined;
+
+  return { reply, cards, checklist, share_url };
+}
+
+export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({} as any));
-    const raw = typeof body?.message === "string" ? body.message : "";
+    const { message } = (await req.json().catch(() => ({}))) as {
+      message?: unknown;
+    };
+    const userMessage =
+      typeof message === "string" && message.trim() ? message.trim() : "";
 
-    const userPrompt = `
-사용자 메시지(그대로): """${raw.slice(0, 2000)}"""
+    // API 키 없으면 200으로 소프트 에러 (프론트 UX 유지)
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json<ApiOut>(
+        {
+          reply:
+            "서버 설정(OPENAI_API_KEY)이 비어 있어요. 관리자에게 문의해 주세요.",
+          cards: [],
+        },
+        { status: 200 }
+      );
+    }
 
-요구사항:
-1) 만약 부동산과 무관하면 reply에 "부동산 상담 전용"임을 친절히 알리고, 어떤 정보를 주면 계산해줄지 예시를 한국어로 안내. cards는 [].
-2) 부동산 관련이면 아래 JSON 스키마에 맞게 값을 채워서 내보내기.
-- reply: 쉬운 설명 요약(아이도 이해할 수준)
-- cards: 0~3개. 각 카드엔 title, subtitle(선택), monthly/totalInterest(선택), notes(글머리표 2~4줄)
-- checklist: 필요 서류가 있다면 2~5개(선택)
-JSON만 출력하세요.
-`;
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    // 모델/온도는 환경변수로도 오버라이드 가능
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+    const sys =
+      `너는 한국 부동산 상담 도우미야. 사용자 입력이 자유로운 구어체여도 ` +
+      `의미를 분석해 매매/전세/월세 맥락을 파악하고, 초보자도 이해할 쉬운 한국어로 설명해.` +
+      `항상 아래 JSON만 반환하도록 노력해. 마크다운/설명 말고 JSON 본문만.\n\n` +
+      `반환 JSON 스키마(예):\n` +
+      `{\n` +
+      `  "reply": "짧은 요약 한 문단",\n` +
+      `  "cards": [\n` +
+      `    { "title": "1. 고정금리 대출", "subtitle": "안정적인 상환", "monthly": "2,020,701 원", "totalInterest": "277,452,394 원", "notes": ["금리: 3.5%", "기간: 30년", "방식: 원리금 균등"] },\n` +
+      `    { "title": "2. 변동금리 대출", "subtitle": "금리 변동 리스크", "monthly": "1,849,025 원", "totalInterest": "215,648,998 원", "notes": ["금리: 2.8%", "기간: 30년", "방식: 원리금 균등"] }\n` +
+      `  ],\n` +
+      `  "checklist": ["재직증명서", "소득증빙(원천징수/급여명세)"],\n` +
+      `  "share_url": "/r/abc123"\n` +
+      `}\n\n` +
+      `카드가 없으면 "cards"는 생략 가능.` +
+      `사용자가 월세를 말했는데 보증금(보유자금)이 100 미만이면 '보증금은 최소 100만원 이상 입력' 같은 친절한 코멘트도 reply에 포함.` +
+      `모든 숫자는 "3,200,000 원"처럼 보기 좋게 천단위 콤마와 단위 포함 문자열로.` +
+      `최신 정책/금리는 정확한 수치 대신 "최근 금리 수준/정책 방향"을 설명하되, '확정'처럼 단정 표현은 피하고 안내 형식으로.`
+
+    const prompt =
+      userMessage ||
+      "상담 시작: 매매/전세/월세 중 무엇을 검토할지 모르겠어요. 상황부터 질문해 주세요.";
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
+      model,
+      temperature: 0.3,
+      max_tokens: 900,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: sys },
+        { role: "user", content: prompt },
       ],
     });
 
-    const jsonStr = completion.choices?.[0]?.message?.content ?? "{}";
+    const text =
+      completion.choices?.[0]?.message?.content?.trim() ?? "";
 
-    let out: any;
-    try {
-      out = JSON.parse(jsonStr);
-    } catch {
-      out = {};
-    }
+    // 1) 모델이 JSON을 잘 주면 그대로, 2) 아니면 본문에서 JSON 부분만 추출
+    const parsed = extractJSON(text);
 
-    const reply =
-      typeof out.reply === "string"
-        ? out.reply
-        : "요청을 이해했어요. 목적(매매/전세/월세), 예산, 지역 등을 한 줄로 알려주시면 바로 계산해드릴게요!";
-
-    const cards = Array.isArray(out.cards) ? out.cards : [];
-    const checklist = Array.isArray(out.checklist) ? out.checklist : [];
-
-    return NextResponse.json({ reply, cards, checklist });
-  } catch (err) {
-    console.error("compute error", err);
-    // 200으로도 안전하게 처리(프론트가 항상 JSON을 받도록)
-    return NextResponse.json(
+    const out = sanitize(parsed ?? { reply: text }, text);
+    return NextResponse.json<ApiOut>(out, { status: 200 });
+  } catch (e) {
+    console.error(e);
+    // 실패해도 200으로 소프트 리턴 (UI 끊기지 않게)
+    return NextResponse.json<ApiOut>(
       {
-        reply:
-          "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요. 문제가 계속되면 간단히 '매매, 예산 6억, 수도권'처럼 입력해 보세요!",
+        reply: "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
         cards: [],
-        checklist: [],
       },
       { status: 200 }
     );
