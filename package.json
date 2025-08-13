@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "openai": "^4.0.0",
+    "openai": "^4.56.0",    // 또는 최신 4.x
     "next": "14.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"
