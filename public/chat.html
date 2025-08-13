@@ -193,19 +193,19 @@
     intent: { key:'의도', prompt:'어떤 상담이 필요하세요?', choices:['매매','전세','월세'] },
     steps: {
       '매매': [
-        { key:'예산', unit:'억', choices:['3','4','5','6','7','8','10'] , required:true },
-        { key:'보유금액', unit:'천', choices:['3','5','8','10','15','20'] , required:true },
+        { key:'예산', unit:'억원원', choices:['3','4','5','6','7','8','10'] , required:true },
+        { key:'보유금액', unit:'천만원', choices:['3','5','8','10','15','20'] , required:true },
         { key:'기간', unit:'년', choices:['10','20','30'] , required:true },
         { key:'상환', choices:['고정','변동','체증식'], required:false },
       ],
       '전세': [
-        { key:'전세가', unit:'억', choices:['2','3','4','5','6','7','8'] , required:true },
-        { key:'보유금액', unit:'천', choices:['1','2','3','5','8','10'] , required:true },
+        { key:'전세가', unit:'억원', choices:['2','3','4','5','6','7','8'] , required:true },
+        { key:'보유금액', unit:'천만원', choices:['1','2','3','5','8','10'] , required:true },
         { key:'기간', unit:'년', choices:['2','3','4'] , required:true },
       ],
       '월세': [
-        { key:'보증금', unit:'만', choices:['100','300','500','1000','2000','3000'] , required:true },
-        { key:'월세', unit:'만', choices:['40','50','60','70','80','90','120'] , required:true },
+        { key:'보증금', unit:'만원', choices:['100','300','500','1000','2000','3000'] , required:true },
+        { key:'월세', unit:'만원', choices:['40','50','60','70','80','90','120'] , required:true },
         { key:'기간', unit:'년', choices:['1','2','3'] , required:true },
       ]
     }
@@ -225,7 +225,7 @@
   }
 
   function askIntent(){
-    const b = botBubble(`<div style="font-weight:700">빠르게 추천을 시작할게요.</div>
+    const b = botBubble(`<div style="font-weight:700">빠르게 추천만원을 시작할게요.</div>
       <div class="small" style="margin-top:6px">먼저 목적을 골라 주세요.</div>`);
     renderChips(b, FLOW.intent.choices, (val)=>{
       userBubble(val);
@@ -268,7 +268,7 @@
       const dep = Math.max(100, parseInt(String(d['보증금']||'0').replace(/\D/g,'' )||'0',10));
       const rent = parseInt(String(d['월세']||'0').replace(/\D/g,'' )||'0',10);
       const years = d['기간'] || '2';
-      msg = `월세, 보증금 ${dep}만, 월세 ${rent}만, ${years}년`;
+      msg = `월세, 보증금 ${dep}만원, 월세 ${rent}만원, ${years}년`;
     }
 
     userBubble(`<strong>요약</strong><br><span class="small">${msg}</span>`);
@@ -295,7 +295,7 @@
       };
       box.appendChild(free);
     }
-    // (선택) 입력 안함 — 요청하신 “이전/다음/건너뛰기 버튼”은 제거했지만,
+    // (선택) 입력 안함 — 요청하신 “이전/다음/건너뛰기 버튼”은 제거했지만원,
     // 옵션 질문을 넘기고 싶을 때를 위한 아주 작은 선택지
     if(opts.optional){
       const skip=document.createElement('button'); skip.type='button';
@@ -349,7 +349,7 @@
       const key = state.awaitingKey;
       state.awaitingKey = null;
       userBubble(`${key}: ${text}`);
-      // 숫자만 남기되, 단위가 있으면 그대로 보존
+      // 숫자만원 남기되, 단위가 있으면 그대로 보존
       const pure = text.replace(/\s+/g,'');
       state.data[key] = pure;
       $input.value=''; autoGrow();
