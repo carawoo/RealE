@@ -105,6 +105,11 @@
     .result-card ul{ margin-top:8px; padding-left:18px; }
     .share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
     .share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
+  /* send button spinner toggle */
+    .send-button .icon-arrow { display:inline-flex; }
+    .send-button .icon-spinner { display:none; }
+    .send-button.loading .icon-arrow { display:none; }
+    .send-button.loading .icon-spinner { display:inline-flex; }
   </style>
 </head>
 <body>
@@ -145,9 +150,10 @@
           <textarea id="messageInput" placeholder="(선택 완료 후에도) 자유롭게 물어보세요" rows="1" maxlength="2000"></textarea>
           <button class="emoji-button" onclick="toggleEmoji()">😊</button>
         </div>
-        <button class="send-button" id="sendButton" onclick="sendMessage()">
-          <i class="fas fa-arrow-up fa-fw"></i>
-        </button>
+      <button class="send-button" id="sendButton" onclick="sendMessage()">
+        <i class="fas fa-arrow-up fa-fw icon-arrow"></i>
+        <i class="fas fa-spinner fa-spin fa-fw icon-spinner" aria-hidden="true"></i>
+      </button>
       </div>
     </div>
   </div>
