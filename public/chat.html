@@ -67,6 +67,123 @@
   </div>
 
   <script>
+      // -------- 공통 유틸 ----------
+  const safe = (v) => (v === undefined || v === null ? "" : String(v));
+  function summaryFromFreeText(raw) {
+    const txt = safe(raw).trim();
+    if (!txt) return "";
+    // 너무 짧은 감탄사(예: ㅇㅇ, ㅎㅎ)만 있는 경우는 처리
+    if (/^[ㅇㅎㅋ]+$/.test(txt)) return "";
+    return txt;
+  }
+
+  // 선택형 스텝을 쓰는 경우, 현재까지의 선택 요약을 문자열로 만들어줌.
+  // 선택형 UI를 안 쓰면 항상 ""를 리턴하게 둬도 OK.
+  function buildStructuredPromptOrEmpty() {
+    try {
+      // 선택 상태를 모아 문자열로 합치기 (예: window.__selState 에 저장해두었다면)
+      // 예: return `매매, 예산 ${state.budget}, 보유 ${state.cash}, ...`;
+      return "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function sendMessage() {
+    // 1) 입력 원문
+    const inputEl = document.getElementById('messageInput');
+    const typed = safe(inputEl?.value).trim();
+
+    // 2) 선택형 스텝 요약 → 없으면 빈 문자열
+    const fromWizard = buildStructuredPromptOrEmpty().trim();
+
+    // 3) 최종 프롬프트: 우선순위 (선택 요약 > 사용자가 친 텍스트)
+    const prompt = fromWizard || summaryFromFreeText(typed);
+
+    if (!prompt) {
+      // 사용자 피드백
+      addMessage("간단히 목적과 숫자를 알려주세요. 예) 매매, 예산 6억, 보유 8천, 연소득 4500, 수도권, 30년, 체증식 선호", "assistant");
+      return;
+    }
+
+    // 화면에 내가 입력한 내용 먼저 찍고
+    addMessage(prompt, "user");
+
+    // 인풋 초기화
+    if (inputEl) {
+      inputEl.value = "";
+      inputEl.style.height = "auto";
+    }
+    const sendBtn = document.getElementById('sendButton');
+    if (sendBtn) sendBtn.disabled = true;
+
+    // 로딩 표시
+    showTyping();
+    try {
+      const resp = await callApi(prompt);
+      hideTyping();
+
+      // 결과 카드
+      if (resp && (resp.cards || resp.checklist || resp.share_url)) {
+        renderResult(resp);
+      }
+
+      // 요약/설명 텍스트(있을 때만 추가)
+      if (safe(resp?.reply).trim()) {
+        addMessage(resp.reply, "assistant");
+      }
+    } catch (e) {
+      hideTyping();
+      console.error(e);
+      addMessage("서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", "assistant");
+    }
+  }
+
+  async function sendQuickMessage(msg) {
+    const prompt = safe(msg).trim();
+    if (!prompt) return;
+    addMessage(prompt, "user");
+
+    showTyping();
+    try {
+      const resp = await callApi(prompt);
+      hideTyping();
+
+      if (resp && (resp.cards || resp.checklist || resp.share_url)) {
+        renderResult(resp);
+      }
+      if (safe(resp?.reply).trim()) {
+        addMessage(resp.reply, "assistant");
+      }
+    } catch (e) {
+      hideTyping();
+      console.error(e);
+      addMessage("서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", "assistant");
+    }
+  }
+
+  async function callApi(finalPrompt) {
+    // 항상 문자열로 보냄 (null/undefined 방지)
+    const body = JSON.stringify({ message: String(finalPrompt || "") });
+
+    const res = await fetch("/api/compute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body
+    });
+
+    // 200 아닌데도 서버가 친절한 메시지를 줄 수 있으므로 처리
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = { reply: text }; }
+
+    if (!res.ok) {
+      // 서버가 에러 사유를 알려주면 그걸 사용자에게
+      const note = safe(json?.reply || json?.error || "요청 처리 중 오류가 발생했습니다.");
+      return { reply: note };
+    }
+    return json || {};
+  }
   /* ===== 안전 바인딩 드롭-인 패치 =====
    - DOMContentLoaded 이후 실행
    - 이벤트 위임으로 #messageInput가 나중에 생겨도 동작
