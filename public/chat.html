@@ -365,6 +365,23 @@
     prevBtn.onclick = ()=>{ if(idx>0){ idx--; renderStep(); } };
     skipBtn.onclick = ()=>{ idx = Math.min(idx+1, STEPS.length-1); renderStep(); };
     nextBtn.onclick = async ()=>{
+      // 완료 분기에서 문장 생성 뒤:
+      guidedEl.style.display = 'none';
+      addMessage(text, 'user');
+
+      setLoading(true);          // ← 추가
+      showTyping();
+      try {
+        const resp = await callApi(text);
+        hideTyping();
+        renderResult(resp);
+        addMessage(resp.reply || '요약', 'assistant');
+      } catch (e) {
+        hideTyping();
+        addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant');
+      } finally {
+        setLoading(false);       // ← 추가
+      }
       // 값 없으면 넘어가기
       if(!S[STEPS[idx].key]) { idx = Math.min(idx+1, STEPS.length-1); renderStep(); return; }
       if(idx < STEPS.length-1){ idx++; renderStep(); return; }
