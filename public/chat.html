@@ -9,410 +9,304 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f23;height:100vh;overflow:hidden;color:#e5e7eb}
-
-    .chat-container{height:100vh;display:flex;flex-direction:column;background:#0f0f23}
-    .chat-messages{flex:1;overflow-y:auto;background:#0f0f23;padding:24px 20px 96px}
-    .messages-container{max-width:768px;margin:0 auto;padding-top:8px}
-
-    .message{margin-bottom:16px;display:flex;gap:0}
-    .message-avatar{display:none!important}
-    .message-content{flex:1;font-size:15px;line-height:1.6;color:#f9fafb}
-    .message.user .message-content{background:transparent;padding:10px 0;border-radius:0;max-width:80%;margin-left:auto;text-align:right}
-    .message.assistant .message-content{background:#1f2937;padding:14px;border-radius:12px;max-width:80%;border:1px solid #374151}
-
-    .chat-input-container{position:fixed;left:0;right:0;bottom:0;background:#1f2937;border-top:1px solid #374151;padding:16px 20px;z-index:10}
-    .chat-input{display:flex;align-items:stretch;gap:12px;max-width:768px;margin:0 auto}
-    .input-wrapper{flex:1;position:relative;background:#374151;border:1px solid #4b5563;border-radius:12px;display:flex;align-items:center;transition:.2s}
+    .chat-container{height:100vh;display:flex;flex-direction:column;position:relative}
+    .chat-messages{flex:1;overflow-y:auto;padding:32px 16px 88px}
+    .messages-container{max-width:768px;margin:0 auto}
+    .message{margin:12px 0;display:flex;gap:10px}
+    .message.user{justify-content:flex-end}
+    .message .bubble{max-width:80%;border-radius:14px;padding:14px 16px;line-height:1.6}
+    .message.user .bubble{background:linear-gradient(135deg,#1f2a44,#26334f);border:1px solid #2f3b5a}
+    .message.assistant .bubble{background:#1f2937;border:1px solid #374151}
+    .chips{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+    .chip{background:#2a3551;border:1px solid #3a4a76;color:#e3e7ff;border-radius:999px;padding:8px 12px;font-size:14px;cursor:pointer}
+    .chip:hover{background:#334065}
+    .chip.alt{background:#243042;border-color:#3a4a76}
+    .chip.ghost{background:transparent;border-color:#4b5563;color:#cbd5e1}
+    .small{opacity:.8;font-size:13px}
+    .chat-input-container{position:fixed;left:0;right:0;bottom:0;background:#1f2937;border-top:1px solid #374151;padding:14px 16px}
+    .input-row{max-width:768px;margin:0 auto;display:flex;gap:12px;align-items:stretch}
+    .input-wrapper{flex:1;position:relative;background:#374151;border:1px solid #4b5563;border-radius:12px;display:flex;align-items:center}
     .input-wrapper:focus-within{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.2)}
-    textarea{width:100%;min-height:44px;max-height:120px;padding:12px 50px 12px 16px;border:none;border-radius:12px;resize:none;font:inherit;line-height:1.5;outline:none;background:transparent;color:#f9fafb}
-    textarea::placeholder{color:#9ca3af}
-    .emoji-button{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:4px;border-radius:4px}
-    .emoji-button:hover{background:#4b5563}
-
-    .send-button{
-      width:48px;min-width:48px;height:auto;
-      background:linear-gradient(135deg,#8b5cf6,#06b6d4);border:none;border-radius:12px;
-      color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-      box-shadow:0 4px 15px rgba(139,92,246,.3)
-    }
-    .send-button:disabled{opacity:.7;cursor:not-allowed}
-    .send-button i{line-height:1;vertical-align:middle}
-    /* 스피너 */
-    .btn-spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
-    .send-button.loading i{display:none}
-    .send-button.loading .btn-spinner{display:inline-block}
+    textarea{width:100%;min-height:44px;max-height:120px;padding:12px 48px 12px 14px;border:none;border-radius:12px;background:transparent;color:#f9fafb;resize:none;outline:none;font-size:16px}
+    .emoji-button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;font-size:18px;color:#cbd5e1;cursor:pointer}
+    .send-button{width:48px;border:none;border-radius:14px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(100,116,255,.25);cursor:pointer;padding:0 0}
+    .send-button:disabled{opacity:.5;cursor:not-allowed}
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .9s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* 타이핑 표시 */
-    .typing-indicator{display:none;padding:0 16px 12px}
-    .typing-container{max-width:768px;margin:0 auto;display:flex;gap:0}
-    .typing-bubble{background:#1f2937;border:1px solid #374151;padding:10px 14px;border-radius:12px;display:flex;gap:4px}
-    .typing-dots{display:flex;gap:4px}
-    .typing-dots span{width:6px;height:6px;background:#8b5cf6;border-radius:50%;animation:typing 1.2s infinite}
-    .typing-dots span:nth-child(2){animation-delay:.2s}
-    .typing-dots span:nth-child(3){animation-delay:.4s}
-    @keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
-
-    /* 결과 카드 */
-    .result-cards{max-width:768px;margin:16px auto 0;display:grid;gap:12px}
-    .result-card{background:#1f2937;border:1px solid #374151;border-radius:12px;padding:16px}
-    .result-card .title{font-weight:600;margin-bottom:6px}
-    .result-card .sub{color:#9ca3af;font-size:14px;margin-bottom:6px}
-    .result-card .big{margin:6px 0 8px;font-size:18px}
-    .result-card ul{margin-top:6px;padding-left:18px}
-    .share-box{margin-top:10px;display:flex;gap:8px;align-items:center}
-    .share-input{flex:1;padding:8px;border-radius:8px;border:1px solid #4b5563;background:#111827;color:#e5e7eb}
-
-    /* ------- 가이드 UI(요약/칩/네비) ------- */
-    .guided-box{max-width:768px;margin:0 auto 8px}
-    .guided-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .guided-title{font-weight:600}
-    .step-indicator{font-size:12px;color:#9ca3af}
-    .guided-summary{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;border-radius:10px;background:#111827;border:1px solid #374151;color:#9ca3af;min-height:42px;font-size:14px}
-    .summary-badge{background:#1f2937;border:1px solid #4b5563;color:#e5e7eb;padding:6px 10px;border-radius:999px}
-
-    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-    .chip{padding:10px 14px;border-radius:999px;background:#1f2937;border:1px solid #4b5563;color:#e5e7eb;cursor:pointer}
-    .chip.active{background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:#fff;border-color:transparent;box-shadow:0 4px 18px rgba(139,92,246,.25)}
-
-    .nav-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px}
-    .nav-left{display:flex;gap:8px}
-    .btn{height:40px;padding:0 16px;border-radius:10px;border:1px solid #4b5563;background:#1f2937;color:#e5e7eb;cursor:pointer}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn-next{min-width:78px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);border:none;color:#fff}
-    .link-inline{color:#93c5fd;text-decoration:underline;background:none;border:none;cursor:pointer;padding:0 6px}
+    .typing{display:flex;gap:6px;margin-top:8px}
+    .dot{width:6px;height:6px;background:#8b5cf6;border-radius:50%;opacity:.5;animation:blink 1.2s infinite}
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div class="chat-messages" id="chatMessages">
-      <!-- 가이드 UI가 여기에 렌더됩니다 -->
-      <div id="guided-root"></div>
-    </div>
-
-    <div class="typing-indicator" id="typingIndicator">
-      <div class="typing-container">
-        <div class="typing-bubble">
-          <div class="typing-dots"><span></span><span></span><span></span></div>
-        </div>
-      </div>
+      <div class="messages-container" id="msgs"></div>
     </div>
 
     <div class="chat-input-container">
-      <div class="chat-input">
+      <div class="input-row">
         <div class="input-wrapper">
-          <textarea id="messageInput" placeholder="(선택 완료 후에도) 자유롭게 물어보세요" rows="1" maxlength="2000"></textarea>
+          <textarea id="messageInput" placeholder="직접 입력하거나, 위 칩을 눌러 진행해요." rows="1"></textarea>
           <button class="emoji-button" id="emojiBtn">😊</button>
         </div>
-        <button class="send-button" id="sendButton" aria-busy="false" title="보내기">
+        <button class="send-button" id="sendButton">
           <i class="fas fa-arrow-up"></i>
-          <span class="btn-spinner" aria-hidden="true"></span>
         </button>
       </div>
     </div>
   </div>
 
   <script>
-    // 현실적인 옵션(서울/수도권 기준의 보편 범위)
-window.REALISTIC_STEPS = {
-  공통: {
-    지역: ["서울", "수도권", "광역시", "기타"],
-  },
-  매매: [
-    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
-    { key: "예산", type: "choice", unit: "억", choices: ["3", "4", "5", "6", "7", "8", "10", "12"], required: true },
-    { key: "보유", type: "choice", unit: "천", choices: ["3","5","8","10","12","15","20"], required: true },
-    { key: "연소득", type: "choice", unit: "만원", choices: ["3000","4000","5000","7000","9000","12000"] },
-    { key: "재직", type: "choice", unit: "개월", choices: ["6","10","12","24","36"] },
-    { key: "지역", type: "choice", choices: window.REALISTIC_STEPS_지역 || ["서울","수도권","광역시","기타"] },
-    { key: "기간", type: "choice", unit: "년", choices: ["10","20","30"], required: true },
-    { key: "상환", type: "choice", choices: ["고정","변동","체증식"] }
-  ],
-  전세: [
-    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
-    { key: "전세가", type: "choice", unit: "억", choices: ["2","3","4","5","6","7","8"], required: true },
-    { key: "보유", type: "choice", unit: "천", choices: ["1","2","3","5","8","10"], required: true },
-    { key: "지역", type: "choice", choices: ["서울","수도권","광역시","기타"] },
-    { key: "기간", type: "choice", unit: "년", choices: ["2","3","4"] }
-  ],
-  월세: [
-    { key: "의도", type: "choice", choices: ["매매","전세","월세"], required: true },
-    { key: "보증금", type: "choice", unit: "만", choices: ["100","300","500","1000","2000","3000","5000"], required: true }, // 최소 100만
-    { key: "월세", type: "choice", unit: "만", choices: ["40","50","60","70","80","90","120","150"], required: true },
-    { key: "지역", type: "choice", choices: ["서울","수도권","광역시","기타"] },
-    { key: "기간", type: "choice", unit: "년", choices: ["1","2","3"] }
-  ]
-};
+  // ===== 공통 유틸 =====
+  const $msgs = document.getElementById('msgs');
+  const $input = document.getElementById('messageInput');
+  const $send = document.getElementById('sendButton');
 
-// 월세 유효성 보정(보증금 100만 미만 → 100만)
-window.ensureValidForWolse = function ensureValidForWolse(summaryText) {
-  // summaryText 예: "월세, 보증금 50만, 월세 70만, 2년"
-  if (/월세/.test(summaryText)) {
-    const m = /보증금\s*(\d+)\s*만/.exec(summaryText);
-    if (m && parseInt(m[1],10) < 100) {
-      return summaryText.replace(/보증금\s*\d+\s*만/, "보증금 100만");
-    }
+  function scrollToBottom(){ requestAnimationFrame(()=>{ const wrap=document.getElementById('chatMessages'); wrap.scrollTop = wrap.scrollHeight; }); }
+  function userBubble(html){ const el=document.createElement('div'); el.className='message user'; el.innerHTML=`<div class="bubble">${html}</div>`; $msgs.appendChild(el); scrollToBottom(); }
+  function botBubble(html){ const el=document.createElement('div'); el.className='message assistant'; el.innerHTML=`<div class="bubble">${html}</div>`; $msgs.appendChild(el); scrollToBottom(); return el.querySelector('.bubble'); }
+  function typingDots(parent){ const box=document.createElement('div'); box.className='typing'; box.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>'; parent.appendChild(box); return ()=>box.remove(); }
+
+  const KR = (n)=> new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0}).format(+n||0);
+
+  // ===== API 연동 =====
+  async function callApi(message){
+    const res = await fetch('/api/compute',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message })
+    });
+    if(!res.ok){ throw new Error('API '+res.status); }
+    return await res.json(); // { reply, cards, checklist, notices }
   }
-  return summaryText;
-};
-    const messageInput = document.getElementById('messageInput');
-    const chatMessages = document.getElementById('chatMessages');
-    const sendButton   = document.getElementById('sendButton');
-    const emojiBtn     = document.getElementById('emojiBtn');
-    const typingIndicator = document.getElementById('typingIndicator');
 
-    // textarea auto grow + 버튼 활성/비활성
-    messageInput.addEventListener('input', function(){
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-      sendButton.disabled = this.value.trim() === '' || sendButton.classList.contains('loading');
-    });
-
-    // Enter 전송 (Shift+Enter 줄바꿈)
-    messageInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // 이모지 버튼
-    emojiBtn.addEventListener('click', () => {
-      const emojis = ['😊','👍','❤️','🤔','💡','🏠','🔑','📊'];
-      const r = emojis[Math.floor(Math.random()*emojis.length)];
-      messageInput.value += r;
-      messageInput.dispatchEvent(new Event('input'));
-      messageInput.focus();
-    });
-
-    // 로딩 토글(버튼 스피너 + 입력 차단)
-    function setLoading(on){
-      sendButton.classList.toggle('loading', on);
-      sendButton.setAttribute('aria-busy', on ? 'true' : 'false');
-      sendButton.disabled = on || messageInput.value.trim()==='';
-      emojiBtn.disabled = on;
-    }
-    function showTyping(){ typingIndicator.style.display='block'; scrollToBottom(); }
-    function hideTyping(){ typingIndicator.style.display='none'; }
-
-    async function sendMessage(){
-      const message = messageInput.value.trim();
-      if(!message || sendButton.classList.contains('loading')) return;
-
-      addMessage(message, 'user');
-      messageInput.value = '';
-      messageInput.style.height = 'auto';
-      messageInput.dispatchEvent(new Event('input'));
-
-      setLoading(true);
-      showTyping();
-      try{
-        const resp = await callApi(message);
-        hideTyping();
-        renderResult(resp);
-        addMessage(resp.reply || '요약', 'assistant');
-      }catch(e){
-        hideTyping();
-        addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant');
-      }finally{
-        setLoading(false);
-      }
-    }
-    sendButton.addEventListener('click', sendMessage);
-
-    async function callApi(userMessage){
-      const res = await fetch('/api/compute', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ message:userMessage })
-      });
-      if(!res.ok) throw new Error('API ' + res.status);
-      return await res.json(); // { reply, cards, checklist, share_url }
-    }
-
-    function addMessage(message, sender){
-      const wrap = chatMessages.querySelector('.messages-container') || createMessagesContainer();
-      const div = document.createElement('div');
-      div.className = `message ${sender}`;
-      div.innerHTML = `<div class="message-avatar"></div><div class="message-content">${message.replace(/\n/g,'<br>')}</div>`;
-      wrap.appendChild(div);
-      scrollToBottom();
-    }
-    function createMessagesContainer(){
-      const c = document.createElement('div');
-      c.className = 'messages-container';
-      chatMessages.appendChild(c);
-      return c;
-    }
-    function scrollToBottom(){ setTimeout(()=>{ chatMessages.scrollTop = chatMessages.scrollHeight; }, 50); }
-
-    // 결과 카드 렌더
-    function renderResult(resp){
-      const wrap = document.createElement('div');
-      wrap.className = 'result-cards';
-
-      (resp.cards || []).forEach(c=>{
-        const el = document.createElement('div');
-        el.className='result-card';
-        el.innerHTML = `
-          <div class="title">${c.title||''}</div>
-          ${c.subtitle?`<div class="sub">${c.subtitle}</div>`:''}
-          ${c.monthly?`<div class="big">${c.monthly}</div>`:''}
-          ${c.totalInterest?`<div>${c.totalInterest}</div>`:''}
-          ${Array.isArray(c.notes)?`<ul>${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`:''}
-        `;
-        wrap.appendChild(el);
-      });
-
-      if(Array.isArray(resp.checklist) && resp.checklist.length){
-        const el = document.createElement('div');
-        el.className='result-card';
-        el.innerHTML = `
-          <div class="title">서류 체크리스트</div>
-          <ul>${resp.checklist.map(n=>`<li>${n}</li>`).join('')}</ul>
-        `;
-        wrap.appendChild(el);
-      }
-
-      if(resp.share_url){
-        const full = location.origin + resp.share_url;
-        const el = document.createElement('div');
-        el.className='result-card';
-        el.innerHTML = `
-          <div class="title">공유</div>
-          <div class="share-box">
-            <input class="share-input" value="${full}" readonly/>
-            <button class="btn" onclick="navigator.clipboard.writeText('${full}')">복사</button>
-            <a class="btn" href="${full}" target="_blank" style="text-decoration:none">열기</a>
-          </div>
-        `;
-        wrap.appendChild(el);
-      }
-
-      (chatMessages.querySelector('.messages-container') || createMessagesContainer()).appendChild(wrap);
-      scrollToBottom();
-    }
-
-    // ===== 빠른 추천 가이드(UI 요약/칩/네비 분리) =====
-    function startGuided(){
-      const host = document.getElementById('guided-root');
-
-      host.innerHTML = `
-        <div class="guided-box">
-          <div class="guided-bar">
-            <div class="guided-title">빠른 추천을 위한 선택</div>
-            <div class="step-indicator" id="stepIdx">1/8</div>
-          </div>
-          <div class="guided-summary" id="guidedSummary">선택값이 여기에 요약됩니다.</div>
-          <div class="chips" id="chipWrap"></div>
-          <div class="nav-row">
-            <div class="nav-left">
-              <button class="btn" id="prevBtn">이전</button>
-              <button class="btn" id="skipBtn">건너뛰기</button>
-            </div>
-            <div class="nav-right">
-              <button class="btn btn-next" id="nextBtn">다음</button>
-              <button class="link-inline" id="manualBtn">직접 입력할래요</button>
-            </div>
-          </div>
+  // 결과 카드 렌더(기존 함수 없으면 여기에 내장)
+  function renderResult(resp){
+    const wrap = document.createElement('div');
+    wrap.className = 'message assistant';
+    const inner = document.createElement('div');
+    inner.className = 'bubble';
+    let html = '';
+    (resp.cards||[]).forEach(c=>{
+      html += `
+        <div style="background:#111827;border:1px solid #374151;border-radius:12px;padding:14px 14px;margin:10px 0;">
+          <div style="font-weight:700;margin-bottom:4px">${c.title||''}</div>
+          <div class="small" style="margin-bottom:8px">${c.subtitle||''}</div>
+          ${c.monthly?`<div style="font-size:22px;font-weight:800;margin:4px 0">${c.monthly}</div>`:''}
+          ${c.totalInterest?`<div class="small" style="margin-bottom:8px">총 이자: ${c.totalInterest}</div>`:''}
+          ${Array.isArray(c.notes)?`<ul style="margin-left:16px">${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`:''}
         </div>
       `;
+    });
+    if(Array.isArray(resp.checklist)&&resp.checklist.length){
+      html += `
+        <div style="background:#111827;border:1px solid #374151;border-radius:12px;padding:14px 14px;margin:10px 0;">
+          <div style="font-weight:700;margin-bottom:8px">서류 체크리스트</div>
+          <ul style="margin-left:16px">${resp.checklist.map(n=>`<li>${n}</li>`).join('')}</ul>
+        </div>
+      `;
+    }
+    if(Array.isArray(resp.notices) && resp.notices.length){
+      html += `<div class="small" style="opacity:.9;margin-top:6px">${resp.notices.join(' ')}</div>`;
+    }
+    inner.innerHTML = html || '<div class="small">표시할 카드가 없습니다.</div>';
+    wrap.appendChild(inner);
+    $msgs.appendChild(wrap);
+    scrollToBottom();
+  }
 
-      const steps = [
-        { id:'intent', label:'어떤 상담이 필요하신가요?', type:'single', options:['매매','전세','월세'] },
-        { id:'budget', label:'구매 예산(억원)', type:'single', options:['3','4','5','6','7','8'], map:o=>`${o}억` },
-        { id:'cash',   label:'보유 현금(천만원)', type:'single', options:['3','5','8','10','15'], map:o=>`${o}천` },
-        { id:'income', label:'연소득(만원)', type:'single', options:['3000','4500','6000','8000','10000'] },
-        { id:'tenure', label:'재직 기간', type:'single', options:['6개월','10개월','1년↑'] },
-        { id:'region', label:'지역', type:'single', options:['수도권','지방','무관'] },
-        { id:'term',   label:'상환기간', type:'single', options:['20년','30년','40년'] },
-        { id:'pref',   label:'상환 방식', type:'single', options:['고정','변동','체증식 선호'] },
-      ];
+  // ===== 대화형 위저드 =====
+  const FLOW = {
+    intent: { key:'의도', prompt:'어떤 상담이 필요하세요?', choices:['매매','전세','월세'] },
+    steps: {
+      '매매': [
+        { key:'예산', unit:'억', choices:['3','4','5','6','7','8','10'] , required:true },
+        { key:'보유', unit:'천', choices:['3','5','8','10','15','20'] , required:true },
+        { key:'기간', unit:'년', choices:['10','20','30'] , required:true },
+        { key:'상환', choices:['고정','변동','체증식'], required:false },
+      ],
+      '전세': [
+        { key:'전세가', unit:'억', choices:['2','3','4','5','6','7','8'] , required:true },
+        { key:'보유', unit:'천', choices:['1','2','3','5','8','10'] , required:true },
+        { key:'기간', unit:'년', choices:['2','3','4'] , required:true },
+      ],
+      '월세': [
+        { key:'보증금', unit:'만', choices:['100','300','500','1000','2000','3000'] , required:true },
+        { key:'월세', unit:'만', choices:['40','50','60','70','80','90','120'] , required:true },
+        { key:'기간', unit:'년', choices:['1','2','3'] , required:true },
+      ]
+    }
+  };
 
-      let i = 0;
-      const answers = {};
-      const chipWrap   = host.querySelector('#chipWrap');
-      const summaryBox = host.querySelector('#guidedSummary');
-      const stepIdxEl  = host.querySelector('#stepIdx');
-      const prevBtn    = host.querySelector('#prevBtn');
-      const skipBtn    = host.querySelector('#skipBtn');
-      const nextBtn    = host.querySelector('#nextBtn');
-      const manualBtn  = host.querySelector('#manualBtn');
+  const state = {
+    active: true,
+    intent: null,
+    idx: -1,
+    data: {},
+    awaitingKey: null, // '예산' 등 직접입력 대기
+  };
 
-      renderStep();
+  function startWizard(){
+    state.active = true; state.intent = null; state.idx = -1; state.data = {}; state.awaitingKey = null;
+    askIntent();
+  }
 
-      prevBtn.onclick  = () => { if(i>0){ i--; renderStep(); } };
-      skipBtn.onclick  = () => { if(i<steps.length-1){ i++; renderStep(); } };
-      manualBtn.onclick= () => { host.remove(); messageInput.focus(); };
+  function askIntent(){
+    const b = botBubble(`<div style="font-weight:700">빠르게 추천을 시작할게요.</div>
+      <div class="small" style="margin-top:6px">먼저 목적을 골라 주세요.</div>`);
+    renderChips(b, FLOW.intent.choices, (val)=>{
+      userBubble(val);
+      state.intent = val;
+      askNext();
+    }, { extraFree:true });
+  }
 
-      nextBtn.onclick = () => {
-        if(i < steps.length-1){ i++; renderStep(); return; }
-        // 마지막 단계 → 문장으로 조립 후 API 호출
-        const text = buildFinalText();
-        host.style.display='none';
-        addMessage(text, 'user');
+  function askNext(){
+    const steps = FLOW.steps[state.intent] || [];
+    state.idx++;
+    // 다음 필수/선호 질문이 없으면 완료
+    if(state.idx >= steps.length){ return finishWizard(); }
+    const step = steps[state.idx];
+    const hint = step.unit ? `예: ${step.choices?.[0] ?? ''}${step.unit}` : '숫자 또는 텍스트';
+    const b = botBubble(`<div style="font-weight:700">${step.key}를 선택하거나 직접 입력해 주세요.</div><div class="small" style="margin-top:6px">${hint}</div>`);
+    renderChips(b, step.choices || [], (val)=>{
+      const display = step.unit ? `${val}${step.unit}` : val;
+      userBubble(`${step.key}: ${display}`);
+      state.data[step.key] = String(val);
+      askNext();
+    }, { extraFree:true, key: step.key, unit: step.unit, optional: !step.required });
+  }
 
-        setLoading(true);
-        showTyping();
-        callApi(text)
-          .then(resp => { hideTyping(); renderResult(resp); addMessage(resp.reply || '요약', 'assistant'); })
-          .catch(()=>{ hideTyping(); addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 'assistant'); })
-          .finally(()=> setLoading(false));
-      };
+  function finishWizard(){
+    // 요약문 생성 → API 호출
+    const it = state.intent;
+    const d = state.data;
+    let msg = it;
+    const add = (k, label=k)=>{
+      if(d[k]) msg += `, ${label} ${d[k]}`;
+    };
 
-      function renderStep(){
-        const s = steps[i];
-        host.querySelector('.guided-title').textContent = s.label;
-        stepIdxEl.textContent = `${i+1}/${steps.length}`;
-
-        chipWrap.innerHTML='';
-        s.options.forEach(opt=>{
-          const b = document.createElement('button');
-          b.className='chip';
-          b.textContent = s.map ? s.map(opt) : opt;
-          if(answers[s.id]===opt) b.classList.add('active');
-          b.onclick = ()=>{
-            answers[s.id]=opt;
-            chipWrap.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
-            b.classList.add('active');
-            updateSummary();
-            nextBtn.disabled = false;
-          };
-          chipWrap.appendChild(b);
-        });
-
-        prevBtn.disabled = (i===0);
-        nextBtn.disabled = !answers[s.id];
-        updateSummary();
-      }
-
-      function updateSummary(){
-        const picked = steps.map(s=>({s,v:answers[s.id]})).filter(x=>x.v);
-        if(!picked.length){ summaryBox.textContent='선택값이 여기에 요약됩니다.'; return; }
-        summaryBox.innerHTML = picked.map(x=>{
-          const val = x.s.map ? x.s.map(x.v) : x.v;
-          return `<span class="summary-badge">${val}</span>`;
-        }).join(' ');
-      }
-
-      function buildFinalText(){
-        const v = id => answers[id] || '';
-        const parts = [
-          v('intent') || '매매',
-          v('budget') && `예산 ${v('budget')}`,
-          v('cash')   && `보유 ${v('cash')}`,
-          v('income') && `연소득 ${v('income')}`,
-          v('tenure') && `재직 ${v('tenure')}`,
-          v('region'),
-          v('term'),
-          v('pref') && (v('pref').includes('선호') ? v('pref') : `${v('pref')} 선호`)
-        ].filter(Boolean);
-        return parts.join(', ');
-      }
+    if(it==='매매'){
+      add('예산'); add('보유'); add('기간'); if(d['상환']) msg += `, ${d['상환']} 선호`;
+    } else if(it==='전세'){
+      add('전세가'); add('보유'); add('기간');
+    } else if(it==='월세'){
+      // 보증금 최소 100 보정(프론트 UX)
+      const dep = Math.max(100, parseInt(String(d['보증금']||'0').replace(/\D/g,'' )||'0',10));
+      const rent = parseInt(String(d['월세']||'0').replace(/\D/g,'' )||'0',10);
+      const years = d['기간'] || '2';
+      msg = `월세, 보증금 ${dep}만, 월세 ${rent}만, ${years}년`;
     }
 
-    // 초기 실행
-    startGuided();
+    userBubble(`<strong>요약</strong><br><span class="small">${msg}</span>`);
+    runCompute(msg);
+  }
+
+  function renderChips(bubbleEl, choices, onPick, opts={}){
+    const box = document.createElement('div'); box.className='chips';
+    // 기본 선택칩
+    choices.forEach(c=>{
+      const btn=document.createElement('button'); btn.type='button';
+      btn.className='chip'; btn.textContent=c;
+      btn.onclick=()=>onPick(c);
+      box.appendChild(btn);
+    });
+    // 직접 입력
+    if(opts.extraFree){
+      const free=document.createElement('button'); free.type='button';
+      free.className='chip ghost'; free.textContent='직접 입력';
+      free.onclick=()=>{
+        state.awaitingKey = opts.key || '입력값';
+        $input.placeholder = opts.unit ? `${state.awaitingKey} 입력 (예: 6${opts.unit})` : `${state.awaitingKey} 입력`;
+        $input.focus();
+      };
+      box.appendChild(free);
+    }
+    // (선택) 입력 안함 — 요청하신 “이전/다음/건너뛰기 버튼”은 제거했지만,
+    // 옵션 질문을 넘기고 싶을 때를 위한 아주 작은 선택지
+    if(opts.optional){
+      const skip=document.createElement('button'); skip.type='button';
+      skip.className='chip alt'; skip.textContent='입력 안함';
+      skip.onclick=()=>{ onPick(''); };
+      box.appendChild(skip);
+    }
+    bubbleEl.appendChild(box);
+    scrollToBottom();
+  }
+
+  // ===== 전송/입력 처리 =====
+  function autoGrow(){
+    $input.style.height='auto';
+    $input.style.height=Math.min($input.scrollHeight,120)+'px';
+  }
+  $input.addEventListener('input', autoGrow);
+
+  async function runCompute(summary){
+    // 버튼 스피너
+    const prev = $send.innerHTML;
+    $send.innerHTML = '<div class="spinner"></div>';
+    $send.disabled = true;
+
+    const host = botBubble('<div class="small">계산 중입니다…</div>');
+    const stop = typingDots(host);
+
+    try{
+      const resp = await callApi(summary);
+      stop();
+      if(resp.reply){ botBubble(resp.reply); }
+      renderResult(resp);
+    }catch(e){
+      stop();
+      botBubble('서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+      console.error(e);
+    }finally{
+      $send.innerHTML = prev;
+      $send.disabled = false;
+      scrollToBottom();
+    }
+  }
+
+  // 사용자가 입력창으로 보낼 때:
+  async function sendMessage(){
+    const text = $input.value.trim();
+    if(!text) return;
+
+    if(state.active && state.awaitingKey){
+      // 위저드의 “직접 입력” 채우기
+      const key = state.awaitingKey;
+      state.awaitingKey = null;
+      userBubble(`${key}: ${text}`);
+      // 숫자만 남기되, 단위가 있으면 그대로 보존
+      const pure = text.replace(/\s+/g,'');
+      state.data[key] = pure;
+      $input.value=''; autoGrow();
+      askNext();
+      return;
+    }
+
+    // 그냥 자유 질문 → API
+    userBubble(text);
+    $input.value=''; autoGrow();
+    runCompute(text);
+  }
+
+  $send.addEventListener('click', sendMessage);
+  $input.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  document.getElementById('emojiBtn').addEventListener('click', ()=>{
+    const arr=['😊','👍','❤️','🤔','💡','🏠','🔑','📊']; 
+    $input.value += (arr[Math.floor(Math.random()*arr.length)] || '😊');
+    autoGrow(); $input.focus();
+  });
+
+  // 시작!
+  startWizard();
   </script>
 </body>
 </html>
