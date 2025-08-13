@@ -106,7 +106,24 @@ export async function POST(req: Request) {
     }
 
     const result = await callOpenAI(message);
-
+    // (저장 켜기)
+    try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE) {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE!
+        );
+      const public_id = crypto.randomUUID().slice(0, 8);
+      await supabase.from("recommendations").insert({
+        public_id,
+        payload_json: result,
+      });
+      result.share_url = `/r/${public_id}`;
+    }
+  } catch (e) {
+  // 저장 실패는 무시
+}
     // (선택) Supabase 저장은 환경 변수가 있을 때만 시도
     // try {
     //   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE) {
