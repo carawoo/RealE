@@ -1,9 +1,11 @@
-// app/page.tsx
 export default function Page() {
   return (
-    <main style={{ padding: 24 }}>
-      <h1>RealE MVP</h1>
-      <a href="/chat">/chat 열기 →</a>
+    <main style={{ margin: 0, padding: 0, height: "100vh" }}>
+      <iframe
+        src="/chat.html"
+        style={{ border: "none", width: "100%", height: "100vh" }}
+        title="RealE Chat"
+      />
     </main>
   );
 }
