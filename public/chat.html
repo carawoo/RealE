@@ -67,6 +67,69 @@
   </div>
 
   <script>
+  /* ===== 안전 바인딩 드롭-인 패치 =====
+   - DOMContentLoaded 이후 실행
+   - 이벤트 위임으로 #messageInput가 나중에 생겨도 동작
+   - 요소가 없어도 에러 안 나도록 방어
+*/
+(function () {
+  // DOM 준비 후 한 번 실행
+  window.addEventListener('DOMContentLoaded', initSafeBindings);
+
+  function initSafeBindings() {
+    // 1) 입력 변화 -> 버튼 활성/비활성
+    document.addEventListener('input', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLTextAreaElement)) return;
+      if (t.id !== 'messageInput') return;
+
+      // auto grow
+      t.style.height = 'auto';
+      t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+
+      const btn = document.getElementById('sendButton');
+      if (btn instanceof HTMLButtonElement) {
+        btn.disabled = t.value.trim() === '';
+      }
+    });
+
+    // 2) Enter 전송(Shift+Enter 줄바꿈)
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLTextAreaElement)) return;
+      if (t.id !== 'messageInput') return;
+
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        safeSendMessage();
+      }
+    });
+
+    // 3) 전송 버튼 클릭
+    const btn = document.getElementById('sendButton');
+    if (btn instanceof HTMLButtonElement) {
+      btn.addEventListener('click', safeSendMessage);
+      // 초기 버튼 상태 보정
+      const ta = document.getElementById('messageInput');
+      if (ta instanceof HTMLTextAreaElement) {
+        btn.disabled = ta.value.trim() === '';
+      }
+    }
+  }
+
+  // 기존 sendMessage를 호출하되, 없으면 무시(에러 방지)
+  function safeSendMessage() {
+    try {
+      if (typeof sendMessage === 'function') {
+        sendMessage();
+      } else {
+        console.warn('sendMessage() 가 아직 정의되지 않았습니다.');
+      }
+    } catch (err) {
+      console.error('sendMessage 실행 중 오류:', err);
+    }
+  }
+})();
   // ===== 공통 유틸 =====
   const $msgs = document.getElementById('msgs');
   const $input = document.getElementById('messageInput');
