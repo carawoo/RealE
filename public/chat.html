@@ -259,6 +259,7 @@
             transition: all 0.3s ease;
             display: flex;
             align-self: stretch;            /* ← 세로 100% (행 높이 만큼) */
+            align-items: center;    /* ← 추가 (세로 중앙) */
             justify-content: center;
             flex-shrink: 0;
             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
@@ -428,7 +429,7 @@
                 <div class="input-wrapper">
                     <textarea 
                         id="messageInput" 
-                        placeholder="메시지를 입력하세요..." 
+                        placeholder="어떤 것을 도와드릴까요?" 
                         rows="1"
                         maxlength="2000"></textarea>
                     <button class="emoji-button" onclick="toggleEmoji()">
