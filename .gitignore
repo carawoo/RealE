@@ -1,0 +1,17 @@
+# 3) .gitignore 생성
+cat > .gitignore <<'EOF'
+# dependencies
+node_modules/
+.pnp.*
+# build outputs
+.next/
+out/
+# env
+.env
+.env.*
+# os/editor junk
+.DS_Store
+*.log
+# vercel
+.vercel/
+EOF
