@@ -1,0 +1,270 @@
+/* 기본 */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0f0f23; color:#e5e7eb; }
+
+
+
+/* 컨테이너 */
+.chat-container { height:100vh; display:flex; flex-direction:column; background:#0f0f23; position:relative; }
+.chat-messages { flex:1; overflow-y:auto; background:#0f0f23; padding:40px 20px 80px; }
+
+/* 웰컴 섹션 */
+.welcome-section { display:flex; flex-direction:column; align-items:center; padding:20px 20px 40px; text-align:center; max-width:600px; margin:0 auto; }
+.bot-avatar { width:64px; height:64px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; margin-bottom:20px; box-shadow:0 4px 20px rgba(139,92,246,.3); }
+.welcome-text h2 { font-size:24px; font-weight:600; color:#f9fafb; margin-bottom:8px; }
+.welcome-text p { font-size:16px; color:#d1d5db; line-height:1.5; margin-bottom:24px; }
+
+.quick-options { display:grid; grid-template-columns:1fr; gap:12px; width:100%; max-width:400px; }
+.quick-option { background:linear-gradient(135deg,#1e1b4b,#312e81); border:1px solid #4338ca; padding:16px 20px; border-radius:12px; font-size:15px; color:#e0e7ff; cursor:pointer; transition:all .3s ease; text-align:left; display:flex; align-items:center; gap:12px; position:relative; overflow:hidden; }
+.quick-option::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(139,92,246,.1),transparent); transition:left .6s; }
+.quick-option:hover { background:linear-gradient(135deg,#2d1b69,#3730a3); border-color:#6366f1; transform:translateY(-2px); box-shadow:0 8px 25px rgba(139,92,246,.25); }
+.quick-option:hover::before { left:100%; }
+.quick-option .icon { font-size:18px; color:#8b5cf6; }
+
+/* 메시지 */
+.messages-container { max-width:768px; margin:0 auto; padding:40px 0 0; }
+.message { margin-bottom:24px; display:flex; align-items:flex-start; gap:0; }
+.message-avatar { display:none !important; }
+.message-content { flex:1; font-size:15px; line-height:1.6; color:#f9fafb; min-width:50%; } /* 최소 50% 폭 */
+.message.user .message-content { background:transparent; padding:12px 0; border-radius:0; max-width:80%; margin-left:auto; text-align:right; }
+.message.assistant .message-content { background:#1f2937; padding:16px; border-radius:12px; max-width:80%; border:1px solid #374151; }
+
+/* 입력 */
+.chat-input-container { position:fixed; bottom:0; left:0; right:0; background:#1f2937; padding:16px 20px; border-top:1px solid #374151; z-index:100; }
+.chat-input { display:flex; align-items:stretch; gap:12px; max-width:768px; margin:0 auto; }
+.input-wrapper { flex:1; position:relative; background:#374151; border:1px solid #4b5563; border-radius:12px; transition:all .2s ease; display:flex; align-items:center; }
+.input-wrapper:focus-within { border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.2); }
+.chat-input textarea { width:100%; min-height:44px; max-height:120px; padding:12px 50px 12px 16px; border:none; border-radius:12px; resize:none; font-family:inherit; font-size:16px; line-height:1.5; outline:none; background:transparent; color:#f9fafb; }
+.chat-input textarea::placeholder { color:#9ca3af; }
+.send-button { width:44px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); border:none; border-radius:12px; color:#fff; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(139,92,246,.3); }
+.send-button:disabled { background:#4b5563; cursor:not-allowed; box-shadow:none; }
+
+/* 로딩 */
+.typing-indicator { padding:0 16px 16px; }
+.typing-container { max-width:768px; margin:0 auto; display:flex; align-items:flex-start; gap:0; }
+.typing-bubble { background:#1f2937; border:1px solid #374151; padding:12px 16px; border-radius:12px; display:flex; align-items:center; gap:4px; }
+.typing-dots { display:flex; gap:4px; }
+.typing-dots span { width:6px; height:6px; background:#8b5cf6; border-radius:50%; animation:typing 1.4s infinite; }
+.typing-dots span:nth-child(2){ animation-delay:.2s; }
+.typing-dots span:nth-child(3){ animation-delay:.4s; }
+@keyframes typing{ 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-6px); opacity:1; } }
+
+/* 결과 카드 */
+.result-cards{ max-width: 80%;   min-width: 50%;  margin:16px auto 0; display:grid; gap:12px;  margin: 12px 0; }
+.result-card{ background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb; }
+.result-card .title{ font-weight:600; }
+.result-card .sub{ color:#9ca3af; font-size:14px; }
+.result-card .big{ margin-top:8px; font-size:18px; }
+.result-card ul{ margin-top:8px; padding-left:18px; }
+.share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
+.share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
+
+/* 스크롤바 */
+.chat-messages::-webkit-scrollbar{ width:6px; }
+.chat-messages::-webkit-scrollbar-track{ background:transparent; }
+.chat-messages::-webkit-scrollbar-thumb{ background:rgba(156,163,175,.5); border-radius:3px; }
+.chat-messages::-webkit-scrollbar-thumb:hover{ background:rgba(156,163,175,.7); }
+
+/* 반응형 */
+@media (min-width:768px){
+  .chat-container{ max-width:100%; margin:0 auto; }
+  .quick-options{ grid-template-columns:1fr 1fr; gap:16px; }
+}
+@media (min-width:1024px){
+  .quick-options{ grid-template-columns:1fr 1fr 1fr; }
+}
+
+/* 아이폰 세이프에어리어 */
+@supports (padding-top: env(safe-area-inset-top)){
+  .chat-messages{ padding-top:env(safe-area-inset-top); }
+  .chat-input-container{ padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+}
+/* Typing indicator – moved from inline style to avoid hydration mismatch */
+.typing { display: inline-flex; gap: 6px; align-items: center; }
+.typing > span { width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; display: inline-block; animation: b 1.2s infinite; }
+.typing > span:nth-child(2){ animation-delay: .2s }
+.typing > span:nth-child(3){ animation-delay: .4s }
+@keyframes b { 0%, 60%, 100% { transform: translateY(0); opacity:.4 } 30% { transform: translateY(-6px); opacity:1 } }
+
+/* typing dots indicator */
+.typing { display:inline-flex; gap:6px; align-items:center; }
+.typing > span {
+  width:6px; height:6px; border-radius:50%;
+  background:#8b5cf6; display:inline-block;
+  animation: dotBounce 1.2s infinite;
+}
+.typing > span:nth-child(2) { animation-delay:.2s; }
+.typing > span:nth-child(3) { animation-delay:.4s; }
+
+@keyframes dotBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity:.4; }
+  30% { transform: translateY(-6px); opacity:1; }
+}
+
+/* 상단 우측 ‘새 대화’ 버튼 */
+.chat-container{ position: relative; }
+
+.chat-reset{
+  position: fixed; /* 화면 기준 고정 */
+  top: 16px;
+  right: 16px;
+  z-index: 60; /* 필요시 2000 정도로 올려도 됨 */
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid #2b2f3b;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1;
+
+  opacity: .7;
+  backdrop-filter: saturate(120%) blur(6px);
+  transition: opacity .15s ease, transform .02s ease;
+}
+/* 상단 좌/우 고정 버튼 공통 */
+.chat-home,
+.chat-reset{
+  position: fixed;                 /* 화면 기준 고정 */
+  top: calc(16px + env(safe-area-inset-top));
+  z-index: 60;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid #2b2f3b;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1;
+
+  opacity: .7;
+  backdrop-filter: saturate(120%) blur(6px);
+  transition: opacity .15s ease, transform .02s ease;
+}
+.chat-home:hover,
+.chat-reset:hover{ opacity: 1 }
+.chat-home:active,
+.chat-reset:active{ transform: translateY(1px) }
+.chat-home .icon,
+.chat-reset .icon{ font-size: 14px }
+.chat-home .label,
+.chat-reset .label{ letter-spacing: .1px }
+
+/* 좌/우 위치만 다르게 */
+.chat-home{
+  left: calc(16px + env(safe-area-inset-left));
+}
+.chat-reset{
+  right: calc(16px + env(safe-area-inset-right));
+}
+
+/* 작은 화면에서는 라벨 숨기고 아이콘만 노출(선택) */
+@media (max-width: 420px){
+  .chat-home .label,
+  .chat-reset .label{ display:none }
+  .chat-home, .chat-reset{ height: 34px; padding: 0 8px }
+}
+.chat-reset:hover{ opacity: 1 }
+.chat-reset:active{ transform: translateY(1px) }
+.chat-reset .icon{ font-size: 14px }
+.chat-reset .label{ letter-spacing: .1px }
+
+.chat-share{
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  right: calc(86px + env(safe-area-inset-right)); /* '새 대화' 왼쪽에 살짝 간격 */
+  z-index: 60;
+
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 10px; border-radius: 10px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid #2b2f3b; color: #cbd5e1;
+  font-size: 13px; line-height: 1; opacity: .7;
+  backdrop-filter: saturate(120%) blur(6px);
+  transition: opacity .15s ease, transform .02s ease;
+}
+.chat-share:hover{ opacity: 1 }
+.chat-share:active{ transform: translateY(1px) }
+.chat-share .icon{ font-size: 14px }
+.chat-share .label{ letter-spacing: .1px }
+
+@media (max-width:420px){
+  .chat-share .label{ display:none }
+  .chat-share{ height: 34px; padding: 0 8px }
+}
+
+/* ===== 상단 고정 TopBar ===== */
+.chat-topbar{
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(960px, calc(100% - 32px));   /* 좌우 16px 여백 */
+  z-index: 60;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(15, 15, 35, .55);
+  border: 1px solid #2b2f3b;
+  backdrop-filter: saturate(140%) blur(6px);
+}
+
+/* 우측 버튼 묶음: 정확히 16px 간격 */
+.chat-topbar .top-actions{
+  display: flex;
+  gap: 16px;  /* ← 요구사항 */
+}
+
+/* TopBar 안 공통 버튼 */
+.btn-top{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid #2b2f3b;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1;
+
+  opacity: .9;
+  transition: opacity .15s ease, transform .02s ease;
+}
+.btn-top:hover{ opacity: 1; }
+.btn-top:active{ transform: translateY(1px); }
+.btn-top .icon{ font-size: 14px; }
+.btn-top .label{ letter-spacing: .1px; }
+
+/* 작은 화면: 라벨은 숨겨서 아이콘만 */
+@media (max-width: 420px){
+  .btn-top .label{ display: none; }
+  .chat-topbar{ padding: 6px 8px; }
+  .btn-top{ height: 30px; padding: 0 8px; }
+}
+
+/* TopBar가 가리는 것 방지: 메시지 영역 상단 패딩 추가 */
+.chat-messages{
+  /* TopBar 높이(약 48~56px) + 여유 */
+  padding-top: 72px;
+}

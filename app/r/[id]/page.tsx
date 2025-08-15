@@ -1,74 +1,45 @@
-// /app/r/[id]/page.tsx
-import { supabasePublic } from "@/lib/supabase";
+// app/r/[id]/page.tsx
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic = "force-dynamic";
-
-export default async function SharePage({
-  params,
-}: { params: { id: string } }) {
-  const { data, error } = await supabasePublic
+export default async function SharedPage({ params }: { params: { id: string } }) {
+  const { data, error } = await supabaseAdmin
     .from("recommendations")
-    .select("reply, cards, checklist, created_at, input_text")
-    .eq("public_id", params.id)
+    .select("payload, created_at")
+    .or(`public_id.eq.${params.id},id.eq.${params.id}`) // public_id 또는 기존 id로 접근 허용
     .single();
 
   if (error || !data) {
     return (
-      <main style={{ padding: 24 }}>
-        <h2>결과를 찾을 수 없습니다.</h2>
+      <main style={{ maxWidth: 880, margin: "40px auto", padding: "0 20px" }}>
+        <h2>링크가 유효하지 않아요</h2>
+        <p>공유 링크가 삭제되었거나 만료되었을 수 있어요.</p>
       </main>
     );
   }
 
-  const { reply, cards, checklist, input_text, created_at } = data;
+  const msgs = Array.isArray(data.payload?.msgs) ? data.payload.msgs : [];
 
   return (
-    <main style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 8 }}>RealE 추천 결과</h1>
-      <div style={{ fontSize: 14, color: "#888", marginBottom: 16 }}>
-        공유 ID: {params.id} · {new Date(created_at).toLocaleString("ko-KR")}
+    <main style={{ maxWidth: 880, margin: "24px auto", padding: "0 20px", color: "#e5e7eb", background:"#0f0f23" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, margin: "18px 0" }}>공유된 상담</h1>
+      <div style={{ display:"flex", flexDirection:"column", gap: 10 }}>
+        {msgs.map((m: any, i: number) => (
+          <div key={i} style={{
+            alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+            maxWidth:"80%",
+            background: m.role === "user" ? "transparent" : "#1f2937",
+            border: m.role === "user" ? "1px solid #374151" : "1px solid #374151",
+            padding: "12px 14px",
+            borderRadius: 12,
+            whiteSpace: "pre-wrap"
+          }}>
+            {m.text}
+          </div>
+        ))}
       </div>
-
-      {input_text && (
-        <p style={{ background: "#111827", padding: 12, borderRadius: 8 }}>
-          <b>입력:</b> {input_text}
-        </p>
-      )}
-
-      {reply && (
-        <p style={{ background: "#1f2937", padding: 16, borderRadius: 12, marginTop: 16 }}>
-          {reply}
-        </p>
-      )}
-
-      {/* 카드들 */}
-      {Array.isArray(cards) && cards.length > 0 && (
-        <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
-          {cards.map((c: any, i: number) => (
-            <div key={i} style={{ background: "#1f2937", padding: 16, borderRadius: 12, border: "1px solid #374151" }}>
-              <div style={{ fontWeight: 700 }}>{c.title}</div>
-              <div style={{ color: "#9ca3af", fontSize: 14 }}>{c.subtitle}</div>
-              {c.monthly && <div style={{ fontSize: 18, marginTop: 8 }}>{c.monthly}</div>}
-              {c.totalInterest && <div>{c.totalInterest}</div>}
-              {Array.isArray(c.notes) && (
-                <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                  {c.notes.map((n: string, j: number) => <li key={j}>{n}</li>)}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 체크리스트 */}
-      {Array.isArray(checklist) && checklist.length > 0 && (
-        <div style={{ background: "#1f2937", padding: 16, borderRadius: 12, marginTop: 16, border: "1px solid #374151" }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>서류 체크리스트</div>
-          <ul style={{ paddingLeft: 20 }}>
-            {checklist.map((n: string, i: number) => <li key={i}>{n}</li>)}
-          </ul>
-        </div>
-      )}
+      <p style={{ marginTop: 16, opacity:.7, fontSize:13 }}>
+        생성일: {new Date(data.created_at).toLocaleString("ko-KR")}
+      </p>
     </main>
   );
 }

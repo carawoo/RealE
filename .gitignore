@@ -1,0 +1,17 @@
+cat > .gitignore <<'EOF'
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.log
+
+# Vercel/IDE 등
+.vercel/
+.DS_Store
+
+# 환경변수 (실제 키는 올리지 말기)
+.env*
+!.env.local.example
+EOF

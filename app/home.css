@@ -1,0 +1,188 @@
+/* app/home.css */
+:root{
+  --bg:#0f0f23;
+  --card:#1f2937;
+  --line:#374151;
+  --muted:#9ca3af;
+  --text:#e5e7eb;
+  --text-strong:#f9fafb;
+  --brand:#8b5cf6;
+  --brand2:#06b6d4;
+}
+
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif }
+
+.home{ min-height:100dvh; display:flex; flex-direction:column }
+
+/* nav */
+.nav{
+  height:64px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; border-bottom:1px solid #14142b;
+  backdrop-filter:saturate(140%) blur(6px);
+}
+.brand{ display:flex; align-items:center; gap:10px; font-weight:800; color:var(--text-strong) }
+.logo{ font-size:20px }
+.nav-actions{ display:flex; gap:8px }
+
+
+/* how */
+.how{
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;        /* 가운데 정렬 */
+  padding: 56px 20px 24px; /* 위/좌우/아래 패딩 */
+}
+.hero{
+  max-width: 960px;      /* 컨텐츠 최대폭 */
+  margin: 0 auto;        /* 가운데 정렬 */
+  padding: 56px 20px 24px; /* 위/좌우/아래 패딩 */
+}
+
+.hero .accent{
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.lead{ color:var(--muted); margin: 0 0 18px; font-size:18px }
+.cta{ display:flex; gap:12px; flex-wrap:wrap }
+.cta.bottom{ justify-content:center; margin-top:18px }
+/* .cta.bottom 영역의 버튼을 가로 100% 확장 */
+.cta.bottom > .btn {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: none;
+}
+.chips{
+  display:flex; gap: 20px; flex-wrap:wrap; list-style:none; padding:0; margin:18px 0 0;
+}
+.chips li{
+  background: #121431; border:1px solid #20234b; color:#b2b7d7;
+  padding: 16px 24px; border-radius:999px; font-size:16px;
+}
+
+/* features */
+.features{
+  max-width:960px; width:100%; margin:24px auto; padding:0 20px;
+  display:grid; grid-template-columns: repeat(3,1fr); gap:14px;
+}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px;
+  transition: transform .15s ease, border-color .2s ease;
+}
+.card:hover{ transform: translateY(-2px); border-color:#4b5563 }
+.card h3{ margin:2px 0 8px; color:var(--text-strong) }
+.card p{ margin:0; color:#c7cbe0; line-height:1.6 }
+
+
+/* how */
+.how{
+  max-width:960px; margin:10px auto 28px; padding:0 20px;
+}
+.how h2{ margin:10px 0 14px; font-size:22px; color:var(--text-strong) }
+.steps{ list-style:none; padding:0; margin:0; display:grid; gap: 20px; }
+.steps li{
+  display:flex; gap: 20px; align-items:flex-start;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px;
+}
+.num{
+  width:28px; height:28px; border-radius:999px; display:inline-grid; place-items:center;
+  background:linear-gradient(135deg, var(--brand), var(--brand2)); color:white; font-weight:700
+}
+.steps b{ color:var(--text-strong) }
+.steps p{ margin:4px 0 0; color:#c7cbe0 }
+
+/* 고정 컬럼: 숫자 뱃지 */
+.steps .num{
+  width: 36px;          /* ← 고정 너비(원하면 28/32 등으로 조절) */
+  height: 36px;
+  flex: 0 0 36px;       /* ← '늘어나지 않음' + '항상 36px 차지' */
+  display: inline-grid; 
+  place-items: center;  /* 숫자 수직/수평 중앙 */
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 한 줄 레이아웃 정리 */
+.steps li{
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* 숫자 오른쪽의 본문 영역을 남은 폭 100% 차지 */
+.steps li > div{
+  flex: 1;
+  min-width: 0; /* 긴 줄바꿈 시 넘침 방지 */
+}
+
+
+/* footer */
+.footer{
+  margin-top:auto; border-top:1px solid #14142b; color:#98a0c6;
+  display:flex; justify-content:center; padding:18px 12px; font-size:13.5px;
+}
+
+
+/* buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:42px; padding:0 16px; border-radius:12px; font-weight:700;
+  text-decoration:none; user-select:none; transition: filter .15s ease, transform .02s ease;
+  border:1px solid transparent; color:var(--text-strong);
+}
+.btn:active{ transform: translateY(1px) }
+.btn.primary{
+  background:linear-gradient(135deg, var(--brand), var(--brand2));
+  color:#fff; border-color:transparent;
+}
+.btn.ghost{
+  background:#11142d; border:1px solid #1d2145; color:#cdd3fb;
+}
+.btn.lg{ height: 56px; padding:0 24px }
+
+@media (max-width:960px){
+  .features{ grid-template-columns:1fr }
+  .hero h1{ font-size:32px }
+}
+/* override: CTA height to 46px */
+.btn, .btn.lg { height: 46px; }
+
+/* hero 안의 텍스트/버튼/칩을 중앙 정렬 */
+.hero{ text-align: center; }          /* 제목(h1), 설명(.lead) 가운데 */
+.hero .cta{ justify-content: center; } /* 버튼 묶음 가운데 정렬 */
+.hero .chips{ justify-content: center; } /* 칩(태그) 줄도 가운데 */
+
+/* === Fixed CTA bar (global) === */
+.cta-fixed{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(15,15,35,.9), rgba(15,15,35,.4), transparent);
+  backdrop-filter: saturate(140%) blur(6px);
+}
+
+.cta-fixed .inner{
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+}
+
+.cta-fixed .btn{ 
+  flex: 1;
+  height: 56px;           /* CTA 높이 */
+}
+
+/* 고정바에 가리지 않게 페이지 하단 여백 확보 */
+.home{
+  padding-bottom: calc(56px + 24px + env(safe-area-inset-bottom));
+}
+
+/* 섹션 하단 CTA는 중복되니 숨김(선택) */
+.how .cta.bottom{ display: none; }
