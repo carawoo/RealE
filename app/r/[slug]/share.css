@@ -1,0 +1,506 @@
+/* app/r/[slug]/share.css
+   - RealE 디자인 시스템과 일치하는 공유 뷰 스타일
+   - 홈페이지와 동일한 색상, 그라데이션, 버튼 스타일 적용
+*/
+
+/* ---------------------------
+   Design Tokens - RealE System
+---------------------------- */
+:root {
+    --bg: #0f0f23;
+    --card: #1f2937;
+    --card-hover: #374151;
+    --line: #374151;
+    --line-hover: #4b5563;
+    --muted: #9ca3af;
+    --text: #e5e7eb;
+    --text-strong: #f9fafb;
+    --text-subtle: #c7cbe0;
+    --brand: #8b5cf6;
+    --brand2: #06b6d4;
+    
+    /* 추가 색상 */
+    --assistant-bg: #121431;
+    --assistant-border: #20234b;
+    --user-bg: #1f2937;
+    --user-border: #374151;
+    
+    /* 그림자 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+    
+    /* 반지름 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    
+    /* 전환 효과 */
+    --transition: all 0.15s ease;
+  }
+  
+  /* ---------------------------
+     Base Styles
+  ---------------------------- */
+  * {
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  
+  /* ---------------------------
+     Page Layout
+  ---------------------------- */
+  .share-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 20px 24px;
+    min-height: 100vh;
+  }
+  
+  /* 네비게이션 (홈과 동일) */
+  .nav {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid #14142b;
+    backdrop-filter: saturate(140%) blur(6px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(15, 15, 35, 0.8);
+  }
+  
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    color: var(--text-strong);
+    text-decoration: none;
+  }
+  
+  .logo {
+    font-size: 20px;
+  }
+  
+  .nav-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  /* ---------------------------
+     Header
+  ---------------------------- */
+  .share-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  
+  .share-head h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 0;
+    background: linear-gradient(135deg, var(--brand), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* 버튼 (홈 디자인 시스템과 동일) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    text-decoration: none;
+    user-select: none;
+    transition: filter 0.15s ease, transform 0.02s ease;
+    border: 1px solid transparent;
+    color: var(--text-strong);
+    gap: 8px;
+  }
+  
+  .btn:active {
+    transform: translateY(1px);
+  }
+  
+  .btn.primary {
+    background: linear-gradient(135deg, var(--brand), var(--brand2));
+    color: #fff;
+    border-color: transparent;
+  }
+  
+  .btn.ghost {
+    background: #11142d;
+    border: 1px solid #1d2145;
+    color: #cdd3fb;
+  }
+  
+  .btn:hover {
+    filter: brightness(1.1);
+  }
+  
+  /* 메타 정보 */
+  .meta {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  
+  /* ---------------------------
+     Timeline
+  ---------------------------- */
+  .timeline {
+    margin-top: 32px;
+    display: grid;
+    gap: 20px;
+  }
+  
+  /* 메시지 카드 (홈의 .card와 일치) */
+  .msg {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: transform 0.15s ease, border-color 0.2s ease;
+  }
+  
+  .msg:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-hover);
+  }
+  
+  /* 발화자 라벨 */
+  .msg .who {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .msg .who::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--line), transparent);
+    margin-left: 12px;
+  }
+  
+  /* 메시지 내용 */
+  .msg .content {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    font-size: 15px;
+    color: var(--text-subtle);
+  }
+  
+  /* 역할별 스타일 */
+  .msg.assistant {
+    background: var(--card);
+  }
+  
+  .msg.assistant .content {
+    background: var(--assistant-bg);
+    border-color: var(--assistant-border);
+    color: #b2b7d7;
+  }
+  
+  .msg.user .content {
+    background: var(--user-bg);
+    border-color: var(--user-border);
+    color: var(--text-subtle);
+  }
+  
+  /* ---------------------------
+     Result Cards
+  ---------------------------- */
+  .cards {
+    margin-top: 16px;
+    display: grid;
+    gap: 12px;
+  }
+  
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: transform 0.15s ease, border-color 0.2s ease;
+    position: relative;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-hover);
+  }
+  
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+  }
+  
+  .card .title {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.2px;
+    margin-bottom: 4px;
+    color: var(--text-strong);
+  }
+  
+  .card .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  
+  .card .big {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 12px 0 8px;
+    background: linear-gradient(135deg, var(--brand), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .card ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-subtle);
+  }
+  
+  .card li {
+    margin-bottom: 4px;
+    line-height: 1.6;
+  }
+  
+  /* ---------------------------
+     Checklist
+  ---------------------------- */
+  .checklist {
+    margin-top: 16px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+  
+  .checklist .ttl {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--text-strong);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .checklist .ttl::before {
+    content: '✓';
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--brand), var(--brand2));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .checklist ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-subtle);
+  }
+  
+  .checklist li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
+  
+  /* ---------------------------
+     Steps (FAQ 스타일로 활용 가능)
+  ---------------------------- */
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0;
+    display: grid;
+    gap: 20px;
+  }
+  
+  .steps li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: transform 0.15s ease, border-color 0.2s ease;
+  }
+  
+  .steps li:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-hover);
+  }
+  
+  .num {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--brand), var(--brand2));
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+  }
+  
+  .steps li > div {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .steps b {
+    color: var(--text-strong);
+  }
+  
+  .steps p {
+    margin: 4px 0 0;
+    color: var(--text-subtle);
+  }
+  
+  /* ---------------------------
+     Features Grid (필요시 사용)
+  ---------------------------- */
+  .features {
+    max-width: 960px;
+    width: 100%;
+    margin: 24px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  
+  .features .card h3 {
+    margin: 2px 0 8px;
+    color: var(--text-strong);
+  }
+  
+  .features .card p {
+    margin: 0;
+    color: var(--text-subtle);
+    line-height: 1.6;
+  }
+  
+  /* ---------------------------
+     Footer
+  ---------------------------- */
+  .footer {
+    margin-top: auto;
+    border-top: 1px solid #14142b;
+    color: #98a0c6;
+    display: flex;
+    justify-content: center;
+    padding: 18px 12px;
+    font-size: 13.5px;
+  }
+  
+  /* ---------------------------
+     Responsive Design
+  ---------------------------- */
+  @media (max-width: 960px) {
+    .features {
+      grid-template-columns: 1fr;
+    }
+    
+    .share-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .share-head h1 {
+      font-size: 24px;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .share-wrap {
+      padding: 20px 16px;
+    }
+    
+    .msg {
+      padding: 16px;
+    }
+    
+    .msg .content {
+      padding: 14px;
+      font-size: 14px;
+    }
+    
+    .card {
+      padding: 16px;
+    }
+    
+    .steps li {
+      padding: 14px;
+    }
+    
+    .num {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .share-wrap {
+      padding: 16px 12px;
+    }
+    
+    .share-head h1 {
+      font-size: 20px;
+    }
+  }
+
+  

@@ -2,71 +2,61 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import "./share.css";
 
 type Role = "user" | "assistant";
 type Card = { title: string; subtitle?: string; monthly?: string; totalInterest?: string; notes?: string[] };
-type Msg  = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
+type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
 
-export const revalidate = 0; // 공유 링크는 즉시 반영
+export const revalidate = 0;
 
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 }
 
-export default async function SharedPage({ params: { slug } }: { params: { slug: string } }) {
-  // 환경변수(브라우저로 노출 가능한 anon 키/URL)
-  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+/** 카드 전용 금액 텍스트 정규화(채팅 페이지와 동일 규칙) */
+function formatMoneyishText(s?: string): string {
+  if (!s) return "";
+  let out = s;
+  out = out.replace(/(\d{1,3}),(\d{2})(\s*만)/g, (_m, a, b, unit) => `${a}${b}${unit}`);
+  out = out.replace(/(\d{4,})(\s*원)/g, (_m, num, won) => `${Number(num).toLocaleString("ko-KR")}${won}`);
+  out = out.replace(/\b(\d{4,})\b/g, (m) => (m.includes(",") ? m : Number(m).toLocaleString("ko-KR")));
+  return out;
+}
+
+export default async function SharedPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = createClient(url, anon);
 
-  // 1) 실행 전: 쿼리빌더 구성 (아직 실행 X)
-  const base = supabase
-    .from("recommendations")
-    .select("payload_json, payload, created_at")
-    .limit(1);
+  const base = supabase.from("recommendations").select("payload_json, payload, created_at").limit(1);
 
-  // 2) slug 유형별 필터 부착
-  const query =
-    isUuid(slug)      ? base.eq("public_id", slug) :
-    /^\d+$/.test(slug) ? base.eq("id", Number(slug)) :
-    null;
-
+  const query = isUuid(slug) ? base.eq("public_id", slug) : /^\d+$/.test(slug) ? base.eq("id", Number(slug)) : null;
   if (!query) return notFound();
 
-  // 3) 실제 실행
   const { data, error } = await query.maybeSingle();
+  if (error || !data) return notFound();
 
-  // 4) 가드 및 디버그 로그
-  if (error) {
-    console.error("[/r/[slug]] select error:", error);
-    return notFound();
-  }
-  if (!data) {
-    console.warn("[/r/[slug]] no row for slug:", slug);
-    return notFound();
-  }
-
-  // payload_json(신규) 또는 payload(이전 컬럼) 중 있는 쪽 사용
   const payload = (data as any).payload_json ?? (data as any).payload;
   const msgs: Msg[] = Array.isArray(payload) ? payload : [];
 
   return (
     <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1 style={{ fontSize: 20, margin: 0 }}>공유된 대화</h1>
-        <Link href="/" className="btn">홈으로</Link>
+        <h1 style={{ fontSize: 20, margin: 10 }}>대화를 공유했어요</h1>
+        <Link href="/" className="btn ghost">홈</Link>
       </header>
 
       {msgs.length === 0 ? (
         <p style={{ marginTop: 24 }}>표시할 메시지가 없어요.</p>
       ) : (
-        <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
+        <div style={{ marginTop: 24, display: "grid", gap: 20 }}>
           {msgs.map((m, i) => (
-            <section key={i} style={{ border: "1px solid #eee", borderRadius: 8, padding: 12 }}>
+            <section key={i} style={{ backdropFilter: "blur(10px) saturate(140%)", border: "1px solid rgb(22, 22, 65)", borderRadius: 16, padding: 20 }}>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>
                 {m.role === "user" ? "🙋 사용자" : "🤖 RealE"}
               </div>
-
               {m.text && <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>}
 
               {Array.isArray(m.cards) && m.cards.length > 0 && (
@@ -74,12 +64,12 @@ export default async function SharedPage({ params: { slug } }: { params: { slug:
                   {m.cards.map((c, ci) => (
                     <div key={ci} style={{ border: "1px solid #ddd", borderRadius: 6, padding: 10 }}>
                       <div style={{ fontWeight: 600 }}>{c.title}</div>
-                      {c.subtitle && <div>{c.subtitle}</div>}
-                      {c.monthly && <div style={{ fontSize: 18 }}>{c.monthly}</div>}
-                      {c.totalInterest && <div>{c.totalInterest}</div>}
+                      {c.subtitle && <div>{formatMoneyishText(c.subtitle)}</div>}
+                      {c.monthly && <div style={{ fontSize: 18 }}>{formatMoneyishText(c.monthly)}</div>}
+                      {c.totalInterest && <div>{formatMoneyishText(c.totalInterest)}</div>}
                       {Array.isArray(c.notes) && c.notes.length > 0 && (
                         <ul style={{ marginTop: 6 }}>
-                          {c.notes.map((n, ni) => <li key={ni}>{n}</li>)}
+                          {c.notes.map((n, ni) => <li key={ni}>{formatMoneyishText(n)}</li>)}
                         </ul>
                       )}
                     </div>

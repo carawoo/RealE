@@ -11,30 +11,37 @@ import "./chat.css";
 
 type Role = "user" | "assistant";
 type Card = { title: string; subtitle?: string; monthly?: string; totalInterest?: string; notes?: string[] };
-type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
+type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[]; actions?: string[] };
 
 const INITIAL_MSG: Msg = {
   role: "assistant",
   text: '안녕하세요! 무엇을 도와드릴까요? (예: "전세로 살지 매매가 나을지 고민이에요")',
 };
 
-// Supabase (클라이언트: anon key)
+// Supabase (클라이언트)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase: SupabaseClient | null =
   supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// 로컬 유지: 대화 id
+const CONV_KEY = "reale:conv";
 
 export default function Chat() {
   const [msgs, setMsgs] = useState<Msg[]>([INITIAL_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
-
-  // 현재 대화 id (conversations.id)
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   const areaRef = useRef<HTMLTextAreaElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  // 초기 conv 복원
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem(CONV_KEY) : null;
+    if (saved) setConversationId(saved);
+  }, []);
 
   // textarea auto-resize
   useEffect(() => {
@@ -51,12 +58,12 @@ export default function Chat() {
     return () => clearTimeout(t);
   }, [msgs, loading]);
 
-  /* ---------- 상단 버튼들 ---------- */
   function handleReset() {
     setLoading(false);
     setInput("");
     setMsgs([INITIAL_MSG]);
     setConversationId(null);
+    if (typeof window !== "undefined") window.localStorage.removeItem(CONV_KEY);
     requestAnimationFrame(() => listRef.current?.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
@@ -71,7 +78,6 @@ export default function Chat() {
       });
       const data = await res.json().catch(() => ({} as any));
       if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-
       const absolute = new URL(data.url, window.location.origin).toString();
       await navigator.clipboard?.writeText(absolute).catch(() => {});
       alert("공유 링크가 복사되었어요!\n" + absolute);
@@ -82,9 +88,7 @@ export default function Chat() {
     }
   }
 
-  /* ---------- Supabase 저장 유틸 ---------- */
-
-  // conversations 행 없으면 하나 만들고 id 반환
+  /* ───────── Supabase 저장 ───────── */
   async function ensureConversation(): Promise<string | null> {
     try {
       if (!supabase) return null;
@@ -95,6 +99,7 @@ export default function Chat() {
         return null;
       }
       setConversationId(data.id);
+      if (typeof window !== "undefined") window.localStorage.setItem(CONV_KEY, data.id);
       return data.id;
     } catch (e) {
       console.warn("[conv] ensureConversation exception:", e);
@@ -102,24 +107,18 @@ export default function Chat() {
     }
   }
 
-  // 사용자 메시지 저장: content만
   async function saveUserMessage(content: string) {
     try {
       if (!supabase) return;
       const cid = await ensureConversation();
       if (!cid) return;
-      await supabase.from("messages").insert({
-        conversation_id: cid,
-        role: "user",
-        content, // ← 컬럼명 content
-      });
+      await supabase.from("messages").insert({ conversation_id: cid, role: "user", content });
     } catch (e) {
       console.warn("[messages] user insert error:", e);
     }
   }
 
-  // 봇 메시지 저장: content + cards/checklist(jsonb)
-  async function saveAssistantMessage(content: string, cards?: Card[], checklist?: string[]) {
+  async function saveAssistantMessage(content: string, cards?: Card[], checklist?: string[], actions?: string[]) {
     try {
       if (!supabase) return;
       const cid = await ensureConversation();
@@ -130,39 +129,45 @@ export default function Chat() {
         content,
         cards: cards && cards.length ? cards : null,
         checklist: checklist && checklist.length ? checklist : null,
+        // actions는 fields(jsonb)에 보관
+        fields: actions && actions.length ? { actions } : null,
       });
     } catch (e) {
       console.warn("[messages] assistant insert error:", e);
     }
   }
 
-  /* ---------- 백엔드 호출 공통 ---------- */
-  async function callBackend(message: string) {
+  /* ───────── 백엔드 호출 ───────── */
+  async function callBackend(message: string, extra?: { intent?: "summary" | "verify" }) {
     setLoading(true);
     try {
+      const cid = await ensureConversation();
       const res = await fetch("/api/compute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, conversationId: cid, intent: extra?.intent }),
       });
       const data = await res.json();
 
-      const reply =
-        typeof data?.reply === "string"
-          ? data.reply
-          : "분석에 실패했어요. 한 번만 다시 시도해 주세요.";
+      const reply = typeof data?.reply === "string"
+        ? data.reply
+        : "분석에 실패했어요. 한 번만 다시 시도해 주세요.";
 
       const cards: Card[] = Array.isArray(data?.cards) ? data.cards : [];
       const checklist: string[] = Array.isArray(data?.checklist) ? data.checklist : [];
+      const actions: string[] = Array.isArray(data?.nextSteps) ? data.nextSteps
+        : Array.isArray(data?.actions) ? data.actions : [];
 
+      // 본문
       setMsgs(prev => [...prev, { role: "assistant", text: reply }]);
-      // DB 저장 (content + cards/checklist)
-      saveAssistantMessage(reply, cards, checklist);
+      // 저장
+      saveAssistantMessage(reply, cards, checklist, actions);
 
-      if (cards.length || checklist.length) {
-        setMsgs(prev => [...prev, { role: "assistant", cards, checklist }]);
+      // 구조 결과(카드/체크/다음단계)
+      if (cards.length || checklist.length || actions.length) {
+        setMsgs(prev => [...prev, { role: "assistant", cards, checklist, actions }]);
       }
-    } catch {
+    } catch (e) {
       const errText = "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
       setMsgs(prev => [...prev, { role: "assistant", text: errText }]);
       saveAssistantMessage(errText);
@@ -171,17 +176,15 @@ export default function Chat() {
     }
   }
 
-  /* ---------- 전송 ---------- */
+  /* ───────── 전송 ───────── */
   async function send() {
     const message = input.trim();
     if (!message || loading) return;
 
-    // 화면 반영 + 저장
     setMsgs(prev => [...prev, { role: "user", text: message }]);
     saveUserMessage(message);
     setInput("");
 
-    // 1) 저품질 방어
     if (isLowInfo(message)) {
       const txt = "어떤 상황인지 자세히 말씀해 주시면! 상황에 맞춰 도움을 드릴게요!";
       setMsgs(prev => [...prev, { role: "assistant", text: txt }]);
@@ -189,7 +192,6 @@ export default function Chat() {
       return;
     }
 
-    // 2) 도메인 방어
     if (!isRealEstateQuery(message)) {
       const txt =
         "이 서비스는 '부동산/주택금융' 상담 전용이에요 🙂\n" +
@@ -199,13 +201,11 @@ export default function Chat() {
       return;
     }
 
-    // 3) 분석형 주제면 곧장 LLM
     if (isAnalyticalTopic(message)) {
       await callBackend(message);
       return;
     }
 
-    // 4) FAQ 우선(임계 0.9) → 있으면 그 답, 없으면 LLM
     const hit = bestFAQMatch(message, FAQ, 0.9);
     if (hit) {
       const txt = `${hit.item.a}\n\n(참고: 자주 묻는 질문에서 자동 안내 · 유사도 ${(hit.score * 100).toFixed(0)}%)`;
@@ -214,7 +214,6 @@ export default function Chat() {
       return;
     }
 
-    // 5) LLM
     await callBackend(message);
   }
 
@@ -225,28 +224,23 @@ export default function Chat() {
     }
   }
 
-  /* ---------- JSX ---------- */
+  /* ───────── UI ───────── */
   return (
     <div className="chat-container">
-      {/* 좌측 상단 홈 */}
       <Link href="/" className="chat-home" aria-label="홈으로 이동" title="홈으로 이동">
         <span className="icon">🏠</span><span className="label">홈</span>
       </Link>
 
-      {/* 우측 상단 새 대화 */}
       <button type="button" className="chat-reset" onClick={handleReset} aria-label="새 대화 시작" title="새 대화 시작">
         <span className="icon">↺</span><span className="label">새 대화</span>
       </button>
 
-      {/* 우측 상단 공유 */}
       <button type="button" className="chat-share" onClick={handleShare} disabled={sharing} aria-label="대화 공유" title="대화 공유">
         <span className="icon">🔗</span><span className="label">{sharing ? "생성 중…" : "공유"}</span>
       </button>
 
-      {/* 스크롤 영역 */}
       <div ref={listRef} className="chat-messages">
         <div className="messages-container">
-          {/* 웰컴 */}
           <div className="welcome-section">
             <div className="bot-avatar">🏠</div>
             <div className="welcome-text">
@@ -255,7 +249,6 @@ export default function Chat() {
             </div>
           </div>
 
-          {/* 메시지 렌더링 */}
           {msgs.map((m, i) => (
             <div key={i} className={`message ${m.role}`}>
               {m.text && (
@@ -269,7 +262,7 @@ export default function Chat() {
                 </div>
               )}
 
-              {(m.cards?.length || m.checklist?.length) ? (
+              {(m.cards?.length || m.checklist?.length || m.actions?.length) ? (
                 <div className="result-cards">
                   {m.cards?.map((c, idx) => (
                     <div key={idx} className="result-card">
@@ -282,10 +275,18 @@ export default function Chat() {
                       )}
                     </div>
                   ))}
+
                   {Array.isArray(m.checklist) && m.checklist.length > 0 && (
                     <div className="result-card">
                       <div className="title">서류 체크리스트</div>
                       <ul>{m.checklist.map((n, ni) => <li key={ni}>{n}</li>)}</ul>
+                    </div>
+                  )}
+
+                  {Array.isArray(m.actions) && m.actions.length > 0 && (
+                    <div className="result-card">
+                      <div className="title">다음 단계</div>
+                      <ul>{m.actions.map((n, ni) => <li key={ni}>{n}</li>)}</ul>
                     </div>
                   )}
                 </div>
@@ -293,7 +294,6 @@ export default function Chat() {
             </div>
           ))}
 
-          {/* 로딩 도트 */}
           {loading && (
             <div className="typing-indicator">
               <div className="typing-container">
@@ -306,7 +306,6 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* 입력 */}
       <div className="chat-input-container">
         <div className="chat-input">
           <div className="input-wrapper">

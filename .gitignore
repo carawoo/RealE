@@ -14,4 +14,10 @@ coverage/
 # 환경변수 (실제 키는 올리지 말기)
 .env*
 !.env.local.example
-EOF
+EOFnode_modules/
+.next/
+out/
+.vercel/
+.env
+.env.local
+*.log
