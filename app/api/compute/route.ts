@@ -247,6 +247,38 @@ export async function POST(req: NextRequest) {
       if (r) return NextResponse.json(r);
     }
 
+    // 중기청 100 대출 관련 질문 처리
+    if (/중기청.*100|중기청.*대출|중기청.*전세/.test(message)) {
+      return NextResponse.json({
+        content: "⚠️ **중기청 100억 대출 종료 안내**\n\n" +
+        "중소기업 취업 청년 전월세 보증금 대출(일명 '중기청 100')은 **2024년 말 종료**되어 더 이상 신청할 수 없습니다.\n\n" +
+        "💡 **대안 프로그램**: '청년 버팀목 전세자금대출'로 통합 운영\n" +
+        "• 대상: 만 19~34세 무주택 세대주\n" +
+        "• 한도: 최대 2억원 (전세보증금의 80%)\n" +
+        "• 금리: 연 2.2~3.3% (우대조건 시 최저 1.0%)\n" +
+        "• 소득: 연 5천만원 이하",
+        cards: [{
+          title: "청년 버팀목 전세자금대출",
+          subtitle: "중기청 대출 통합 운영 프로그램",
+          monthly: "최대 2억원",
+          totalInterest: "연 2.2~3.3%",
+          notes: [
+            "만 19~34세 무주택 세대주",
+            "연소득 5천만원 이하", 
+            "전세보증금 80% 한도",
+            "우대조건 시 최저 1.0%",
+            "신청링크: https://www.hf.go.kr/hf/sub01/sub01_04_01.do"
+          ]
+        }],
+        checklist: [
+          "기존 중기청 대출 신규신청 불가 (2024년 말 종료)",
+          "청년 버팀목 전세자금대출로 대체 신청",
+          "신청 자격조건 및 필요서류 미리 확인",
+          "우대금리 적용 조건 검토"
+        ]
+      });
+    }
+
     if (!isDomain(message, merged)) {
       return NextResponse.json({
         content:

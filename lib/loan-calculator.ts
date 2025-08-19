@@ -34,7 +34,8 @@ export interface PolicySupport {
   applicationLink: string;   // 신청링크
 }
 
-// 정책 지원 프로그램 데이터 (2024년 기준)
+// 정책 지원 프로그램 데이터 (2025년 기준)
+// 주의: 중기청 100억 대출은 2024년 말 종료되어 더 이상 운영되지 않음
 export const POLICY_SUPPORTS: PolicySupport[] = [
   {
     name: "디딤돌대출(일반)",
@@ -63,6 +64,13 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
     interestRate: 2.2,
     conditions: ["자녀 2명 이상", "무주택 세대주", "연소득 1억원 이하", "주택가격 8억원 이하"],
     applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_06_04.do"
+  },
+  {
+    name: "청년 버팀목 전세자금대출",
+    maxAmount: 200_000_000,
+    interestRate: 2.2,
+    conditions: ["만 19~34세 무주택 세대주", "연소득 5천만원 이하", "전세보증금 80% 한도", "중기청 대출 통합운영"],
+    applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_04_01.do"
   }
 ];
 
