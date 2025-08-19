@@ -230,10 +230,17 @@ function isLoanScenarioRequest(text: string, profile: Fields): boolean {
   
   const hasExplicitRequest = explicitKeywords.some(keyword => t.includes(keyword));
   
-  // 프로필이 있고 명시적인 대출 관련 요청일 때만
-  const hasProfile = !!(profile.incomeMonthly && (profile.propertyPrice || profile.cashOnHand));
+  // 프로필이 충분히 있는지 확인
+  const hasBasicProfile = !!(profile.incomeMonthly && (profile.propertyPrice || profile.cashOnHand));
   
-  return hasExplicitRequest && hasProfile;
+  // 숫자만 나열된 경우 (월소득 500만원, 5억원 집 구입 등) 자동 분석 트리거
+  const hasNumbersPattern = /\d+만원|\d+억|\d+천만원/.test(text) && 
+                           (text.includes("월소득") || text.includes("소득")) &&
+                           (text.includes("집") || text.includes("구입") || text.includes("매매"));
+  
+  // 1. 명시적 요청이 있고 프로필이 있거나
+  // 2. 숫자 패턴이 있고 기본 프로필이 있는 경우
+  return (hasExplicitRequest && hasBasicProfile) || (hasNumbersPattern && hasBasicProfile);
 }
 
 // 전문 정책 상담 요청인지 확인
@@ -241,7 +248,8 @@ function isSpecificLoanPolicyRequest(text: string): boolean {
   const t = text.toLowerCase();
   const policyKeywords = [
     "디딤돌", "체증식", "원리금균등", "원금균등", "상환방식", "상환 방식",
-    "신혼부부", "생애최초", "기금e든든", "모의심사", "고정금리", "변동금리"
+    "신혼부부", "생애최초", "기금e든든", "모의심사", "고정금리", "변동금리",
+    "보금자리론", "보금자리", "ltv", "dsr", "대출규제", "차감", "수도권"
   ];
   
   return policyKeywords.some(keyword => t.includes(keyword));
@@ -317,6 +325,50 @@ function generateSpecificLoanPolicyResponse(text: string) {
         "우대금리 적용 조건 확인 (신혼부부, 생애최초, 청약저축 등)",
         isGradual ? "체증식 선택 시 후반기 상환부담 증가 고려" : "고정금리 vs 변동금리 선택 검토",
         "타 은행 대출 조건과 비교 검토"
+      ]
+    };
+  }
+  
+  // 보금자리론 생애최초 질문 처리
+  if ((t.includes("보금자리") || t.includes("보금자리론")) && t.includes("생애최초")) {
+    const isRegulation = t.includes("규제") || t.includes("80%") || t.includes("70%");
+    const isNonApartment = t.includes("아파트") && (t.includes("외") || t.includes("다른"));
+    const isDeduction = t.includes("차감") || t.includes("5%");
+    const isSeoulMetro = t.includes("수도권");
+    
+    return {
+      content: `**보금자리론 생애최초 대출 상담** 🏠\n\n` +
+               `📋 **현재 LTV 한도 (2024년 기준)**:\n` +
+               `• **수도권**: 70% (기존 80%에서 하향 조정)\n` +
+               `• **비수도권**: 80% 유지\n\n` +
+               `🏢 **주택유형별 LTV 차감**:\n` +
+               `• **아파트**: 차감 없음 (70% 그대로)\n` +
+               `• **아파트 외 주택** (연립, 다세대, 단독 등): **5%p 차감**\n` +
+               `  → 수도권 기준 65% (70% - 5%)\n\n` +
+               `💡 **생애최초 특례 혜택**:\n` +
+               `• 일반 보금자리론과 동일한 차감 규칙 적용\n` +
+               `• 아파트 외 주택도 5%p 차감됩니다\n` +
+               `• 생애최초라고 해서 70% 전부를 받을 수는 없어요\n\n` +
+               `⚠️ **주의사항**:\n` +
+               `규제 이후 아파트 외 주택 구매 시 자기자본을 더 많이 준비해야 합니다.`,
+      cards: [{
+        title: "보금자리론 생애최초 LTV 한도",
+        subtitle: "2024년 대출규제 이후 기준",
+        monthly: "수도권 기준",
+        totalInterest: "최대 65% (아파트 외)",
+        notes: [
+          "아파트: 70% (차감 없음)",
+          "아파트 외: 65% (5%p 차감)",
+          "생애최초도 동일 규칙 적용",
+          "비수도권: +10%p 우대",
+          "금리: 연 3.2~4.0% (변동금리)"
+        ]
+      }],
+      checklist: [
+        "아파트 vs 아파트 외 주택 LTV 차이 5%p 확인",
+        "수도권 기준 자기자본 최소 35% 준비 (아파트 외)",
+        "생애최초 자격조건 재확인 (무주택 세대주, 소득기준 등)",
+        "DSR 70% 이하 유지 가능한지 소득 대비 상환능력 점검"
       ]
     };
   }
