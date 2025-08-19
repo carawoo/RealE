@@ -409,72 +409,82 @@ function generateSpecificLoanPolicyResponse(text: string) {
   
   // 디딤돌 대출 관련 질문 처리
   if (t.includes("디딤돌")) {
-    let loanType = "일반";
-    let loanAmount = 250_000_000; // 기본 2.5억
-    let repaymentType: "원리금균등" | "체증식" | "원금균등" = "원리금균등";
+    // 상환방식 관련 구체적 질문인지 확인
+    const isRepaymentTypeQuestion = /상환방식|원리금균등|체증식|원금균등/.test(t) ||
+                                   (/금리.*\d|계산.*상환|월.*상환.*\d/.test(t) && parseWon(text));
     
-    // 대출 유형 식별
-    if (t.includes("신혼부부")) loanType = "신혼부부";
-    if (t.includes("생애최초")) loanType = "생애최초";
-    
-    // 대출 금액 추출
-    const amountMatch = parseWon(text);
-    if (amountMatch) loanAmount = amountMatch;
-    
-    // 상환방식 식별
-    if (t.includes("체증식")) repaymentType = "체증식";
-    if (t.includes("원금균등")) repaymentType = "원금균등";
-    
-    const analysis = analyzeSpecificLoanPolicy(loanType, loanAmount, repaymentType);
-    if (!analysis) {
+    // 상환방식 계산이 필요한 경우에만 기존 로직 사용
+    if (isRepaymentTypeQuestion) {
+      let loanType = "일반";
+      let loanAmount = 250_000_000; // 기본 2.5억
+      let repaymentType: "원리금균등" | "체증식" | "원금균등" = "원리금균등";
+      
+      // 대출 유형 식별
+      if (t.includes("신혼부부")) loanType = "신혼부부";
+      if (t.includes("생애최초")) loanType = "생애최초";
+      
+      // 대출 금액 추출
+      const amountMatch = parseWon(text);
+      if (amountMatch) loanAmount = amountMatch;
+      
+      // 상환방식 식별
+      if (t.includes("체증식")) repaymentType = "체증식";
+      if (t.includes("원금균등")) repaymentType = "원금균등";
+      
+      const analysis = analyzeSpecificLoanPolicy(loanType, loanAmount, repaymentType);
+      if (!analysis) {
+        return {
+          content: "분석에 실패했어요. 다시 시도해 주세요.",
+          cards: null,
+          checklist: null
+        };
+      }
+      
+      const typeInfo = analysis.repaymentType;
+      const isGradual = repaymentType === "체증식";
+      
       return {
-        content: "분석에 실패했어요. 다시 시도해 주세요.",
-        cards: null,
-        checklist: null
+        content: `**디딤돌 ${loanType} 대출 상담** 🏠\n\n` +
+                 `${analysis.explanation}\n\n` +
+                 `💡 **상환방식별 특징**:\n` +
+                 `• ${typeInfo.description}\n` +
+                 `• 기본금리: ${formatPercent(analysis.baseRate)}\n` +
+                 `• 적용금리: ${formatPercent(analysis.adjustedRate)}` +
+                 (isGradual ? ` (체증식 +0.3%p 적용)` : ``) + `\n\n` +
+                 `📋 **월 상환액**:\n` +
+                 (isGradual ? 
+                   `• 초기 ${Math.ceil(5)} 년: 월 ${formatKRW(analysis.payments.initialPayment)}원 (이자만)\n` +
+                   `• 이후 기간: 월 ${formatKRW(analysis.payments.finalPayment || 0)}원 (원리금)`
+                   :
+                   `• 매월: ${formatKRW(analysis.payments.initialPayment)}원`
+                 ),
+        cards: [{
+          title: `디딤돌대출(${loanType}) - ${repaymentType}`,
+          subtitle: typeInfo.description,
+          monthly: isGradual ? 
+            `초기 ${formatKRW(analysis.payments.initialPayment)}원 → 후기 ${formatKRW(analysis.payments.finalPayment || 0)}원` :
+            `월 ${formatKRW(analysis.payments.initialPayment)}원`,
+          totalInterest: `적용금리 ${formatPercent(analysis.adjustedRate)}`,
+          notes: [
+            `대출금액: ${formatKRW(loanAmount)}원`,
+            `기본금리: ${formatPercent(analysis.baseRate)}`,
+            ...(isGradual ? [`체증식 추가금리: +${formatPercent(typeInfo.interestRateAdjustment)}`] : []),
+            `최종적용금리: ${formatPercent(analysis.adjustedRate)}`,
+            `신청링크: https://www.hf.go.kr`
+          ]
+        }],
+        checklist: [
+          "기금e든든에서 최신 금리 재확인",
+          "개인 신용상태 및 소득증빙 준비",
+          "우대금리 적용 조건 확인 (신혼부부, 생애최초, 청약저축 등)",
+          isGradual ? "체증식 선택 시 후반기 상환부담 증가 고려" : "고정금리 vs 변동금리 선택 검토",
+          "타 은행 대출 조건과 비교 검토"
+        ]
       };
     }
     
-    const typeInfo = analysis.repaymentType;
-    const isGradual = repaymentType === "체증식";
-    
-    return {
-      content: `**디딤돌 ${loanType} 대출 상담** 🏠\n\n` +
-               `${analysis.explanation}\n\n` +
-               `💡 **상환방식별 특징**:\n` +
-               `• ${typeInfo.description}\n` +
-               `• 기본금리: ${formatPercent(analysis.baseRate)}\n` +
-               `• 적용금리: ${formatPercent(analysis.adjustedRate)}` +
-               (isGradual ? ` (체증식 +0.3%p 적용)` : ``) + `\n\n` +
-               `📋 **월 상환액**:\n` +
-               (isGradual ? 
-                 `• 초기 ${Math.ceil(5)} 년: 월 ${formatKRW(analysis.payments.initialPayment)}원 (이자만)\n` +
-                 `• 이후 기간: 월 ${formatKRW(analysis.payments.finalPayment || 0)}원 (원리금)`
-                 :
-                 `• 매월: ${formatKRW(analysis.payments.initialPayment)}원`
-               ),
-      cards: [{
-        title: `디딤돌대출(${loanType}) - ${repaymentType}`,
-        subtitle: typeInfo.description,
-        monthly: isGradual ? 
-          `초기 ${formatKRW(analysis.payments.initialPayment)}원 → 후기 ${formatKRW(analysis.payments.finalPayment || 0)}원` :
-          `월 ${formatKRW(analysis.payments.initialPayment)}원`,
-        totalInterest: `적용금리 ${formatPercent(analysis.adjustedRate)}`,
-        notes: [
-          `대출금액: ${formatKRW(loanAmount)}원`,
-          `기본금리: ${formatPercent(analysis.baseRate)}`,
-          ...(isGradual ? [`체증식 추가금리: +${formatPercent(typeInfo.interestRateAdjustment)}`] : []),
-          `최종적용금리: ${formatPercent(analysis.adjustedRate)}`,
-          `신청링크: https://www.hf.go.kr`
-        ]
-      }],
-      checklist: [
-        "기금e든든에서 최신 금리 재확인",
-        "개인 신용상태 및 소득증빙 준비",
-        "우대금리 적용 조건 확인 (신혼부부, 생애최초, 청약저축 등)",
-        isGradual ? "체증식 선택 시 후반기 상환부담 증가 고려" : "고정금리 vs 변동금리 선택 검토",
-        "타 은행 대출 조건과 비교 검토"
-      ]
-    };
+    // 일반적인 디딤돌 질문 (자격, 한도, 기간 등)은 맥락 기반 응답으로 넘어감
+    // 이 부분은 아래 일반 대출 질문 처리 섹션에서 처리됨
   }
   
   // 보금자리론 생애최초 질문 처리
