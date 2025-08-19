@@ -85,6 +85,111 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
     interestRate: 2.2,
     conditions: ["만 19~34세 무주택 세대주", "연소득 5천만원 이하", "전세보증금 80% 한도", "중기청 대출 통합운영"],
     applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "일반 버팀목 전세자금대출",
+    maxAmount: 300_000_000,
+    interestRate: 2.5,
+    conditions: ["무주택 세대주", "연소득 7천만원 이하", "전세보증금 80% 한도", "임대차계약서 필요"],
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "KB국민은행 주택담보대출",
+    maxAmount: 1_000_000_000,
+    interestRate: 4.2,
+    conditions: ["주택 담보 제공", "DTI 70% 이하", "LTV 70% 이하", "소득증빙 필요"],
+    applicationLink: "https://www.kbstar.com"
+  },
+  {
+    name: "신한은행 주택담보대출",
+    maxAmount: 1_000_000_000,
+    interestRate: 4.1,
+    conditions: ["주택 담보 제공", "DTI 70% 이하", "LTV 70% 이하", "재직증명서 필요"],
+    applicationLink: "https://www.shinhan.com"
+  },
+  {
+    name: "하나은행 주택담보대출",
+    maxAmount: 1_000_000_000,
+    interestRate: 4.3,
+    conditions: ["주택 담보 제공", "DTI 70% 이하", "LTV 70% 이하", "소득증빙 3개월"],
+    applicationLink: "https://www.kebhana.com"
+  },
+  {
+    name: "우리은행 주택담보대출",
+    maxAmount: 1_000_000_000,
+    interestRate: 4.2,
+    conditions: ["주택 담보 제공", "DTI 70% 이하", "LTV 70% 이하", "급여이체 우대금리"],
+    applicationLink: "https://www.wooribank.com"
+  },
+  {
+    name: "KB국민은행 신용대출",
+    maxAmount: 150_000_000,
+    interestRate: 5.8,
+    conditions: ["연소득 2천만원 이상", "재직기간 6개월 이상", "신용등급 6등급 이상", "소득증빙 필요"],
+    applicationLink: "https://www.kbstar.com"
+  },
+  {
+    name: "신한은행 신용대출",
+    maxAmount: 150_000_000,
+    interestRate: 5.6,
+    conditions: ["연소득 2천만원 이상", "재직기간 1년 이상", "신용등급 6등급 이상", "급여이체 필수"],
+    applicationLink: "https://www.shinhan.com"
+  },
+  {
+    name: "토스뱅크 신용대출",
+    maxAmount: 100_000_000,
+    interestRate: 4.9,
+    conditions: ["연소득 2천만원 이상", "신용등급 7등급 이상", "모바일 전용", "간편 신청"],
+    applicationLink: "https://www.tossbank.com"
+  },
+  {
+    name: "카카오뱅크 신용대출",
+    maxAmount: 100_000_000,
+    interestRate: 5.2,
+    conditions: ["연소득 1천500만원 이상", "신용등급 7등급 이상", "모바일 전용", "365일 신청"],
+    applicationLink: "https://www.kakaobank.com"
+  },
+  {
+    name: "아파트담보대출(은행 공통)",
+    maxAmount: 1_500_000_000,
+    interestRate: 3.8,
+    conditions: ["아파트 담보 제공", "LTV 80% 이하", "DTI 60% 이하", "주택가격 20억원 이하"],
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "오피스텔담보대출",
+    maxAmount: 800_000_000,
+    interestRate: 4.5,
+    conditions: ["오피스텔 담보 제공", "LTV 60% 이하", "DTI 60% 이하", "임대수익 인정"],
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "상가담보대출",
+    maxAmount: 1_000_000_000,
+    interestRate: 5.2,
+    conditions: ["상가 담보 제공", "LTV 50% 이하", "임대료 수익 증빙", "사업자등록증 필요"],
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "중소기업진흥공단 창업자금",
+    maxAmount: 300_000_000,
+    interestRate: 2.0,
+    conditions: ["창업 3년 이내", "사업자등록증", "사업계획서", "기술평가 우수"],
+    applicationLink: "https://www.sbc.or.kr"
+  },
+  {
+    name: "농협 주택담보대출",
+    maxAmount: 800_000_000,
+    interestRate: 4.0,
+    conditions: ["농협 조합원", "주택 담보 제공", "LTV 70% 이하", "지역 우대금리"],
+    applicationLink: "https://www.nonghyup.com"
+  },
+  {
+    name: "새마을금고 주택자금",
+    maxAmount: 500_000_000,
+    interestRate: 4.1,
+    conditions: ["조합원 가입", "주택 담보 제공", "지역 거주자", "LTV 70% 이하"],
+    applicationLink: "https://www.kfcc.co.kr"
   }
 ];
 

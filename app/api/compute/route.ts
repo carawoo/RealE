@@ -103,7 +103,7 @@ function isDomain(text: string, current: Fields): boolean {
     /(전세|월세|보증금|매매|매수|매도|청약|대출|LTV|DSR|특례보금자리|주택|집|아파트|주거비|전월세|임대차|금리)/;
   if (isNumbersOnlyAsk(text)) return !!(current.incomeMonthly || current.cashOnHand);
   if (kw.test(t)) return true;
-  if (/(월소득|소득|현금|보유현금)/.test(t)) return true;
+  if (/(월소득|소득|현금|보유현금|자기자본|자금)/.test(t)) return true;
   return false;
 }
 
@@ -216,15 +216,24 @@ function generateLoanScenariosResponse(profile: Fields) {
 // 대출 관련 질문인지 확인
 function isLoanScenarioRequest(text: string, profile: Fields): boolean {
   const t = text.toLowerCase();
-  const keywords = [
-    "대출", "시나리오", "최대한도", "안전상환", "정책활용",
-    "월상환", "총이자", "ltv", "dsr", "보금자리", "디딤돌"
+  
+  // 간단한 정보 질문들은 제외
+  if (/얼마|몇|어느|뭐|무엇|언제|어디|왜|어떻게/.test(t) && t.length < 20) {
+    return false;
+  }
+  
+  // 명시적인 시나리오 요청
+  const explicitKeywords = [
+    "시나리오", "분석해줘", "계산해줘", "비교해줘", "추천해줘",
+    "최대한도", "안전상환", "정책활용", "대출 상품"
   ];
   
-  const hasKeyword = keywords.some(keyword => t.includes(keyword));
-  const hasProfile = !!(profile.incomeMonthly && profile.propertyPrice);
+  const hasExplicitRequest = explicitKeywords.some(keyword => t.includes(keyword));
   
-  return hasKeyword || hasProfile;
+  // 프로필이 있고 명시적인 대출 관련 요청일 때만
+  const hasProfile = !!(profile.incomeMonthly && (profile.propertyPrice || profile.cashOnHand));
+  
+  return hasExplicitRequest && hasProfile;
 }
 
 // 전문 정책 상담 요청인지 확인
@@ -343,6 +352,74 @@ function generateSpecificLoanPolicyResponse(text: string) {
   return null;
 }
 
+// ---------- 맥락 기반 질문 처리 ----------
+function handleContextualQuestion(message: string, profile: Fields): { content: string; cards: null; checklist: null } | null {
+  const msg = message.toLowerCase();
+  
+  // 소득 관련 질문
+  if (/소득|월급|연봉|급여/.test(msg) && /얼마|몇|어느/.test(msg)) {
+    if (profile.incomeMonthly) {
+      return {
+        content: `월소득은 ${profile.incomeMonthly.toLocaleString("ko-KR")}원이었어요.`,
+        cards: null,
+        checklist: null
+      };
+    }
+  }
+  
+  // 자기자본/현금 관련 질문
+  if (/자기자본|현금|돈|자금/.test(msg) && /얼마|몇|어느/.test(msg)) {
+    if (profile.cashOnHand || profile.downPayment) {
+      const amount = profile.cashOnHand || profile.downPayment;
+      return {
+        content: `자기자본은 ${amount.toLocaleString("ko-KR")}원이었어요.`,
+        cards: null,
+        checklist: null
+      };
+    }
+  }
+  
+  // 집값/매매가 관련 질문
+  if (/집값|매매가|주택가격|가격/.test(msg) && /얼마|몇|어느/.test(msg)) {
+    if (profile.propertyPrice) {
+      return {
+        content: `매매가는 ${profile.propertyPrice.toLocaleString("ko-KR")}원이었어요.`,
+        cards: null,
+        checklist: null
+      };
+    }
+  }
+  
+  // 전체 정보 요약 질문
+  if (/정보|내용|요약|다시|다시|뭐/.test(msg) && (/말|설명|알려/.test(msg) || /였/.test(msg))) {
+    const parts: string[] = [];
+    if (profile.incomeMonthly) parts.push(`월소득: ${profile.incomeMonthly.toLocaleString("ko-KR")}원`);
+    if (profile.cashOnHand) parts.push(`자기자본: ${profile.cashOnHand.toLocaleString("ko-KR")}원`);
+    if (profile.propertyPrice) parts.push(`매매가: ${profile.propertyPrice.toLocaleString("ko-KR")}원`);
+    
+    if (parts.length > 0) {
+      return {
+        content: `지금까지 알려주신 정보는 다음과 같아요:\n\n${parts.join("\n")}\n\n추가로 궁금한 점이 있으시면 말씀해 주세요!`,
+        cards: null,
+        checklist: null
+      };
+    }
+  }
+  
+  // 대출 추천 질문
+  if (/추천|좋은|어떤/.test(msg) && /대출|상품/.test(msg)) {
+    if (profile.incomeMonthly && profile.propertyPrice) {
+      return {
+        content: `말씀해주신 조건으로 다시 대출 시나리오를 분석해드릴게요. 구체적인 분석을 원하시면 "대출 시나리오 분석해줘" 라고 말씀해 주세요.`,
+        cards: null,
+        checklist: null
+      };
+    }
+  }
+  
+  return null;
+}
+
 // ---------- route ----------
 export async function POST(req: NextRequest) {
   try {
@@ -355,7 +432,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ content: replyNumbersOnly(merged), cards: null, checklist: null });
     }
 
-    // 전문 정책 상담 요청 확인 (우선순위 높음)
+    // 대화 맥락 기반 질문 처리 (우선순위 높음)
+    const contextResponse = handleContextualQuestion(message, merged);
+    if (contextResponse) {
+      return NextResponse.json(contextResponse);
+    }
+
+    // 전문 정책 상담 요청 확인
     if (isSpecificLoanPolicyRequest(message)) {
       const response = generateSpecificLoanPolicyResponse(message);
       if (response) {
@@ -406,6 +489,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 도메인 체크는 맥락 질문이 처리되지 않은 경우에만
     if (!isDomain(message, merged)) {
       return NextResponse.json({
         content:

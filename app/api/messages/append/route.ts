@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const rows = (items as Item[]).map((i) => ({
     conversation_id,
     role: i.role,
-    text: i.text, // ← 여기가 본문 컬럼명
+    content: i.text, // ← 컬럼명을 content로 변경
   }));
 
   const { error } = await supabaseAdmin.from("messages").insert(rows);
