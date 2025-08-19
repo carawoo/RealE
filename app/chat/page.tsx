@@ -209,8 +209,8 @@ export default function Chat() {
 
       const intentSummary = typeof data?.intentSummary === "string" ? data.intentSummary : "";
       const reply =
-        typeof data?.reply === "string" && data.reply.trim()
-          ? data.reply
+        typeof data?.content === "string" && data.content.trim()
+          ? data.content
           : "분석에 실패했어요. 한 번만 다시 시도해 주세요.";
       const cards: Card[] = Array.isArray(data?.cards) ? data.cards : [];
       const checklist: string[] = Array.isArray(data?.checklist) ? data.checklist : [];

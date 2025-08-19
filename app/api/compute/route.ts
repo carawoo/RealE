@@ -57,7 +57,7 @@ function extractFieldsFrom(text: string): Fields {
   // 매매가/집값 추출
   const priceM = 
     text.match(/(?:매매가|집값|매물가|부동산가)\s*([0-9억천만,\s]+)원?/i) ||
-    text.match(/([0-9억천만,\s]+)원?\s*(?:짜리|집|매물)/i);
+    text.match(/([0-9억천만,\s]+)원?\s*(?:짜리|집|매물|구입|구매)/i);
   if (priceM?.[1]) {
     const v = parseWon(priceM[1] + "원");
     if (v) fields.propertyPrice = v;
