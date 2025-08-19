@@ -50,6 +50,8 @@ function extractFieldsFrom(text: string): Fields {
     if (v) fields.incomeMonthly = v;
   }
   
+  // (extractFieldsFrom: 텍스트에서 숫자 필드만 추출)
+
   // 보유현금 추출
   const cashM = text.match(/(?:보유\s*현금|현금)\s*([0-9억천만,\s]+)원?/i);
   if (cashM?.[1]) {
