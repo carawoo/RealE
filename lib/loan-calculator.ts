@@ -66,6 +66,31 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
   }
 ];
 
+// 2억5천, 3억, 3천만원, 4500만원, 120만원, 250000000 등
+export function parseWon(text: string): number | null {
+  const t = text.replace(/\s+/g, "").replace(/,/g, "");
+
+  let m = t.match(/(\d+)\s*억\s*(\d+)\s*천/);
+  if (m) return parseInt(m[1]) * 100_000_000 + parseInt(m[2]) * 10_000_000;
+
+  m = t.match(/(\d+)\s*억\s*(\d+)\s*만?원?/);
+  if (m) return parseInt(m[1]) * 100_000_000 + parseInt(m[2]) * 10_000;
+
+  m = t.match(/(\d+)\s*억(원)?/);
+  if (m) return parseInt(m[1]) * 100_000_000;
+
+  m = t.match(/(\d+)\s*천\s*만?원?/);
+  if (m) return parseInt(m[1]) * 10_000_000;
+
+  m = t.match(/(\d+)\s*만\s*원/);
+  if (m) return parseInt(m[1]) * 10_000;
+
+  m = t.match(/(\d{2,})(?:원)?$/);
+  if (m) return parseInt(m[1], 10);
+
+  return null;
+}
+
 // 월 상환액 계산 (원리금균등상환)
 export function calculateMonthlyPayment(
   principal: number,
