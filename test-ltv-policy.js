@@ -165,7 +165,7 @@ if (require.main === module) {
   
   console.log(`\n📌 참고 링크:`);
   console.log(`- 한국주택금융공사: https://www.hf.go.kr`);
-  console.log(`- 기금e든든: https://www.hf.go.kr/hf/sub02/sub01_05_01.do`);
+  console.log(`- 기금e든든: https://www.hf.go.kr`);
   
   // 프로세스 종료 코드 설정
   process.exit(results.failed > 0 ? 1 : 0);

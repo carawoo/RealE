@@ -31,7 +31,7 @@ export interface PolicySupport {
   maxAmount: number;         // 최대 지원금액 (원)
   interestRate: number;      // 지원금리 (%)
   conditions: string[];      // 지원조건
-  applicationLink: string;   // 신청링크
+  applicationLink: string;   // 신청링크 (루트 도메인만 사용)
 }
 
 // 정책 지원 프로그램 데이터 (2025년 기준)

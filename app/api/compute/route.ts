@@ -312,7 +312,7 @@ const CURRENT_LOAN_POLICY = {
 // 최신 정보 확인 알림
 function getCurrentPolicyDisclaimer() {
   return `\n\n📌 **정보 업데이트**: ${CURRENT_LOAN_POLICY.lastUpdated} 기준\n` +
-         `💡 **최신 정보**: [한국주택금융공사](https://www.hf.go.kr) | [기금e든든](https://www.hf.go.kr/hf/sub02/sub01_05_01.do)\n` +
+         `💡 **최신 정보**: [한국주택금융공사](https://www.hf.go.kr) | [기금e든든](https://www.hf.go.kr)\n` +
          `⚠️ 정책 변경 가능성이 있으니 신청 전 반드시 확인하세요.`;
 }
 
