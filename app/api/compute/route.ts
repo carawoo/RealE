@@ -484,10 +484,107 @@ function generateSpecificLoanPolicyResponse(text: string) {
     };
   }
   
-  // 일반적인 대출 질문 처리 (기간, 조건, 절차 등)
+  // LTV/DSR 한도 추정 및 구체적 계산 요청 (최우선 처리)
+  if (/ltv.*dsr|dsr.*ltv/i.test(t) && (/한도|추정|계산|얼마/.test(t))) {
+    return {
+      content: `**LTV/DSR 한도 정확 계산** 💰\n\n` +
+               `정확한 한도 계산을 위해 다음 정보를 알려주세요:\n\n` +
+               `🏠 **필수 정보**:\n` +
+               `• 월소득: "월소득 500만원"\n` +
+               `• 매물가격: "5억원 아파트"\n` +
+               `• 지역: "서울" 또는 "부산" 등\n` +
+               `• 대상: "생애최초" 또는 "일반"\n\n` +
+               `💡 **예시**: "월소득 500만원, 서울 5억원 아파트 생애최초 LTV DSR 한도 계산해줘"\n\n` +
+               `📊 **즉시 계산 제공**:\n` +
+               `• LTV 한도: 지역/유형별 정확한 비율\n` +
+               `• DSR 한도: 소득 대비 상환능력\n` +
+               `• 최대 대출금액: 구체적 금액\n` +
+               `• 월상환액: 상환방식별 시뮬레이션${getCurrentPolicyDisclaimer()}`,
+      cards: [{
+        title: "LTV/DSR 한도 계산기",
+        subtitle: "전문가 수준 정확한 계산",
+        monthly: "즉시 계산 제공",
+        totalInterest: "맞춤형 시뮬레이션",
+        notes: [
+          "실시간 LTV 비율 적용",
+          "DSR 70% 기준 상환능력 분석", 
+          "지역별/대상별 우대조건 반영",
+          "3가지 상환방식 비교",
+          "월상환액 정확 계산"
+        ]
+      }],
+      checklist: [
+        "월소득 정확한 금액 확인",
+        "매물 지역 및 유형(아파트/아파트외) 파악",
+        "생애최초/신혼부부 등 우대조건 확인",
+        "기존 대출 잔액 및 DSR 영향 요소 점검"
+      ]
+    };
+  }
+  
+  // 구체적 한도 질문 (지역+금액 포함)
+  if (/(\d+억|\d+만원)/.test(t) && (/한도|얼마|최대|대출/.test(t)) && 
+      /(서울|경기|인천|부산|대구|생애최초|아파트)/.test(t)) {
+    
+    const isFirstTime = t.includes("생애최초");
+    const isMetro = /(서울|경기|인천)/.test(t);
+    const isApartment = t.includes("아파트") && !t.includes("외");
+    
+    const policy = CURRENT_LOAN_POLICY;
+    const ltvData = isFirstTime ? policy.ltv.firstTime : policy.ltv.bogeumjari;
+    const regionData = isMetro ? ltvData.metro : ltvData.nonMetro;
+    const ltvRate = isApartment ? regionData.apartment : regionData.nonApartment;
+    
+    // 매물가격 추출 시도
+    const priceMatch = t.match(/(\d+)억/);
+    const propertyPrice = priceMatch ? parseInt(priceMatch[1]) * 100_000_000 : null;
+    const maxLoanAmount = propertyPrice ? Math.min(propertyPrice * (ltvRate / 100), policy.maxAmount.bogeumjari) : null;
+    
+    return {
+      content: `**정확한 대출 한도 계산** 🎯\n\n` +
+               `📍 **지역**: ${isMetro ? '수도권 규제지역' : '비규제지역'}\n` +
+               `🏠 **유형**: ${isApartment ? '아파트' : '아파트 외 주택'}\n` +
+               `👤 **대상**: ${isFirstTime ? '생애최초 특례' : '일반'}\n\n` +
+               `📊 **LTV 한도**: ${ltvRate}%\n` +
+               (propertyPrice ? 
+                 `💰 **최대 대출금액**: ${formatKRW(maxLoanAmount)}원\n` +
+                 `   (매물가 ${formatKRW(propertyPrice)}원 × ${ltvRate}%)\n\n`
+                 : 
+                 `💰 **한도 계산**: 매물가 × ${ltvRate}%\n\n`
+               ) +
+               `⚠️ **추가 고려사항**:\n` +
+               `• DSR ${policy.dsr.max}% 이하 (소득 대비 상환능력)\n` +
+               `• 절대상한: ${formatKRW(policy.maxAmount.bogeumjari)}원\n` +
+               `• 소득증빙 및 신용도 심사 필요\n\n` +
+               `📞 **정확한 월상환액 계산**을 원하시면:\n` +
+               `"월소득 000만원" 정보를 추가로 알려주세요.${getCurrentPolicyDisclaimer()}`,
+      cards: [{
+        title: `${isFirstTime ? '생애최초' : '일반'} 대출 한도`,
+        subtitle: `${isMetro ? '수도권' : '지방'} ${isApartment ? '아파트' : '아파트외'}`,
+        monthly: maxLoanAmount ? formatKRW(maxLoanAmount) + "원" : `${ltvRate}% 적용`,
+        totalInterest: `LTV ${ltvRate}%`,
+        notes: [
+          `지역: ${isMetro ? '서울/경기/인천 (규제지역)' : '기타 지역'}`,
+          `주택유형: ${isApartment ? '아파트' : '아파트 외 (5%p 차감)'}`,
+          `LTV 한도: ${ltvRate}%`,
+          `절대상한: ${formatKRW(policy.maxAmount.bogeumjari)}원`,
+          `DSR 상한: ${policy.dsr.max}%`
+        ]
+      }],
+      checklist: [
+        "매물가격 및 정확한 주소 확인", 
+        "월소득 및 기존 대출 현황 파악",
+        "생애최초/신혼부부 자격 요건 확인",
+        "신용등급 및 소득증빙 서류 준비"
+      ]
+    };
+  }
+  
+  // 일반적인 대출 질문 처리 (기간, 조건, 절차 등) - 위의 구체적 질문들 이후에 처리
   if (/대출.*기간|신청.*기간|얼마.*걸|언제.*신청/.test(t) ||
       /절차|방법|과정|준비|서류/.test(t) ||
-      /조건|자격|요건|한도|금리/.test(t)) {
+      (/조건|자격|요건/.test(t) && !/한도/.test(t)) ||
+      (/금리/.test(t) && !/계산|추정/.test(t))) {
     
     // 특정 대출 상품별 맞춤 답변
     if (t.includes("디딤돌")) {
@@ -717,7 +814,100 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(response);
     }
 
-    if (/전세.*월세.*환산|월세.*환산|전세.*월세/.test(message)) {
+    // 전세/월세 비교 분석 (전문가 수준)
+    if (/전세.*월세.*비교|월세.*전세.*비교|전세.*vs.*월세|월세.*vs.*전세/.test(message) ||
+        (/전세.*\d+/.test(message) && /월세.*\d+/.test(message)) ||
+        (/보증금.*\d+/.test(message) && /월세.*\d+/.test(message))) {
+      
+      // 숫자 추출
+      const jeonseMatch = message.match(/전세\s*(\d+[\d천만억,\s]*)|(\d+[\d천만억,\s]*)\s*전세/);
+      const monthlyMatch = message.match(/월세\s*(\d+[\d천만,\s]*)|(\d+[\d천만,\s]*)\s*월세/);
+      const depositMatch = message.match(/보증금\s*(\d+[\d천만억,\s]*)|(\d+[\d천만억,\s]*)\s*보증금/);
+      
+      const jeonseAmount = jeonseMatch ? parseWon((jeonseMatch[1] || jeonseMatch[2]) + "원") : null;
+      const monthlyRent = monthlyMatch ? parseWon((monthlyMatch[1] || monthlyMatch[2]) + "원") : null;
+      const depositAmount = depositMatch ? parseWon((depositMatch[1] || depositMatch[2]) + "원") : null;
+      
+      if (jeonseAmount && (monthlyRent || depositAmount)) {
+        // 전문가 수준 비교 분석
+        const standardRate = 0.003; // 표준 전환율 0.3%/월
+        const impliedMonthly = jeonseAmount * standardRate;
+        const actualMonthly = monthlyRent || 0;
+        const actualDeposit = depositAmount || 0;
+        
+        // 연간 비용 계산
+        const jeonseYearlyCost = jeonseAmount * standardRate * 12; // 기회비용
+        const monthlyYearlyCost = (actualMonthly * 12) + (actualDeposit * standardRate * 12);
+        
+        const isJeonseBetter = jeonseYearlyCost < monthlyYearlyCost;
+        const difference = Math.abs(jeonseYearlyCost - monthlyYearlyCost);
+        
+        return NextResponse.json({
+          content: `**전세 vs 월세 전문 비교 분석** 📊\n\n` +
+                   `🏠 **조건 비교**:\n` +
+                   `• 전세: ${formatKRW(jeonseAmount)}원\n` +
+                   (monthlyRent ? `• 월세: 보증금 ${formatKRW(actualDeposit)}원 + 월 ${formatKRW(monthlyRent)}원\n\n` : '\n') +
+                   
+                   `💰 **연간 총비용 분석** (기회비용 3.6% 적용):\n` +
+                   `• 전세 연간비용: ${formatKRW(Math.round(jeonseYearlyCost))}원\n` +
+                   (monthlyRent ? `• 월세 연간비용: ${formatKRW(Math.round(monthlyYearlyCost))}원\n` : '') +
+                   `• 차이: ${formatKRW(Math.round(difference))}원\n\n` +
+                   
+                   `🎯 **전문가 추천**: ${isJeonseBetter ? '전세' : '월세'}가 유리\n` +
+                   `💡 **절약효과**: 연간 약 ${formatKRW(Math.round(difference))}원\n\n` +
+                   
+                   `📈 **시장 분석**:\n` +
+                   `• 표준 전환율: 월 0.3% (연 3.6%)\n` +
+                   `• 실제 전환율: 월 ${((actualMonthly / (jeonseAmount - actualDeposit)) * 100).toFixed(2)}%\n` +
+                   `• 시장 대비: ${((actualMonthly / (jeonseAmount - actualDeposit)) / standardRate) > 1 ? '높음' : '낮음'}\n\n` +
+                   
+                   `⚠️ **추가 고려사항**:\n` +
+                   `• 전세: 보증금 반환 리스크, 전세보증보험 필수\n` +
+                   `• 월세: 임대료 인상 가능성, 현금흐름 부담\n` +
+                   `• 세제혜택: 월세세액공제 vs 전세자금대출 소득공제`,
+          
+          cards: [{
+            title: "전세 vs 월세 비교 결과",
+            subtitle: `${isJeonseBetter ? '전세' : '월세'} 추천 (연 ${formatKRW(Math.round(difference))}원 절약)`,
+            monthly: `전세 ${formatKRW(Math.round(jeonseYearlyCost/12))}원/월`,
+            totalInterest: `월세 ${formatKRW(Math.round(monthlyYearlyCost/12))}원/월`,
+            notes: [
+              `전세금: ${formatKRW(jeonseAmount)}원`,
+              `월세: ${formatKRW(actualDeposit)}원 + ${formatKRW(monthlyRent)}원`,
+              `기회비용율: 연 3.6% 적용`,
+              `${isJeonseBetter ? '전세가 연간 ' + formatKRW(Math.round(difference)) + '원 유리' : '월세가 연간 ' + formatKRW(Math.round(difference)) + '원 유리'}`,
+              "세제혜택 및 리스크 별도 고려 필요"
+            ]
+          }],
+          
+          checklist: [
+            "전세보증보험 가입 (전세 선택 시)",
+            "임대인 신용도 및 건물 상태 확인", 
+            "월세세액공제 대상 여부 확인 (연 750만원 한도)",
+            "향후 3-5년 거주계획 및 이사 비용 고려"
+          ]
+        });
+      }
+      
+      // 정보 부족 시 안내
+      return NextResponse.json({
+        content: `**전세 vs 월세 비교 분석** 📊\n\n` +
+                 `정확한 비교 분석을 위해 다음 정보를 알려주세요:\n\n` +
+                 `💡 **예시**:\n` +
+                 `"전세 2억5천 vs 보증금 3천만원 월세 90만원 비교"\n` +
+                 `"전세 3억 vs 월세 120만원 비교"\n\n` +
+                 `📊 **제공 분석**:\n` +
+                 `• 연간 총비용 비교 (기회비용 포함)\n` +
+                 `• 시장 전환율 대비 유불리\n` +
+                 `• 세제혜택 및 리스크 분석\n` +
+                 `• 상황별 맞춤 추천`,
+        cards: null,
+        checklist: ["전세금액 확인", "월세 및 보증금 확인", "거주 예정기간 고려", "현금흐름 계획 수립"]
+      });
+    }
+    
+    // 단순 전세→월세 환산 (기존 기능 유지)
+    if (/전세.*월세.*환산|월세.*환산/.test(message) && !/비교/.test(message)) {
       const r = replyJeonseToMonthly(message);
       if (r) return NextResponse.json(r);
     }
