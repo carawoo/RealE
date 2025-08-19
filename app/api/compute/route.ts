@@ -273,24 +273,30 @@ function isSpecificLoanPolicyRequest(text: string): boolean {
   return hasPolicyKeyword || (hasLoanTerm && hasGeneralPattern);
 }
 
-// 최신 대출 정책 데이터 (동적 관리)
+// 최신 대출 정책 데이터 (동적 관리) - 2025년 실제 정책 반영
 const CURRENT_LOAN_POLICY = {
   year: 2025,
-  lastUpdated: "2025-01-15",
+  lastUpdated: "2025-01-20",
   ltv: {
     bogeumjari: {
-      metro: { apartment: 70, nonApartment: 65 }, // 수도권: 아파트 70%, 아파트외 65%
-      nonMetro: { apartment: 80, nonApartment: 75 } // 비수도권: 아파트 80%, 아파트외 75%
+      // 수도권 (서울/경기/인천) = 규제지역/조정대상지역
+      metro: { apartment: 50, nonApartment: 45 }, // 규제지역: 일반 50%, 아파트외 5%p 차감
+      nonMetro: { apartment: 70, nonApartment: 65 } // 비규제지역: 70%, 아파트외 5%p 차감
     },
     firstTime: {
-      metro: { apartment: 80, nonApartment: 75 }, // 생애최초는 10%p 우대
-      nonMetro: { apartment: 80, nonApartment: 75 }
+      // 생애최초도 2025년 6월부터 규제 강화
+      metro: { apartment: 70, nonApartment: 65 }, // 규제지역: 생애최초 70%, 아파트외 5%p 차감  
+      nonMetro: { apartment: 80, nonApartment: 75 } // 비규제지역: 80%, 아파트외 5%p 차감
     }
   },
   dsr: { max: 70, firstTime: 70 },
   maxAmount: {
-    bogeumjari: 250_000_000, // 2.5억
+    bogeumjari: 600_000_000, // 6억 (2025년 절대상한 도입)
     jeonse: 200_000_000      // 2억
+  },
+  regions: {
+    regulated: ['서울', '경기', '인천'], // 규제지역 (조정대상지역/투기과열지구)
+    nonRegulated: ['부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
   }
 };
 
