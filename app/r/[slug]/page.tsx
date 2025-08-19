@@ -27,6 +27,14 @@ function formatMoneyishText(s?: string): string {
 export default async function SharedPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
   
+  // 디버깅: 함수 진입 확인
+  console.log("SharedPage called with slug:", slug);
+  console.log("Environment check:", {
+    NODE_ENV: process.env.NODE_ENV,
+    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasSupabaseAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  });
+  
   // 환경변수 확인 및 기본값 설정
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -37,12 +45,13 @@ export default async function SharedPage({ params }: { params: { slug: string } 
     return (
       <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h1 style={{ fontSize: 20, margin: 10 }}>공유 링크 오류</h1>
+          <h1 style={{ fontSize: 20, margin: 10 }}>🔧 환경 설정 문제</h1>
           <Link href="/" className="btn ghost">홈</Link>
         </header>
         <div style={{ marginTop: 24 }}>
-          <p>환경 설정 문제로 공유된 대화를 불러올 수 없습니다.</p>
-          <p>새로운 상담을 시작해 주세요.</p>
+          <p>Supabase 환경변수가 설정되지 않아 공유된 대화를 불러올 수 없습니다.</p>
+          <p>Slug: {slug}</p>
+          <p>Environment: {process.env.NODE_ENV}</p>
           <Link href="/chat" className="btn primary">지금 상담 시작</Link>
         </div>
       </main>
@@ -71,12 +80,13 @@ export default async function SharedPage({ params }: { params: { slug: string } 
     return (
       <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h1 style={{ fontSize: 20, margin: 10 }}>공유 링크를 찾을 수 없어요</h1>
+          <h1 style={{ fontSize: 20, margin: 10 }}>🔍 공유 링크를 찾을 수 없어요</h1>
           <Link href="/" className="btn ghost">홈</Link>
         </header>
         <div style={{ marginTop: 24 }}>
           <p>공유된 대화가 만료되었거나 존재하지 않습니다.</p>
-          <p>새로운 상담을 시작해 주세요.</p>
+          <p>Slug: {slug}</p>
+          <p>Database query successful but no data returned</p>
           <Link href="/chat" className="btn primary">지금 상담 시작</Link>
         </div>
       </main>
@@ -94,7 +104,7 @@ export default async function SharedPage({ params }: { params: { slug: string } 
   return (
     <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1 style={{ fontSize: 20, margin: 10 }}>대화를 공유했어요</h1>
+        <h1 style={{ fontSize: 20, margin: 10 }}>✅ 대화를 공유했어요 (실행 확인)</h1>
         <Link href="/" className="btn ghost">홈</Link>
       </header>
 
