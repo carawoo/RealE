@@ -243,7 +243,7 @@ function isLoanScenarioRequest(text: string, profile: Fields): boolean {
   return (hasExplicitRequest && hasBasicProfile) || (hasNumbersPattern && hasBasicProfile);
 }
 
-// 전문 정책 상담 요청인지 확인
+// 전문 정책 상담 요청인지 확인 (더 포괄적으로 개선)
 function isSpecificLoanPolicyRequest(text: string): boolean {
   const t = text.toLowerCase();
   
@@ -251,26 +251,35 @@ function isSpecificLoanPolicyRequest(text: string): boolean {
   const policyKeywords = [
     "디딤돌", "체증식", "원리금균등", "원금균등", "상환방식", "상환 방식",
     "신혼부부", "생애최초", "기금e든든", "모의심사", "고정금리", "변동금리",
-    "보금자리론", "보금자리", "ltv", "dsr", "대출규제", "차감", "수도권"
+    "보금자리론", "보금자리", "ltv", "dsr", "대출규제", "차감", "수도권",
+    "버팀목", "청년", "주택금융", "주택담보", "전세자금", "매수", "구입"
   ];
   
-  // 일반적인 대출 상담 패턴
+  // 일반적인 대출 상담 패턴 (더 포괄적으로)
   const generalLoanPatterns = [
-    /대출.*기간/, /신청.*기간/, /얼마.*걸/, /언제.*신청/,
-    /어느.*정도/, /며칠/, /몇.*주/, /몇.*개월/,
-    /절차/, /방법/, /과정/, /준비/, /서류/,
-    /조건/, /자격/, /요건/, /한도/, /금리/
+    /대출.*기간/, /신청.*기간/, /얼마.*걸/, /언제.*신청/, /어느.*정도/, /며칠/, /몇.*주/, /몇.*개월/,
+    /절차/, /방법/, /과정/, /준비/, /서류/, /조건/, /자격/, /요건/, /한도/, /금리/,
+    /어떻게/, /뭐.*필요/, /무엇.*필요/, /처음/, /시작/, /진행/, /받.*방법/,
+    /신청.*하/, /받.*수/, /가능.*한/, /됩니까/, /되나요/, /할.*수/, /어디서/,
+    /궁금/, /알고.*싶/, /문의/, /상담/, /도움/, /추천/, /선택/, /비교/
   ];
   
-  // 대출 관련 용어
-  const loanTerms = ["대출", "보금자리", "디딤돌", "전세자금", "주택담보"];
+  // 대출 관련 용어 (더 포괄적으로)
+  const loanTerms = ["대출", "보금자리", "디딤돌", "전세자금", "주택담보", "버팀목", "청년", "신혼부부", "생애최초"];
+  
+  // 부동산 관련 키워드
+  const realEstateTerms = ["주택", "집", "아파트", "매매", "전세", "월세", "임대", "구입", "매수"];
   
   const hasLoanTerm = loanTerms.some(term => t.includes(term));
   const hasPolicyKeyword = policyKeywords.some(keyword => t.includes(keyword));
   const hasGeneralPattern = generalLoanPatterns.some(pattern => pattern.test(t));
+  const hasRealEstateTerm = realEstateTerms.some(term => t.includes(term));
   
-  // 정책 키워드가 있거나, 대출 용어 + 일반 패턴이 있으면 전문 상담
-  return hasPolicyKeyword || (hasLoanTerm && hasGeneralPattern);
+  // 더 포괄적인 매칭 조건
+  return hasPolicyKeyword || 
+         (hasLoanTerm && hasGeneralPattern) ||
+         (hasLoanTerm && t.length > 5) || // 대출 용어가 있고 5자 이상이면 상담 가능
+         (hasRealEstateTerm && hasGeneralPattern); // 부동산 용어 + 일반 패턴
 }
 
 // 최신 대출 정책 데이터 (동적 관리) - 2025년 실제 정책 반영
@@ -1344,13 +1353,48 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 월소득 등 재정 정보 질문 처리 (더 지능적으로)
     if (/(월\s*소득|소득|현금|보유\s*현금)/.test(message)) {
       const parts: string[] = [];
       if (merged.incomeMonthly) parts.push(`월소득: ${toComma(merged.incomeMonthly)}원`);
       if (merged.cashOnHand) parts.push(`현금: ${toComma(merged.cashOnHand)}원`);
       if (merged.propertyPrice) parts.push(`매매가: ${toComma(merged.propertyPrice)}원`);
       if (merged.downPayment) parts.push(`자기자본: ${toComma(merged.downPayment)}원`);
-      return NextResponse.json({ content: parts.join(" / "), cards: null, checklist: null });
+      
+      // 단순 정보 확인 질문이 아니라 분석/상담 요청인지 확인
+      const isAnalysisRequest = /분석|계산|시나리오|추천|상담|어떻게|받.*수|가능.*한/.test(message.toLowerCase());
+      const hasEnoughInfo = merged.incomeMonthly && (merged.propertyPrice || merged.cashOnHand);
+      
+      if (isAnalysisRequest && hasEnoughInfo) {
+        // 대출 시나리오 분석으로 라우팅
+        const response = generateLoanScenariosResponse(merged);
+        return NextResponse.json(response);
+      } else if (isAnalysisRequest && !hasEnoughInfo) {
+        // 추가 정보 필요
+        return NextResponse.json({
+          content: parts.length > 0 ? 
+            `알려주신 정보: ${parts.join(" / ")}\n\n추가로 필요한 정보:\n` +
+            `${!merged.incomeMonthly ? "• 월소득\n" : ""}` +
+            `${!merged.propertyPrice ? "• 매매가 또는 전세보증금\n" : ""}` +
+            `${!merged.cashOnHand && !merged.downPayment ? "• 자기자본(현금)\n" : ""}\n` +
+            `모든 정보를 말씀해 주시면 맞춤 대출 시나리오를 분석해 드릴게요.`
+            :
+            `대출 시나리오 분석을 위해 다음 정보가 필요해요:\n` +
+            `• 월소득: "월소득 500만원"\n` +
+            `• 매매가: "5억원 집 구입"\n` +
+            `• 자기자본: "자기자본 1억원"\n\n` +
+            `예시: "월소득 500만원, 5억원 집 구입, 자기자본 1억원 분석해줘"`,
+          cards: null,
+          checklist: ["월소득 확인", "매매가/전세보증금 확인", "자기자본 확인"]
+        });
+      } else {
+        // 단순 정보 확인
+        return NextResponse.json({ 
+          content: parts.length > 0 ? parts.join(" / ") : "재정 정보를 알려주세요.",
+          cards: null, 
+          checklist: null 
+        });
+      }
     }
 
     // 일반 도메인 폴백 - 대출 시나리오 안내 추가
