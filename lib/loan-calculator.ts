@@ -197,23 +197,31 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
 export function parseWon(text: string): number | null {
   const t = text.replace(/\s+/g, "").replace(/,/g, "");
 
-  let m = t.match(/(\d+)\s*억\s*(\d+)\s*천/);
-  if (m) return parseInt(m[1]) * 100_000_000 + parseInt(m[2]) * 10_000_000;
+  // e.g., 2억 8천 500(만원) → 285,000,000원
+  let match = t.match(/(\d+)\s*억\s*(\d+)\s*천\s*(\d+)/);
+  if (match) return parseInt(match[1]) * 100_000_000 + parseInt(match[2]) * 10_000_000 + parseInt(match[3]) * 1_000_000;
 
-  m = t.match(/(\d+)\s*억\s*(\d+)\s*만?원?/);
-  if (m) return parseInt(m[1]) * 100_000_000 + parseInt(m[2]) * 10_000;
+  // e.g., 8천 500(만원) → 85,000,000원
+  match = t.match(/^(\d+)\s*천\s*(\d+)$/);
+  if (match) return parseInt(match[1]) * 10_000_000 + parseInt(match[2]) * 1_000_000;
 
-  m = t.match(/(\d+)\s*억(원)?/);
-  if (m) return parseInt(m[1]) * 100_000_000;
+  match = t.match(/(\d+)\s*억\s*(\d+)\s*천/);
+  if (match) return parseInt(match[1]) * 100_000_000 + parseInt(match[2]) * 10_000_000;
 
-  m = t.match(/(\d+)\s*천\s*만?원?/);
-  if (m) return parseInt(m[1]) * 10_000_000;
+  match = t.match(/(\d+)\s*억\s*(\d+)\s*만?원?/);
+  if (match) return parseInt(match[1]) * 100_000_000 + parseInt(match[2]) * 10_000;
 
-  m = t.match(/(\d+)\s*만\s*원/);
-  if (m) return parseInt(m[1]) * 10_000;
+  match = t.match(/(\d+)\s*억(원)?/);
+  if (match) return parseInt(match[1]) * 100_000_000;
 
-  m = t.match(/(\d{2,})(?:원)?$/);
-  if (m) return parseInt(m[1], 10);
+  match = t.match(/(\d+)\s*천\s*만?원?/);
+  if (match) return parseInt(match[1]) * 10_000_000;
+
+  match = t.match(/(\d+)\s*만\s*원/);
+  if (match) return parseInt(match[1]) * 10_000;
+
+  match = t.match(/(\d{2,})(?:원)?$/);
+  if (match) return parseInt(match[1], 10);
 
   return null;
 }

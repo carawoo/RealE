@@ -57,10 +57,12 @@ function extractFieldsFrom(text: string): Fields {
     if (v) fields.cashOnHand = v;
   }
   
-  // 매매가/집값 추출
+  // 매매가/집값 추출 (2억 8천500 등 복합표현 포함)
   const priceM = 
-    text.match(/(?:매매가|집값|매물가|부동산가)\s*([0-9억천만,\s]+)원?/i) ||
-    text.match(/([0-9억천만,\s]+)원?\s*(?:짜리|집|매물|구입|구매)/i);
+    text.match(/(?:매매가|집값|매물가|부동산가)\s*([0-9억천만,\s]+(?:\d+)?)/i) ||
+    text.match(/([0-9억천만,\s]+(?:\d+)?)원?\s*(?:짜리|집|매물|구입|구매)/i) ||
+    text.match(/(\d+\s*억\s*\d+\s*천\s*\d+)/i) ||
+    text.match(/(\d+\s*천\s*\d+)/i);
   if (priceM?.[1]) {
     const v = parseWon(priceM[1] + "원");
     if (v) fields.propertyPrice = v;
@@ -1224,6 +1226,8 @@ async function handlePolicySummaryRequest(message: string): Promise<{ content: s
     return null;
   }
 
+  
+
   try {
     // 내부 요약 API 호출
     const response = await fetch('http://localhost:3000/api/policy-summary', {
@@ -1264,6 +1268,34 @@ export async function POST(req: NextRequest) {
     const contextResponse = handleContextualQuestion(message, merged);
     if (contextResponse) {
       return NextResponse.json(contextResponse);
+    }
+
+    // 보금자리론 생애최초 + 아낌e + 월급/연봉/매매가가 포함된 구체 질문 → 바로 월상환 계산 (상단 우선 처리)
+    const lowerMsg = message.toLowerCase();
+    if ((lowerMsg.includes("보금자리") || lowerMsg.includes("보금자리론")) && lowerMsg.includes("생애최초") && (/아낌e|akime|akim e|아낌 e/.test(lowerMsg)) && (/월급|연봉|소득/.test(lowerMsg))) {
+      const income = merged.incomeMonthly || extractFieldsFrom(message).incomeMonthly || 0;
+      const priceField = extractFieldsFrom(message).propertyPrice;
+      const price = merged.propertyPrice || priceField || null;
+      const down = merged.downPayment || merged.cashOnHand || 0;
+      const years = merged.loanPeriodYears || 30;
+      
+      if (!income || !price) {
+        return NextResponse.json({ content: `정확한 월 상환액 계산을 위해 다음 정보를 확인해 주세요:\n• 월소득\n• 매매가\n• 자기자본 (계약금)`, cards: null, checklist: ["월소득 확인", "매매가 확인", "자기자본 확인"] });
+      }
+      const policy = CURRENT_LOAN_POLICY;
+      const ltv = policy.ltv.firstTime.metro.apartment;
+      const maxLoanByLtv = Math.min(price * (ltv / 100), policy.maxAmount.bogeumjari);
+      const targetLoan = Math.min(maxLoanByLtv, price - down);
+      const rate = 3.3; // 가정
+      const monthly = Math.round((targetLoan * (rate/100/12) * Math.pow(1 + rate/100/12, years*12)) / (Math.pow(1 + rate/100/12, years*12) - 1));
+      return NextResponse.json({
+        content: `**보금자리론 생애최초(아낌e) 월상환 계산**\n\n` +
+                 `매매가 ${formatKRW(price)}원 기준, 예상 대출금액은 약 ${formatKRW(targetLoan)}원입니다.\n` +
+                 `적용금리 가정 ${formatPercent(rate)} / 기간 ${years}년 기준 월 상환액은 약 ${formatKRW(monthly)}원입니다.\n\n` +
+                 `⚠️ 실제 금리는 신청 시점·우대조건(아낌e 등)에 따라 달라질 수 있으니, 기금e든든에서 최신 금리를 확인해 주세요.` + getCurrentPolicyDisclaimer(),
+        cards: [{ title: "생애최초(아낌e) 월 상환액", subtitle: `${years}년 고정 가정 / 금리 ${formatPercent(rate)}`, monthly: `월 ${formatKRW(monthly)}원`, totalInterest: `예상 대출: ${formatKRW(targetLoan)}원`, notes: [`매매가: ${formatKRW(price)}원`, `LTV 적용: ${ltv}%`, `최대한도: ${formatKRW(policy.maxAmount.bogeumjari)}원`, `소득: ${formatKRW(income)}원/월`] }],
+        checklist: ["기금e든든에서 실제 금리 확인", "우대금리(아낌e) 적용 조건 확인", "DSR 70% 이하 유지"]
+      });
     }
 
     // 정책 문서 요약 요청 처리
