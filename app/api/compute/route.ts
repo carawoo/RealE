@@ -1042,7 +1042,99 @@ function generateSpecificLoanPolicyResponse(text: string) {
     };
   }
   
-  return null;
+  // 일반적인 대출 상담 질문 처리 (특정 상품이 명시되지 않은 경우)
+  // "대출 처음 받아보는데 어떻게 진행해야 해요?" 같은 일반 질문들
+  const context = questionContext;
+  const contextualStart = generateContextualResponse(context, "주택금융 대출", {});
+  
+  let productRecommendation = "";
+  let processInfo = "";
+  let timelineInfo = "";
+  
+  // 질문 유형별 맞춤 정보
+  if (context.questionType === 'timeline') {
+    timelineInfo = `⏰ **처리 기간** (${context.urgency === 'immediate' ? '긴급 시' : '일반적'}):\n` +
+                  (context.urgency === 'immediate' ? 
+                    `• 최단: 1-2주 (모든 서류 완비 + 사전심사 완료)\n` +
+                    `• 일반: 2-3주 (표준 처리)\n` +
+                    `• 복잡: 3-4주 (추가 서류 또는 심사 지연)\n\n`
+                    :
+                    `• 일반적으로 2-4주 소요\n` +
+                    `• 서류 완비 시 단축 가능\n` +
+                    `• 연말/연초에는 더 오래 걸림\n\n`
+                  );
+  } else if (context.questionType === 'application_process') {
+    processInfo = `📋 **신청 절차** (${context.experienceLevel === 'first_time' ? '처음 신청자용' : '일반'}):\n` +
+                 (context.experienceLevel === 'first_time' ?
+                   `1️⃣ **상품 선택**: 목적에 맞는 대출 상품 결정\n` +
+                   `2️⃣ **자격 확인**: 각 상품별 자격 요건 체크\n` +
+                   `3️⃣ **서류 준비**: 소득증명서 등 필수서류\n` +
+                   `4️⃣ **사전 심사**: 기금e든든 모의심사\n` +
+                   `5️⃣ **은행 선택**: 금리 조건 비교\n` +
+                   `6️⃣ **정식 신청**: 방문 또는 온라인 신청\n\n`
+                   :
+                   `• 신청 → 심사 → 승인 → 실행\n` +
+                   `• 각 단계별 평균 3-7일 소요\n` +
+                   `• 병행 처리 가능한 부분 활용\n\n`
+                 );
+  }
+  
+  // 경험 수준별 상품 추천
+  if (context.experienceLevel === 'first_time') {
+    productRecommendation = `💡 **첫 신청자 맞춤 상품 추천**:\n` +
+                           `• **디딤돌 대출**: 무주택자 구입자금 (최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원)\n` +
+                           `• **보금자리론**: 생애최초/신혼부부 특례 (LTV 우대)\n` +
+                           `• **버팀목 전세자금**: 전세보증금 대출 (최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.jeonse)}원)\n\n` +
+                           `🎯 **선택 기준**: 구입 vs 전세, 나이/혼인상태, 소득수준\n\n`;
+  } else {
+    productRecommendation = `💼 **주요 대출 상품 비교**:\n` +
+                           `• 구입자금: 디딤돌, 보금자리론\n` +
+                           `• 전세자금: 버팀목, 청년전용\n` +
+                           `• 특례상품: 신혼부부, 생애최초\n\n`;
+  }
+  
+  const urgencyTips = context.urgency === 'immediate' ? 
+    `🚀 **긴급 처리 팁**:\n` +
+    `• 모든 서류를 미리 완벽하게 준비\n` +
+    `• 기금e든든에서 사전 모의심사 완료\n` +
+    `• 여러 은행에 동시 문의로 빠른 처리\n` +
+    `• 오전 일찍 방문하여 당일 접수 완료\n\n`
+    : 
+    `🏃‍♂️ **효율적 진행 팁**:\n` +
+    `서류 미리 준비 → 사전 모의심사 → 은행 방문\n\n`;
+  
+  return {
+    content: contextualStart +
+             timelineInfo +
+             processInfo +
+             productRecommendation +
+             urgencyTips +
+             getCurrentPolicyDisclaimer(),
+    cards: context.experienceLevel === 'first_time' ? [{
+      title: "첫 대출 신청자 가이드",
+      subtitle: "단계별 완벽 준비",
+      monthly: "상품별 맞춤 추천",
+      totalInterest: "우대조건 최대 활용",
+      notes: [
+        "1단계: 목적별 상품 선택",
+        "2단계: 자격 요건 확인",
+        "3단계: 필수서류 준비",
+        "4단계: 사전심사 완료",
+        "5단계: 은행별 조건 비교"
+      ]
+    }] : null,
+    checklist: context.experienceLevel === 'first_time' ? [
+      "대출 목적 명확히 정하기 (구입/전세/담보)",
+      "나이, 혼인상태, 소득 기준 특례상품 확인",
+      "기금e든든에서 상품별 모의심사",
+      "필수서류 체크리스트 만들어 준비"
+    ] : [
+      "기존 대출 현황 및 DSR 영향 확인",
+      "신용등급 최신 상태 점검",
+      "상품별 금리 및 한도 비교",
+      "우대조건 변경사항 재확인"
+    ]
+  };
 }
 
 // ---------- 맥락 기반 질문 처리 ----------
