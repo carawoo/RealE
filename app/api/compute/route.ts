@@ -420,6 +420,49 @@ function handleContextualQuestion(message: string, profile: Fields): { content: 
   return null;
 }
 
+// ---------- 정책 문서 요약 처리 ----------
+async function handlePolicySummaryRequest(message: string): Promise<{ content: string; cards: null; checklist: null } | null> {
+  // 정책 요약 요청 패턴 감지
+  const summaryIndicators = [
+    "요약해줘", "정리해줘", "5줄 요약", "핵심만", "간단히",
+    "정책.*요약", "보도자료.*요약", "발표.*요약"
+  ];
+  
+  const hasSummaryRequest = summaryIndicators.some(pattern => 
+    new RegExp(pattern, 'i').test(message)
+  );
+
+  // 긴 텍스트 (500자 이상)는 자동으로 요약 대상으로 간주
+  const isLongText = message.length > 500;
+
+  if (!hasSummaryRequest && !isLongText) {
+    return null;
+  }
+
+  try {
+    // 내부 요약 API 호출
+    const response = await fetch('http://localhost:3000/api/policy-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: message })
+    });
+
+    const data = await response.json();
+    
+    if (data.ok && data.summary) {
+      return {
+        content: `📋 **정책 문서 5줄 요약**\n\n${data.summary.join('\n')}\n\n📊 **요약 정보**\n- 원본 길이: ${data.originalLength.toLocaleString()}자\n- 요약 문장: ${data.summaryLines}줄`,
+        cards: null,
+        checklist: null
+      };
+    }
+  } catch (error) {
+    console.error('Policy summary request failed:', error);
+  }
+
+  return null;
+}
+
 // ---------- route ----------
 export async function POST(req: NextRequest) {
   try {
@@ -436,6 +479,12 @@ export async function POST(req: NextRequest) {
     const contextResponse = handleContextualQuestion(message, merged);
     if (contextResponse) {
       return NextResponse.json(contextResponse);
+    }
+
+    // 정책 문서 요약 요청 처리
+    const policyResponse = await handlePolicySummaryRequest(message);
+    if (policyResponse) {
+      return NextResponse.json(policyResponse);
     }
 
     // 전문 정책 상담 요청 확인
