@@ -40,9 +40,23 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
   {
     name: "디딤돌대출(일반)",
     maxAmount: 250_000_000,
-    interestRate: 3.25,
+    interestRate: 3.3, // 2025년 기준 기본금리
     conditions: ["무주택 세대주", "연소득 6천만원 이하", "부부합산 순자산 3.88억원 이하", "주택가격 6억원 이하"],
-    applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_06_01.do"
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "디딤돌대출(신혼부부)",
+    maxAmount: 250_000_000,
+    interestRate: 3.1, // 신혼부부 우대금리 0.2%p 적용
+    conditions: ["무주택 세대주", "혼인신고일 기준 7년 이내", "연소득 7천만원 이하", "부부합산 순자산 3.88억원 이하"],
+    applicationLink: "https://www.hf.go.kr"
+  },
+  {
+    name: "디딤돌대출(생애최초)",
+    maxAmount: 250_000_000,
+    interestRate: 3.1, // 생애최초 우대금리 0.2%p 적용
+    conditions: ["무주택 세대주", "생애최초 주택구입", "연소득 7천만원 이하", "부부합산 순자산 3.88억원 이하"],
+    applicationLink: "https://www.hf.go.kr"
   },
   {
     name: "보금자리론(생애최초)",
@@ -56,21 +70,21 @@ export const POLICY_SUPPORTS: PolicySupport[] = [
     maxAmount: 500_000_000,
     interestRate: 1.6,
     conditions: ["2022년 이후 출생 자녀", "무주택 세대주", "연소득 1.3억원 이하", "주택가격 9억원 이하"],
-    applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_06_03.do"
+    applicationLink: "https://www.hf.go.kr"
   },
   {
     name: "다자녀 특례대출",
     maxAmount: 400_000_000,
     interestRate: 2.2,
     conditions: ["자녀 2명 이상", "무주택 세대주", "연소득 1억원 이하", "주택가격 8억원 이하"],
-    applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_06_04.do"
+    applicationLink: "https://www.hf.go.kr"
   },
   {
     name: "청년 버팀목 전세자금대출",
     maxAmount: 200_000_000,
     interestRate: 2.2,
     conditions: ["만 19~34세 무주택 세대주", "연소득 5천만원 이하", "전세보증금 80% 한도", "중기청 대출 통합운영"],
-    applicationLink: "https://www.hf.go.kr/hf/sub01/sub01_04_01.do"
+    applicationLink: "https://www.hf.go.kr"
   }
 ];
 
@@ -264,6 +278,122 @@ export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
+// 상환방식별 특화 정보
+export interface RepaymentTypeInfo {
+  type: "원리금균등" | "체증식" | "원금균등";
+  description: string;
+  interestRateAdjustment: number; // 금리 조정폭
+  advantages: string[];
+  considerations: string[];
+}
+
+export const REPAYMENT_TYPES: RepaymentTypeInfo[] = [
+  {
+    type: "원리금균등",
+    description: "매월 동일한 금액을 상환하는 가장 일반적인 방식",
+    interestRateAdjustment: 0,
+    advantages: ["매월 상환액 일정", "가계 예산 관리 용이", "장기 재정 계획 수립 편리"],
+    considerations: ["초기 이자 비중 높음", "원금 상환 속도 느림"]
+  },
+  {
+    type: "체증식",
+    description: "초기 상환액이 적고 시간이 지날수록 상환액이 증가하는 방식",
+    interestRateAdjustment: 0.3, // 디딤돌 대출 기준 +0.3%p
+    advantages: ["초기 상환 부담 경감", "초기 현금 흐름 개선", "신혼부부·청년층에 유리"],
+    considerations: ["후반기 상환 부담 증가", "총 이자 비용 증가", "금리 추가 적용(+0.3%p)"]
+  },
+  {
+    type: "원금균등",
+    description: "매월 원금을 동일하게 상환하고 이자는 잔액에 따라 계산하는 방식",
+    interestRateAdjustment: 0,
+    advantages: ["총 이자비용 최소", "원금 상환 속도 빠름", "후반기 상환 부담 감소"],
+    considerations: ["초기 상환 부담 높음", "초기 현금 흐름 부담", "소득 증가 예상 시 유리"]
+  }
+];
+
+// 상환방식별 월 상환액 계산
+export function calculatePaymentByType(
+  principal: number,
+  annualRate: number,
+  years: number,
+  type: "원리금균등" | "체증식" | "원금균등" = "원리금균등"
+): { initialPayment: number; finalPayment?: number; averagePayment: number } {
+  const monthlyRate = annualRate / 100 / 12;
+  const totalMonths = years * 12;
+  
+  switch (type) {
+    case "원리금균등":
+      const equalPayment = calculateMonthlyPayment(principal, annualRate, years);
+      return {
+        initialPayment: equalPayment,
+        averagePayment: equalPayment
+      };
+      
+    case "체증식":
+      // 체증식: 초기 5년간 이자만 납부, 이후 원리금균등
+      const graceYears = Math.min(5, years);
+      const interestOnlyPayment = principal * monthlyRate;
+      const remainingYears = years - graceYears;
+      const principalPayment = remainingYears > 0 ? 
+        calculateMonthlyPayment(principal, annualRate, remainingYears) : principal / totalMonths;
+      
+      return {
+        initialPayment: Math.round(interestOnlyPayment),
+        finalPayment: Math.round(principalPayment),
+        averagePayment: Math.round((interestOnlyPayment * graceYears * 12 + principalPayment * remainingYears * 12) / totalMonths)
+      };
+      
+    case "원금균등":
+      const principalPerMonth = principal / totalMonths;
+      const initialInterest = principal * monthlyRate;
+      const finalInterest = (principal - principalPerMonth * (totalMonths - 1)) * monthlyRate;
+      
+      return {
+        initialPayment: Math.round(principalPerMonth + initialInterest),
+        finalPayment: Math.round(principalPerMonth + finalInterest),
+        averagePayment: Math.round(principalPerMonth + (initialInterest + finalInterest) / 2)
+      };
+      
+    default:
+      return { initialPayment: 0, averagePayment: 0 };
+  }
+}
+
+// 전문 대출 상담 기능
+export function analyzeSpecificLoanPolicy(
+  loanType: string,
+  loanAmount: number,
+  repaymentType: "원리금균등" | "체증식" | "원금균등" = "원리금균등"
+) {
+  const typeInfo = REPAYMENT_TYPES.find(t => t.type === repaymentType);
+  if (!typeInfo) return null;
+  
+  let baseRate = 3.3; // 디딤돌 기본금리
+  let programName = "디딤돌대출(일반)";
+  
+  // 대출 유형별 기본금리 및 혜택 설정
+  if (loanType.includes("신혼부부")) {
+    baseRate = 3.1;
+    programName = "디딤돌대출(신혼부부)";
+  } else if (loanType.includes("생애최초")) {
+    baseRate = 3.1;
+    programName = "디딤돌대출(생애최초)";
+  }
+  
+  // 상환방식에 따른 금리 조정
+  const adjustedRate = baseRate + typeInfo.interestRateAdjustment;
+  const payments = calculatePaymentByType(loanAmount, adjustedRate, 30, repaymentType);
+  
+  return {
+    programName,
+    baseRate,
+    adjustedRate,
+    repaymentType: typeInfo,
+    payments,
+    explanation: `${programName}에서 ${repaymentType} 상환방식 선택 시 금리는 ${adjustedRate}%가 적용됩니다.`
+  };
+}
+
 // 시나리오를 UI 카드 형태로 변환
 export function convertScenarioToCard(scenario: LoanScenario) {
   return {
@@ -277,7 +407,7 @@ export function convertScenarioToCard(scenario: LoanScenario) {
       `LTV: ${formatPercent(scenario.ltv)}`,
       `DSR: ${formatPercent(scenario.dsr)}`,
       ...(scenario.supportProgram ? [`지원프로그램: ${scenario.supportProgram}`] : []),
-      ...(scenario.applicationLink ? [`신청링크: ${scenario.applicationLink}`] : [])
+      ...(scenario.applicationLink ? [`📝 ${scenario.supportProgram || '해당 대출'} 신청은 한국주택금융공사 홈페이지에서 가능합니다`, `신청링크: ${scenario.applicationLink}`] : [])
     ]
   };
 }

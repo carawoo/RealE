@@ -21,7 +21,7 @@ type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
 // ===== 초기 메시지 =====
 const INITIAL_MSG: Msg = {
   role: "assistant",
-  text: '안녕하세요! 부동산 대출 상담을 도와드려요 🏠\n\n💡 **대출 시나리오 분석**을 원하시면:\n"월소득 500만원, 5억원 집 구입, 자기자본 1억원"\n처럼 구체적으로 알려주세요.\n\n📝 다른 상담: 전세↔월세 비교, LTV/DSR 계산, 정책자금 안내 등',
+  text: '안녕하세요! 부동산 대출 상담을 도와드려요 🏠\n\n💡 **대출 시나리오 분석**을 원하시면:\n"월소득 500만원, 5억원 집 구입, 자기자본 1억원"\n처럼 구체적으로 알려주세요.\n\n🏦 **전문 정책 상담**:\n"디딤돌 신혼부부 체증식 2.5억"\n"상환방식 비교해줘"\n\n📝 다른 상담: 전세↔월세 비교, LTV/DSR 계산, 정책자금 안내 등',
 };
 
 // ===== Supabase 클라이언트 =====
@@ -318,8 +318,9 @@ export default function Chat() {
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="application-link"
+                                  title="한국주택금융공사 홈페이지에서 해당 대출 상품을 찾아 신청해주세요"
                                 >
-                                  신청하기 →
+                                  홈페이지에서 신청하기 →
                                 </a>
                               </>
                             ) : n}

@@ -4,7 +4,10 @@ import {
   convertScenarioToCard, 
   LoanInputs,
   formatKRW,
-  parseWon
+  parseWon,
+  analyzeSpecificLoanPolicy,
+  REPAYMENT_TYPES,
+  formatPercent
 } from "../../../lib/loan-calculator";
 
 /**
@@ -224,6 +227,122 @@ function isLoanScenarioRequest(text: string, profile: Fields): boolean {
   return hasKeyword || hasProfile;
 }
 
+// 전문 정책 상담 요청인지 확인
+function isSpecificLoanPolicyRequest(text: string): boolean {
+  const t = text.toLowerCase();
+  const policyKeywords = [
+    "디딤돌", "체증식", "원리금균등", "원금균등", "상환방식", "상환 방식",
+    "신혼부부", "생애최초", "기금e든든", "모의심사", "고정금리", "변동금리"
+  ];
+  
+  return policyKeywords.some(keyword => t.includes(keyword));
+}
+
+// 전문 정책 상담 응답 생성
+function generateSpecificLoanPolicyResponse(text: string) {
+  const t = text.toLowerCase();
+  
+  // 디딤돌 대출 관련 질문 처리
+  if (t.includes("디딤돌")) {
+    let loanType = "일반";
+    let loanAmount = 250_000_000; // 기본 2.5억
+    let repaymentType: "원리금균등" | "체증식" | "원금균등" = "원리금균등";
+    
+    // 대출 유형 식별
+    if (t.includes("신혼부부")) loanType = "신혼부부";
+    if (t.includes("생애최초")) loanType = "생애최초";
+    
+    // 대출 금액 추출
+    const amountMatch = parseWon(text);
+    if (amountMatch) loanAmount = amountMatch;
+    
+    // 상환방식 식별
+    if (t.includes("체증식")) repaymentType = "체증식";
+    if (t.includes("원금균등")) repaymentType = "원금균등";
+    
+    const analysis = analyzeSpecificLoanPolicy(loanType, loanAmount, repaymentType);
+    if (!analysis) {
+      return {
+        content: "분석에 실패했어요. 다시 시도해 주세요.",
+        cards: null,
+        checklist: null
+      };
+    }
+    
+    const typeInfo = analysis.repaymentType;
+    const isGradual = repaymentType === "체증식";
+    
+    return {
+      content: `**디딤돌 ${loanType} 대출 상담** 🏠\n\n` +
+               `${analysis.explanation}\n\n` +
+               `💡 **상환방식별 특징**:\n` +
+               `• ${typeInfo.description}\n` +
+               `• 기본금리: ${formatPercent(analysis.baseRate)}\n` +
+               `• 적용금리: ${formatPercent(analysis.adjustedRate)}` +
+               (isGradual ? ` (체증식 +0.3%p 적용)` : ``) + `\n\n` +
+               `📋 **월 상환액**:\n` +
+               (isGradual ? 
+                 `• 초기 ${Math.ceil(5)} 년: 월 ${formatKRW(analysis.payments.initialPayment)}원 (이자만)\n` +
+                 `• 이후 기간: 월 ${formatKRW(analysis.payments.finalPayment || 0)}원 (원리금)`
+                 :
+                 `• 매월: ${formatKRW(analysis.payments.initialPayment)}원`
+               ),
+      cards: [{
+        title: `디딤돌대출(${loanType}) - ${repaymentType}`,
+        subtitle: typeInfo.description,
+        monthly: isGradual ? 
+          `초기 ${formatKRW(analysis.payments.initialPayment)}원 → 후기 ${formatKRW(analysis.payments.finalPayment || 0)}원` :
+          `월 ${formatKRW(analysis.payments.initialPayment)}원`,
+        totalInterest: `적용금리 ${formatPercent(analysis.adjustedRate)}`,
+        notes: [
+          `대출금액: ${formatKRW(loanAmount)}원`,
+          `기본금리: ${formatPercent(analysis.baseRate)}`,
+          ...(isGradual ? [`체증식 추가금리: +${formatPercent(typeInfo.interestRateAdjustment)}`] : []),
+          `최종적용금리: ${formatPercent(analysis.adjustedRate)}`,
+          `신청링크: https://www.hf.go.kr`
+        ]
+      }],
+      checklist: [
+        "기금e든든에서 최신 금리 재확인",
+        "개인 신용상태 및 소득증빙 준비",
+        "우대금리 적용 조건 확인 (신혼부부, 생애최초, 청약저축 등)",
+        isGradual ? "체증식 선택 시 후반기 상환부담 증가 고려" : "고정금리 vs 변동금리 선택 검토",
+        "타 은행 대출 조건과 비교 검토"
+      ]
+    };
+  }
+  
+  // 상환방식 비교 요청
+  if (t.includes("상환방식") || t.includes("상환 방식")) {
+    return {
+      content: `**대출 상환방식 비교** 📊\n\n` +
+               `디딤돌 대출에서 선택 가능한 3가지 상환방식을 비교해 드려요.\n\n` +
+               `💡 **중요**: 체증식 선택 시 고정금리에 0.3%p가 추가됩니다.`,
+      cards: REPAYMENT_TYPES.map(type => ({
+        title: type.type,
+        subtitle: type.description,
+        monthly: type.type === "체증식" ? "초기 부담 ↓ → 후기 부담 ↑" : 
+                type.type === "원금균등" ? "초기 부담 ↑ → 후기 부담 ↓" : "매월 동일",
+        totalInterest: type.interestRateAdjustment > 0 ? `금리 +${formatPercent(type.interestRateAdjustment)}` : "기본금리",
+        notes: [
+          `특징: ${type.description}`,
+          `금리조정: ${type.interestRateAdjustment > 0 ? `+${formatPercent(type.interestRateAdjustment)}` : '없음'}`,
+          ...type.advantages.map(adv => `✅ ${adv}`),
+          ...type.considerations.map(con => `⚠️ ${con}`)
+        ]
+      })),
+      checklist: [
+        "초기 현금흐름 vs 총 이자비용 고려",
+        "미래 소득증가 계획 반영",
+        "체증식 선택 시 금리 0.3%p 추가 비용 계산",
+        "가계 예산 및 재정 계획에 맞는 방식 선택"
+      ]
+    };
+  }
+  
+  return null;
+}
+
 // ---------- route ----------
 export async function POST(req: NextRequest) {
   try {
@@ -234,6 +353,14 @@ export async function POST(req: NextRequest) {
 
     if (isNumbersOnlyAsk(message)) {
       return NextResponse.json({ content: replyNumbersOnly(merged), cards: null, checklist: null });
+    }
+
+    // 전문 정책 상담 요청 확인 (우선순위 높음)
+    if (isSpecificLoanPolicyRequest(message)) {
+      const response = generateSpecificLoanPolicyResponse(message);
+      if (response) {
+        return NextResponse.json(response);
+      }
     }
 
     // 대출 시나리오 요청 확인
@@ -267,7 +394,7 @@ export async function POST(req: NextRequest) {
             "연소득 5천만원 이하", 
             "전세보증금 80% 한도",
             "우대조건 시 최저 1.0%",
-            "신청링크: https://www.hf.go.kr/hf/sub01/sub01_04_01.do"
+            "신청링크: https://www.hf.go.kr"
           ]
         }],
         checklist: [

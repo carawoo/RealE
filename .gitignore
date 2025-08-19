@@ -21,3 +21,4 @@ out/
 .env
 .env.local
 *.log
+.vercel
