@@ -8,13 +8,20 @@ import "./chat.css";
 
 // ===== 타입 =====
 type Role = "user" | "assistant";
-type Card = { title: string; subtitle?: string; monthly?: string; totalInterest?: string; notes?: string[] };
+type Card = { 
+  title: string; 
+  subtitle?: string; 
+  monthly?: string; 
+  totalInterest?: string; 
+  notes?: string[];
+  applicationLink?: string;
+};
 type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
 
 // ===== 초기 메시지 =====
 const INITIAL_MSG: Msg = {
   role: "assistant",
-  text: '안녕하세요! 무엇을 도와드릴까요? (예: "전세로 살지 매매가 나을지 고민이에요")',
+  text: '안녕하세요! 부동산 대출 상담을 도와드려요 🏠\n\n💡 **대출 시나리오 분석**을 원하시면:\n"월소득 500만원, 5억원 집 구입, 자기자본 1억원"\n처럼 구체적으로 알려주세요.\n\n📝 다른 상담: 전세↔월세 비교, LTV/DSR 계산, 정책자금 안내 등',
 };
 
 // ===== Supabase 클라이언트 =====
@@ -299,9 +306,25 @@ export default function Chat() {
                       <div className="title">{c.title}</div>
                       {c.subtitle && <div className="sub">{c.subtitle}</div>}
                       {c.monthly && <div className="big">{c.monthly}</div>}
-                      {c.totalInterest && <div>{c.totalInterest}</div>}
+                      {c.totalInterest && <div className="total-interest">{c.totalInterest}</div>}
                       {Array.isArray(c.notes) && c.notes.length > 0 && (
-                        <ul>{c.notes.map((n, ni) => <li key={ni}>{n}</li>)}</ul>
+                        <ul>{c.notes.map((n, ni) => (
+                          <li key={ni}>
+                            {n.includes('신청링크:') ? (
+                              <>
+                                {n.split('신청링크:')[0]}
+                                <a 
+                                  href={n.split('신청링크:')[1].trim()} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="application-link"
+                                >
+                                  신청하기 →
+                                </a>
+                              </>
+                            ) : n}
+                          </li>
+                        ))}</ul>
                       )}
                     </div>
                   ))}
