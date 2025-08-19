@@ -492,8 +492,91 @@ function generateSpecificLoanPolicyResponse(text: string) {
       };
     }
     
-    // 일반적인 디딤돌 질문 (자격, 한도, 기간 등)은 맥락 기반 응답으로 넘어감
-    // 이 부분은 아래 일반 대출 질문 처리 섹션에서 처리됨
+    // 일반적인 디딤돌 질문 (자격, 한도, 기간 등) 맥락 기반 처리
+    const context = questionContext;
+    const contextualStart = generateContextualResponse(context, "디딤돌 대출", {});
+    
+    let focusArea = "";
+    let detailInfo = "";
+    
+    // 질문 유형별 맞춤 정보
+    if (context.questionType === 'timeline') {
+      focusArea = `⏰ **처리 시간**:\n` +
+                 `• 표준: 2-3주 (서류 완비 기준)\n` +
+                 `• 빠른 처리: 기금e든든 사전심사 시 1-2주\n` +
+                 `• 복잡한 경우: 최대 4주\n\n`;
+    } else if (context.questionType === 'requirements') {
+      focusArea = `✅ **자격 조건** (${context.experienceLevel === 'first_time' ? '처음 신청자 중심' : '상세'}):\n` +
+                 (context.experienceLevel === 'first_time' ? 
+                   `• **핵심 3요소**: 무주택 + 연소득 7천만원 이하 + 주택가격 6억원 이하\n` +
+                   `• **무주택 확인**: 본인과 배우자 모두 전국 기준 무주택\n` +
+                   `• **소득 계산**: 부부합산 연소득 (전년도 기준)\n` +
+                   `• **주택가격**: 실거래가 또는 감정가 기준\n\n`
+                   :
+                   `• 무주택 세대주 (부부합산 전국 기준)\n` +
+                   `• 연소득 7천만원 이하 (부부합산)\n` +
+                   `• 주택가격 6억원 이하\n` +
+                   `• 생애최초/신혼부부 등 우대조건 추가 확인\n\n`
+                 );
+    } else if (context.questionType === 'calculation') {
+      focusArea = `💰 **대출 한도 및 금리** (${CURRENT_LOAN_POLICY.year}년 기준):\n` +
+                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원\n` +
+                 `• LTV 최대: ${Math.max(...Object.values(CURRENT_LOAN_POLICY.ltv.bogeumjari.metro))}% (비규제지역 기준)\n` +
+                 `• 현재금리: 연 3.20~4.05% (변동금리)\n` +
+                 `• 우대금리: 최대 0.5%p 차감 가능\n\n`;
+    }
+    
+    // 경험 수준별 상세 정보
+    if (context.experienceLevel === 'first_time') {
+      detailInfo = `📋 **첫 신청자 필수 준비사항**:\n` +
+                   `1. 기금e든든에서 모의심사 (자격확인)\n` +
+                   `2. 필수서류 준비: 소득증명서, 재직증명서\n` +
+                   `3. 추가서류: 주민등록등본, 건보자격확인서\n` +
+                   `4. 매물서류: 매매계약서, 등기부등본\n` +
+                   `5. 우대조건 확인: 신혼부부, 생애최초 등\n\n`;
+    } else if (context.experienceLevel === 'experienced') {
+      detailInfo = `🔄 **기존 경험자 체크포인트**:\n` +
+                   `• 이전 대출과 DSR 중복 확인\n` +
+                   `• 신용등급 변동사항 점검\n` +
+                   `• 우대금리 조건 재확인\n` +
+                   `• 상환방식 선택 (원리금균등/체증식/원금균등)\n\n`;
+    }
+    
+    const urgencyNote = context.urgency === 'immediate' ? 
+      `⚡ **긴급 처리 시**: 모든 서류를 미리 완비하고 기금e든든 모의심사를 완료한 상태에서 은행 방문하세요.\n` :
+      ``;
+    
+    return {
+      content: contextualStart +
+               focusArea +
+               detailInfo +
+               urgencyNote +
+               getCurrentPolicyDisclaimer(),
+      cards: context.questionType === 'calculation' ? [{
+        title: "디딤돌 대출 한도 계산",
+        subtitle: `최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원`,
+        monthly: "연 3.20~4.05%",
+        totalInterest: "우대 시 최대 0.5%p 할인",
+        notes: [
+          `LTV 최대 ${Math.max(...Object.values(CURRENT_LOAN_POLICY.ltv.bogeumjari.metro))}% (지역별 차등)`,
+          "무주택 세대주 대상",
+          "연소득 7천만원 이하",
+          "신혼부부/생애최초 우대",
+          "상환방식: 원리금균등/체증식/원금균등"
+        ]
+      }] : null,
+      checklist: context.experienceLevel === 'first_time' ? [
+        "무주택 여부 정확히 확인 (전국 기준)",
+        "부부합산 연소득 7천만원 이하 확인",
+        "기금e든든 모의심사로 사전 자격확인",
+        "우대금리 적용 조건 미리 파악"
+      ] : [
+        "기존 대출 현황 및 DSR 재계산",
+        "신용등급 최신 상태 확인",
+        "우대금리 조건 변경사항 체크",
+        "상환방식별 월 상환액 비교"
+      ]
+    };
   }
   
   // 보금자리론 생애최초 질문 처리
