@@ -273,6 +273,47 @@ function isSpecificLoanPolicyRequest(text: string): boolean {
   return hasPolicyKeyword || (hasLoanTerm && hasGeneralPattern);
 }
 
+// 최신 대출 정책 데이터 (동적 관리)
+const CURRENT_LOAN_POLICY = {
+  year: 2025,
+  lastUpdated: "2025-01-15",
+  ltv: {
+    bogeumjari: {
+      metro: { apartment: 70, nonApartment: 65 }, // 수도권: 아파트 70%, 아파트외 65%
+      nonMetro: { apartment: 80, nonApartment: 75 } // 비수도권: 아파트 80%, 아파트외 75%
+    },
+    firstTime: {
+      metro: { apartment: 80, nonApartment: 75 }, // 생애최초는 10%p 우대
+      nonMetro: { apartment: 80, nonApartment: 75 }
+    }
+  },
+  dsr: { max: 70, firstTime: 70 },
+  maxAmount: {
+    bogeumjari: 250_000_000, // 2.5억
+    jeonse: 200_000_000      // 2억
+  }
+};
+
+// 최신 정보 확인 알림
+function getCurrentPolicyDisclaimer() {
+  return `\n\n📌 **정보 업데이트**: ${CURRENT_LOAN_POLICY.lastUpdated} 기준\n` +
+         `💡 **최신 정보**: [한국주택금융공사](https://www.hf.go.kr) | [기금e든든](https://www.hf.go.kr/hf/sub02/sub01_05_01.do)\n` +
+         `⚠️ 정책 변경 가능성이 있으니 신청 전 반드시 확인하세요.`;
+}
+
+// 정책 데이터 업데이트 필요 체크 (개발자용)
+function checkPolicyDataFreshness() {
+  const now = new Date();
+  const lastUpdate = new Date(CURRENT_LOAN_POLICY.lastUpdated);
+  const daysDiff = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysDiff > 30) {
+    console.warn(`⚠️ Policy data is ${daysDiff} days old. Consider updating CURRENT_LOAN_POLICY.`);
+  }
+  
+  return daysDiff;
+}
+
 // 전문 정책 상담 응답 생성
 function generateSpecificLoanPolicyResponse(text: string) {
   const t = text.toLowerCase();
@@ -354,39 +395,44 @@ function generateSpecificLoanPolicyResponse(text: string) {
     const isDeduction = t.includes("차감") || t.includes("5%");
     const isSeoulMetro = t.includes("수도권");
     
+    const policy = CURRENT_LOAN_POLICY;
+    const metroApt = policy.ltv.firstTime.metro.apartment;
+    const metroNonApt = policy.ltv.firstTime.metro.nonApartment;
+    const nonMetroApt = policy.ltv.firstTime.nonMetro.apartment;
+    
     return {
       content: `**보금자리론 생애최초 대출 상담** 🏠\n\n` +
-               `📋 **현재 LTV 한도 (2024년 기준)**:\n` +
-               `• **수도권**: 70% (기존 80%에서 하향 조정)\n` +
-               `• **비수도권**: 80% 유지\n\n` +
-               `🏢 **주택유형별 LTV 차감**:\n` +
-               `• **아파트**: 차감 없음 (70% 그대로)\n` +
-               `• **아파트 외 주택** (연립, 다세대, 단독 등): **5%p 차감**\n` +
-               `  → 수도권 기준 65% (70% - 5%)\n\n` +
+               `📋 **현재 LTV 한도 (${policy.year}년 기준)**:\n` +
+               `• **수도권**: 아파트 ${metroApt}%, 아파트 외 ${metroNonApt}%\n` +
+               `• **비수도권**: 아파트 ${nonMetroApt}%, 아파트 외 ${policy.ltv.firstTime.nonMetro.nonApartment}%\n\n` +
+               `🏢 **주택유형별 LTV 적용**:\n` +
+               `• **아파트**: ${metroApt}% (수도권 기준)\n` +
+               `• **아파트 외 주택** (연립, 다세대, 단독): ${metroNonApt}%\n` +
+               `  → 아파트 대비 ${metroApt - metroNonApt}%p 차감\n\n` +
                `💡 **생애최초 특례 혜택**:\n` +
-               `• 일반 보금자리론과 동일한 차감 규칙 적용\n` +
-               `• 아파트 외 주택도 5%p 차감됩니다\n` +
-               `• 생애최초라고 해서 70% 전부를 받을 수는 없어요\n\n` +
+               `• 일반 보금자리론 대비 우대 적용\n` +
+               `• 최대 ${Math.max(...Object.values(policy.ltv.firstTime.metro), ...Object.values(policy.ltv.firstTime.nonMetro))}% 한도\n` +
+               `• DSR ${policy.dsr.firstTime}% 이하 유지 필요\n\n` +
                `⚠️ **주의사항**:\n` +
-               `규제 이후 아파트 외 주택 구매 시 자기자본을 더 많이 준비해야 합니다.`,
+               `지역 및 주택유형에 따라 LTV 차이가 있으니 정확한 한도는 개별 상담 필요${getCurrentPolicyDisclaimer()}`,
       cards: [{
         title: "보금자리론 생애최초 LTV 한도",
-        subtitle: "2024년 대출규제 이후 기준",
+        subtitle: `${policy.year}년 최신 기준`,
         monthly: "수도권 기준",
-        totalInterest: "최대 65% (아파트 외)",
+        totalInterest: `최대 ${metroApt}% (아파트)`,
         notes: [
-          "아파트: 70% (차감 없음)",
-          "아파트 외: 65% (5%p 차감)",
-          "생애최초도 동일 규칙 적용",
-          "비수도권: +10%p 우대",
+          `아파트: ${metroApt}% (수도권), ${nonMetroApt}% (비수도권)`,
+          `아파트 외: ${metroNonApt}% (수도권), ${policy.ltv.firstTime.nonMetro.nonApartment}% (비수도권)`,
+          "생애최초 특례 우대 적용",
+          `DSR 최대 ${policy.dsr.firstTime}%`,
           "금리: 연 3.2~4.0% (변동금리)"
         ]
       }],
       checklist: [
-        "아파트 vs 아파트 외 주택 LTV 차이 5%p 확인",
-        "수도권 기준 자기자본 최소 35% 준비 (아파트 외)",
+        `아파트 vs 아파트 외 주택 LTV 차이 ${metroApt - metroNonApt}%p 확인`,
+        `수도권 기준 자기자본 최소 ${100 - metroNonApt}% 준비 (아파트 외)`,
         "생애최초 자격조건 재확인 (무주택 세대주, 소득기준 등)",
-        "DSR 70% 이하 유지 가능한지 소득 대비 상환능력 점검"
+        `DSR ${policy.dsr.firstTime}% 이하 유지 가능한지 소득 대비 상환능력 점검`
       ]
     };
   }
@@ -442,7 +488,7 @@ function generateSpecificLoanPolicyResponse(text: string) {
       return {
         content: `**디딤돌 대출 완벽 가이드** 🏠\n\n` +
                  `⏰ **신청 기간**: 상시 접수 (2-3주 소요)\n` +
-                 `💰 **대출 한도**: 최대 2.5억원 (LTV 70%)\n` +
+                 `💰 **대출 한도**: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원 (LTV 최대 ${Math.max(...Object.values(CURRENT_LOAN_POLICY.ltv.bogeumjari.metro))}%)\n` +
                  `📊 **금리**: 연 3.20~4.05% (변동금리)\n\n` +
                  `✅ **신청 자격**:\n` +
                  `• 무주택 세대주 (부부합산)\n` +
@@ -677,13 +723,13 @@ export async function POST(req: NextRequest) {
         "중소기업 취업 청년 전월세 보증금 대출(일명 '중기청 100')은 **2024년 말 종료**되어 더 이상 신청할 수 없습니다.\n\n" +
         "💡 **대안 프로그램**: '청년 버팀목 전세자금대출'로 통합 운영\n" +
         "• 대상: 만 19~34세 무주택 세대주\n" +
-        "• 한도: 최대 2억원 (전세보증금의 80%)\n" +
+        `• 한도: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.jeonse)}원 (전세보증금의 80%)\n` +
         "• 금리: 연 2.2~3.3% (우대조건 시 최저 1.0%)\n" +
         "• 소득: 연 5천만원 이하",
         cards: [{
           title: "청년 버팀목 전세자금대출",
           subtitle: "중기청 대출 통합 운영 프로그램",
-          monthly: "최대 2억원",
+          monthly: `최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.jeonse)}원`,
           totalInterest: "연 2.2~3.3%",
           notes: [
             "만 19~34세 무주택 세대주",
