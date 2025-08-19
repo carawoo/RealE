@@ -629,8 +629,10 @@ function generateSpecificLoanPolicyResponse(text: string) {
   }
   
   // 보금자리론 신청 기간/절차 질문 처리 (맥락 기반)
+  // 단, LTV/한도 관련 질의는 여기서 제외하여 별도 LTV 응답으로 라우팅
   if ((t.includes("보금자리") || t.includes("보금자리론")) && 
-      (t.includes("기간") || t.includes("신청") || t.includes("절차") || t.includes("얼마") || t.includes("언제"))) {
+      (t.includes("기간") || t.includes("신청") || t.includes("절차") || t.includes("얼마") || t.includes("언제")) &&
+      !(/ltv|한도/.test(t))) {
     
     const context = questionContext;
     const contextualStart = generateContextualResponse(context, "보금자리론", {});
@@ -726,6 +728,43 @@ function generateSpecificLoanPolicyResponse(text: string) {
         "우대금리 적용 조건 재확인",
         "취급은행별 처리기간 문의",
         "신용등급 및 DSR 사전 점검"
+      ]
+    };
+  }
+
+  // 보금자리론 일반 LTV 질의 (생애최초 아님) - 지역/유형 기준으로 퍼센트 안내
+  if ((t.includes("보금자리") || t.includes("보금자리론")) &&
+      !t.includes("생애최초") &&
+      (/ltv|한도/.test(t)) &&
+      /(서울|경기|인천|수도권|부산|대구|대전|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)/.test(t)) {
+    const isMetro = /(서울|경기|인천|수도권)/.test(t);
+    const policy = CURRENT_LOAN_POLICY;
+    const regionData = isMetro ? policy.ltv.bogeumjari.metro : policy.ltv.bogeumjari.nonMetro;
+    const apt = regionData.apartment;
+    const nonApt = regionData.nonApartment;
+
+    return {
+      content: `**보금자리론 LTV 안내** 🏠\n\n` +
+               `📍 지역: ${isMetro ? '수도권 규제지역' : '비규제지역'}\n` +
+               `🏢 주택유형별 LTV:\n` +
+               `• 아파트: ${apt}%\n` +
+               `• 아파트 외 주택: ${nonApt}% (아파트 대비 ${apt - nonApt}%p 차감)\n\n` +
+               `💡 참고: 생애최초는 별도 우대 기준이 적용됩니다.` + getCurrentPolicyDisclaimer(),
+      cards: [{
+        title: `보금자리론 LTV (${isMetro ? '수도권' : '비수도권'})`,
+        subtitle: `일반 대상 기준`,
+        monthly: `아파트 ${apt}%`,
+        totalInterest: `아파트 외 ${nonApt}%`,
+        notes: [
+          `${isMetro ? '규제지역' : '비규제지역'} 기준`,
+          `아파트 외 주택은 ${apt - nonApt}%p 차감`,
+          `절대상한: ${formatKRW(policy.maxAmount.bogeumjari)}원`
+        ]
+      }],
+      checklist: [
+        '정확한 금액 산출을 위해 매매가 확인',
+        '주택유형(아파트/아파트 외) 확인',
+        '생애최초 해당 여부 확인'
       ]
     };
   }
