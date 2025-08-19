@@ -51,11 +51,17 @@ body { background:#0f0f23; color:#e5e7eb; }
 
 /* 결과 카드 */
 .result-cards{ max-width: 80%;   min-width: 50%;  margin:16px auto 0; display:grid; gap:12px;  margin: 12px 0; }
-.result-card{ background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb; }
-.result-card .title{ font-weight:600; }
-.result-card .sub{ color:#9ca3af; font-size:14px; }
-.result-card .big{ margin-top:8px; font-size:18px; }
-.result-card ul{ margin-top:8px; padding-left:18px; }
+.result-card{ background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; color:#f9fafb; position:relative; transition:all 0.3s ease; }
+.result-card:hover{ border-color:#8b5cf6; box-shadow:0 4px 20px rgba(139,92,246,0.15); }
+.result-card .title{ font-weight:600; font-size:16px; color:#f9fafb; margin-bottom:4px; }
+.result-card .sub{ color:#9ca3af; font-size:14px; margin-bottom:8px; }
+.result-card .big{ margin-top:8px; font-size:20px; font-weight:600; color:#06b6d4; }
+.result-card .total-interest{ margin-top:4px; font-size:14px; color:#fbbf24; }
+.result-card ul{ margin-top:12px; padding-left:18px; list-style:none; }
+.result-card ul li{ position:relative; margin-bottom:4px; font-size:14px; color:#d1d5db; }
+.result-card ul li::before{ content:'•'; color:#8b5cf6; margin-right:8px; }
+.application-link{ color:#06b6d4; text-decoration:none; font-weight:600; margin-left:8px; transition:color 0.3s ease; }
+.application-link:hover{ color:#0ea5e9; text-decoration:underline; }
 .share-box{ margin-top:12px; display:flex; gap:8px; align-items:center; }
 .share-input{ flex:1; padding:8px; border-radius:8px; border:1px solid #4b5563; background:#111827; color:#e5e7eb; }
 
