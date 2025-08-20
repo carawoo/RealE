@@ -41,6 +41,7 @@ import {
   generateSpecificLoanPolicyResponse,
   generateLoanConsultationResponse
 } from "../../../lib/response-generators";
+import { generateKnowledgeResponse } from "../../../lib/knowledge";
 
 /**
  * 이 파일은 다음을 해결합니다.
@@ -205,7 +206,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 대출 상담 및 감정평가 관련 응답 처리 (상담원 스타일)
+    // 0) 지식형 질문 처리 (정의/차이/예방법/어디서 받나/자본금 기준 전월세/최고가 등)
+    const knowledge = generateKnowledgeResponse(message, mergedProfile);
+    if (knowledge) {
+      const response = { ...knowledge, fields: mergedProfile };
+      await saveMessageToSupabase(finalConversationId, "assistant", knowledge.content, mergedProfile);
+      return NextResponse.json(response);
+    }
+
+    // 1) 대출 상담 및 감정평가 관련 응답 처리 (상담원 스타일)
     const consultationResponse = generateLoanConsultationResponse(message, mergedProfile);
     if (consultationResponse) {
       const response = {
@@ -219,7 +228,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 구매 상담 처리 (전세→월세 환산보다 우선)
+    // 2) 구매 상담 처리 (전세→월세 환산보다 우선)
     const hasPurchaseIntent = /사고싶|구매|구입|매수|집.*사|아파트.*사|주택.*사|살.*수|살.*있/.test(message.toLowerCase());
     const hasLocationIntent = /서울|부산|대구|인천|광주|대전|울산|경기|강남|강북|송파|마포|서초|분당|성남|하남|용인|수원|고양|의정부/.test(message);
     
@@ -327,7 +336,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 전세→월세 환산 처리 (맥락 기반 - 매매 관련 질문은 제외됨)
+    // 3) 전세→월세 환산 처리 (맥락 기반 - 매매 관련 질문은 제외됨)
     const jeonseResponse = replyJeonseToMonthly(message);
     if (jeonseResponse) {
       const response = {
