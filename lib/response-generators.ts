@@ -584,16 +584,14 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
     }
   }
   
-  content += `🤝 **상담원 조언**:\n`;
-  content += `• 포기하지 마세요! 이런 경우가 많아요.\n`;
-  content += `• 다른 은행이나 정책자금도 시도해보세요.\n`;
-  content += `• 전문가와 상담하면 더 좋은 방법을 찾을 수 있어요.\n`;
-  content += `• 필요하시면 언제든 다시 문의해 주세요! 💪\n\n`;
-  
-  content += `📞 **즉시 도움받기**:\n`;
-  content += `• 한국주택금융공사: 1661-8300\n`;
-  content += `• 기금e든든: https://www.hf.go.kr\n`;
-  content += `• 가까운 은행 지점 상담\n`;
+  // 맥락 기반 마무리 제안 (비템플릿)
+  const closing: string[] = [];
+  closing.push('다음 중 무엇부터 도와드릴까요?');
+  closing.push('1) 다른 은행/정책자금 경로 안내');
+  closing.push('2) 서류 보완 체크리스트 점검');
+  closing.push('3) 감정평가 재검토/리어필 문의 방법');
+  closing.push('4) 대안 시나리오 재계산(기간·상환방식 포함)');
+  content += `\n${closing.join('\n')}`;
   
   return {
     content,
