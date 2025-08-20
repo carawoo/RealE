@@ -82,7 +82,7 @@ export function generateContextualResponse(context: ReturnType<typeof analyzeQue
   return responseStart;
 }
 
-// 전문 정책 상담 응답 생성 (기본 구조)
+// 전문 정책 상담 응답 생성
 export function generateSpecificLoanPolicyResponse(text: string) {
   const t = text.toLowerCase();
   const questionContext = analyzeQuestionContext(text);
@@ -91,11 +91,71 @@ export function generateSpecificLoanPolicyResponse(text: string) {
   if (t.includes("디딤돌")) {
     // 상환방식 관련 구체적 질문인지 확인
     if (isRepaymentTypeQuestion(t)) {
-      // 상환방식 계산 로직 (기존과 동일)
+      let loanType = "일반";
+      let loanAmount = 250_000_000; // 기본 2.5억
+      let repaymentType: "원리금균등" | "체증식" | "원금균등" = "원리금균등";
+      
+      // 대출 유형 식별
+      if (t.includes("신혼부부")) loanType = "신혼부부";
+      if (t.includes("생애최초")) loanType = "생애최초";
+      
+      // 대출 금액 추출
+      const amountMatch = text.match(/(\d+)억/);
+      if (amountMatch) loanAmount = parseInt(amountMatch[1]) * 100_000_000;
+      
+      // 상환방식 식별
+      if (t.includes("체증식")) repaymentType = "체증식";
+      if (t.includes("원금균등")) repaymentType = "원금균등";
+      
+      const analysis = analyzeSpecificLoanPolicy(loanType, loanAmount, repaymentType);
+      if (!analysis) {
+        return {
+          content: "분석에 실패했어요. 다시 시도해 주세요.",
+          cards: null,
+          checklist: null
+        };
+      }
+      
+      const typeInfo = analysis.repaymentType;
+      const isGradual = repaymentType === "체증식";
+      
       return {
-        content: "디딤돌 상환방식 계산 응답",
-        cards: null,
-        checklist: null
+        content: `**디딤돌 ${loanType} 대출 상담** 🏠\n\n` +
+                 `${analysis.explanation}\n\n` +
+                 `💡 **상환방식별 특징**:\n` +
+                 `• ${typeInfo.description}\n` +
+                 `• 기본금리: ${formatPercent(analysis.baseRate)}\n` +
+                 `• 적용금리: ${formatPercent(analysis.adjustedRate)}` +
+                 (isGradual ? ` (체증식 +0.3%p 적용)` : ``) + `\n\n` +
+                 `📋 **월 상환액**:\n` +
+                 (isGradual ? 
+                   `• 초기 ${Math.ceil(5)} 년: 월 ${formatKRW(analysis.payments.initialPayment)}원 (이자만)\n` +
+                   `• 이후 기간: 월 ${formatKRW(analysis.payments.finalPayment || 0)}원 (원리금)`
+                   :
+                   `• 매월: ${formatKRW(analysis.payments.initialPayment)}원`
+                 ),
+        cards: [{
+          title: `디딤돌대출(${loanType}) - ${repaymentType}`,
+          subtitle: typeInfo.description,
+          monthly: isGradual ? 
+            `초기 ${formatKRW(analysis.payments.initialPayment)}원 → 후기 ${formatKRW(analysis.payments.finalPayment || 0)}원` :
+            `월 ${formatKRW(analysis.payments.initialPayment)}원`,
+          totalInterest: `적용금리 ${formatPercent(analysis.adjustedRate)}`,
+          notes: [
+            `대출금액: ${formatKRW(loanAmount)}원`,
+            `기본금리: ${formatPercent(analysis.baseRate)}`,
+            ...(isGradual ? [`체증식 추가금리: +${formatPercent(typeInfo.interestRateAdjustment)}`] : []),
+            `최종적용금리: ${formatPercent(analysis.adjustedRate)}`,
+            `신청링크: https://www.hf.go.kr`
+          ]
+        }],
+        checklist: [
+          "기금e든든에서 최신 금리 재확인",
+          "개인 신용상태 및 소득증빙 준비",
+          "우대금리 적용 조건 확인 (신혼부부, 생애최초, 청약저축 등)",
+          isGradual ? "체증식 선택 시 후반기 상환부담 증가 고려" : "고정금리 vs 변동금리 선택 검토",
+          "타 은행 대출 조건과 비교 검토"
+        ]
       };
     }
     
@@ -103,23 +163,272 @@ export function generateSpecificLoanPolicyResponse(text: string) {
     const context = questionContext;
     const contextualStart = generateContextualResponse(context, "디딤돌 대출", {});
     
+    let focusArea = "";
+    let detailInfo = "";
+    
+    // 질문 유형별 맞춤 정보
+    if (context.questionType === 'timeline') {
+      focusArea = `⏰ **처리 시간**:\n` +
+                 `• 표준: 2-3주 (서류 완비 기준)\n` +
+                 `• 빠른 처리: 기금e든든 사전심사 시 1-2주\n` +
+                 `• 복잡한 경우: 최대 4주\n\n`;
+    } else if (context.questionType === 'requirements') {
+      focusArea = `✅ **자격 조건** (${context.experienceLevel === 'first_time' ? '처음 신청자 중심' : '상세'}):\n` +
+                 (context.experienceLevel === 'first_time' ? 
+                   `• **핵심 3요소**: 무주택 + 연소득 7천만원 이하 + 주택가격 6억원 이하\n` +
+                   `• **무주택 확인**: 본인과 배우자 모두 전국 기준 무주택\n` +
+                   `• **소득 계산**: 부부합산 연소득 (전년도 기준)\n` +
+                   `• **주택가격**: 실거래가 또는 감정가 기준\n\n`
+                   :
+                   `• 무주택 세대주 (부부합산 전국 기준)\n` +
+                   `• 연소득 7천만원 이하 (부부합산)\n` +
+                   `• 주택가격 6억원 이하\n` +
+                   `• 생애최초/신혼부부 등 우대조건 추가 확인\n\n`
+                 );
+    } else if (context.questionType === 'calculation') {
+      focusArea = `💰 **대출 한도 및 금리** (${CURRENT_LOAN_POLICY.year}년 기준):\n` +
+                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원\n` +
+                 `• LTV 최대: ${Math.max(...Object.values(CURRENT_LOAN_POLICY.ltv.bogeumjari.metro))}% (비규제지역 기준)\n` +
+                 `• 현재금리: 연 3.20~4.05% (변동금리)\n` +
+                 `• 우대금리: 최대 0.5%p 차감 가능\n\n`;
+    }
+    
+    // 경험 수준별 상세 정보
+    if (context.experienceLevel === 'first_time') {
+      detailInfo = `📋 **첫 신청자 필수 준비사항**:\n` +
+                   `1. 기금e든든에서 모의심사 (자격확인)\n` +
+                   `2. 필수서류 준비: 소득증명서, 재직증명서\n` +
+                   `3. 추가서류: 주민등록등본, 건보자격확인서\n` +
+                   `4. 매물서류: 매매계약서, 등기부등본\n` +
+                   `5. 우대조건 확인: 신혼부부, 생애최초 등\n\n`;
+    } else if (context.experienceLevel === 'experienced') {
+      detailInfo = `🔄 **기존 경험자 체크포인트**:\n` +
+                   `• 이전 대출과 DSR 중복 확인\n` +
+                   `• 신용등급 변동사항 점검\n` +
+                   `• 우대금리 조건 재확인\n` +
+                   `• 상환방식 선택 (원리금균등/체증식/원금균등)\n\n`;
+    }
+    
+    const urgencyNote = context.urgency === 'immediate' ? 
+      `⚡ **긴급 처리 시**: 모든 서류를 미리 완비하고 기금e든든 모의심사를 완료한 상태에서 은행 방문하세요.\n` :
+      ``;
+    
     return {
-      content: contextualStart + "디딤돌 대출 상담 내용",
-      cards: null,
-      checklist: null
+      content: contextualStart +
+               focusArea +
+               detailInfo +
+               urgencyNote +
+               getCurrentPolicyDisclaimer(),
+      cards: context.questionType === 'calculation' ? [{
+        title: "디딤돌 대출 한도 계산",
+        subtitle: `최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원`,
+        monthly: "연 3.20~4.05%",
+        totalInterest: "우대 시 최대 0.5%p 할인",
+        notes: [
+          `LTV 최대 ${Math.max(...Object.values(CURRENT_LOAN_POLICY.ltv.bogeumjari.metro))}% (지역별 차등)`,
+          "무주택 세대주 대상",
+          "연소득 7천만원 이하",
+          "신혼부부/생애최초 우대",
+          "상환방식: 원리금균등/체증식/원금균등"
+        ]
+      }] : null,
+      checklist: context.experienceLevel === 'first_time' ? [
+        "무주택 여부 정확히 확인 (전국 기준)",
+        "부부합산 연소득 7천만원 이하 확인",
+        "기금e든든 모의심사로 사전 자격확인",
+        "우대금리 적용 조건 미리 파악"
+      ] : [
+        "기존 대출 현황 및 DSR 재계산",
+        "신용등급 최신 상태 확인",
+        "우대금리 조건 변경사항 체크",
+        "상환방식별 월 상환액 비교"
+      ]
     };
   }
   
   // 보금자리론 생애최초 질문 처리
   if ((t.includes("보금자리") || t.includes("보금자리론")) && t.includes("생애최초")) {
+    const policy = CURRENT_LOAN_POLICY;
+    const metroApt = policy.ltv.firstTime.metro.apartment;
+    const metroNonApt = policy.ltv.firstTime.metro.nonApartment;
+    const nonMetroApt = policy.ltv.firstTime.nonMetro.apartment;
+    
     return {
-      content: "보금자리론 생애최초 상담 내용",
-      cards: null,
-      checklist: null
+      content: `**보금자리론 생애최초 대출 상담** 🏠\n\n` +
+               `📋 **현재 LTV 한도 (${policy.year}년 기준)**:\n` +
+               `• **수도권**: 아파트 ${metroApt}%, 아파트 외 ${metroNonApt}%\n` +
+               `• **비수도권**: 아파트 ${nonMetroApt}%, 아파트 외 ${policy.ltv.firstTime.nonMetro.nonApartment}%\n\n` +
+               `🏢 **주택유형별 LTV 적용**:\n` +
+               `• **아파트**: ${metroApt}% (수도권 기준)\n` +
+               `• **아파트 외 주택** (연립, 다세대, 단독): ${metroNonApt}%\n` +
+               `  → 아파트 대비 ${metroApt - metroNonApt}%p 차감\n\n` +
+               `💡 **생애최초 특례 혜택**:\n` +
+               `• 일반 보금자리론 대비 우대 적용\n` +
+               `• 최대 ${Math.max(...Object.values(policy.ltv.firstTime.metro), ...Object.values(policy.ltv.firstTime.nonMetro))}% 한도\n` +
+               `• DSR ${policy.dsr.firstTimeLimit}% 이하 유지 필요\n\n` +
+               `⚠️ **주의사항**:\n` +
+               `지역 및 주택유형에 따라 LTV 차이가 있으니 정확한 한도는 개별 상담 필요${getCurrentPolicyDisclaimer()}`,
+      cards: [{
+        title: "보금자리론 생애최초 LTV 한도",
+        subtitle: `${policy.year}년 최신 기준`,
+        monthly: "수도권 기준",
+        totalInterest: `최대 ${metroApt}% (아파트)`,
+        notes: [
+          `아파트: ${metroApt}% (수도권), ${nonMetroApt}% (비수도권)`,
+          `아파트 외: ${metroNonApt}% (수도권), ${policy.ltv.firstTime.nonMetro.nonApartment}% (비수도권)`,
+          "생애최초 특례 우대 적용",
+          `DSR 최대 ${policy.dsr.firstTimeLimit}%`,
+          "금리: 연 3.2~4.0% (변동금리)"
+        ]
+      }],
+      checklist: [
+        `아파트 vs 아파트 외 주택 LTV 차이 ${metroApt - metroNonApt}%p 확인`,
+        `수도권 기준 자기자본 최소 ${100 - metroNonApt}% 준비 (아파트 외)`,
+        "생애최초 자격조건 재확인 (무주택 세대주, 소득기준 등)",
+        `DSR ${policy.dsr.firstTimeLimit}% 이하 유지 가능한지 소득 대비 상환능력 점검`
+      ]
     };
   }
   
-  // 기타 정책 상담 응답들...
-  
+  // 보금자리론 신청 기간/절차 질문 처리 (맥락 기반)
+  if ((t.includes("보금자리") || t.includes("보금자리론")) && 
+      (t.includes("기간") || t.includes("신청") || t.includes("절차") || t.includes("얼마") || t.includes("언제")) &&
+      !(/ltv|한도/.test(t))) {
+    
+    const context = questionContext;
+    const contextualStart = generateContextualResponse(context, "보금자리론", {});
+    
+    let timelineInfo = "";
+    let procedureInfo = "";
+    let urgentTips = "";
+    
+    // 질문 유형에 따른 맞춤 응답
+    if (context.questionType === 'timeline') {
+      // 시간/기간에 집중한 질문
+      if (context.urgency === 'immediate') {
+        timelineInfo = `⚡ **긴급 신청 시**:\n` +
+                      `• 서류 완비 시 최단 **2주** 가능\n` +
+                      `• 모든 서류를 미리 준비하고 은행 방문\n` +
+                      `• 기금e든든 사전심사로 1-2일 단축\n\n`;
+      } else {
+        timelineInfo = `📅 **표준 처리기간**:\n` +
+                      `• 일반적으로 **2-3주 소요** (서류 완비 기준)\n` +
+                      `• 계절별 차이: 연말/연초 더 오래 걸림\n` +
+                      `• 심사 복잡도에 따라 1-4주 범위\n\n`;
+      }
+    } else if (context.questionType === 'application_process') {
+      // 절차/과정에 집중한 질문
+      procedureInfo = `🔄 **신청 절차 (단계별 안내)** (${context.experienceLevel === 'first_time' ? '처음 신청자용' : '경험자 핵심 포인트'}):\n` +
+                     (context.experienceLevel === 'first_time' ? 
+                       `1️⃣ **사전 준비**: 소득증명서, 재직증명서 준비\n` +
+                       `2️⃣ **자격 확인**: 기금e든든에서 모의심사\n` +
+                       `3️⃣ **은행 선택**: 우대금리 조건 비교\n` +
+                       `4️⃣ **서류 제출**: 취급은행 방문 신청\n` +
+                       `5️⃣ **심사 대기**: 3-7일 소요\n` +
+                       `6️⃣ **승인 후 실행**: 계약 및 실행\n\n`
+                       :
+                       `• 서류 접수 → 심사 → 승인 → 실행 (단계별)\n` +
+                       `• 각 단계별 3-7일 소요\n` +
+                       `• 병행 가능: 모의심사와 서류준비\n\n`
+                     );
+    }
+    
+    // 긴급성에 따른 팁
+    if (context.urgency === 'immediate') {
+      urgentTips = `🚀 **빠른 진행 필수 팁**:\n` +
+                   `• 모든 서류를 사전에 완벽 준비\n` +
+                   `• 기금e든든 모의심사 먼저 완료\n` +
+                   `• 은행에 미리 전화로 빠른 처리 요청\n` +
+                   `• 오전 일찍 방문하여 당일 접수\n\n`;
+    } else if (context.experienceLevel === 'first_time') {
+      urgentTips = `💡 **첫 신청자 꿀팁**:\n` +
+                   `• 기금e든든에서 사전 모의심사 필수\n` +
+                   `• 여러 은행 조건 비교 후 선택\n` +
+                   `• 서류 부족 시 재방문 하지 않도록 체크리스트 확인\n` +
+                   `• 우대금리 조건(신혼부부, 생애최초) 미리 확인\n\n`;
+    }
+    
+    const seasonalNote = new Date().getMonth() >= 10 || new Date().getMonth() <= 1 ? 
+      `⚠️ **연말연초 주의**: 현재 신청이 몰리는 시기로 평소보다 1-2주 더 걸릴 수 있어요.\n` :
+      `📊 **현재 상황**: 비교적 원활한 처리 시기입니다.\n`;
+    
+    return {
+      content: contextualStart +
+               timelineInfo +
+               procedureInfo +
+               urgentTips +
+               seasonalNote +
+               getCurrentPolicyDisclaimer(),
+      
+      cards: [{
+        title: `보금자리론 ${context.questionType === 'timeline' ? '처리기간' : '신청절차'}`,
+        subtitle: context.urgency === 'immediate' ? "긴급처리 가이드" : "표준 프로세스",
+        monthly: context.urgency === 'immediate' ? "최단 2주" : "표준 2-3주",
+        totalInterest: "연중 상시 접수",
+        notes: context.urgency === 'immediate' ? [
+          "모든 서류 사전 완비 필수",
+          "기금e든든 모의심사 완료",
+          "은행 사전 연락 후 방문",
+          "최단 2주, 통상 2-3주 소요"
+        ] : [
+          "1단계: 서류준비 (1-3일)",
+          "2단계: 신청접수 (1일)", 
+          "3단계: 심사완료 (5-10일)",
+          "4단계: 승인·실행 (3-5일)",
+          "사전 모의심사 권장"
+        ]
+      }],
+      
+      checklist: context.experienceLevel === 'first_time' ? [
+        "무주택 세대주 자격 확인",
+        "연소득 7천만원 이하 확인",
+        "소득증명서, 재직증명서 준비",
+        "기금e든든 모의심사 완료"
+      ] : [
+        "필수서류 완비 상태 점검",
+        "우대금리 적용 조건 재확인",
+        "취급은행별 처리기간 문의",
+        "신용등급 및 DSR 사전 점검"
+      ]
+    };
+  }
+
+  // 보금자리론 일반 LTV 질의 (생애최초 아님) - 지역/유형 기준으로 퍼센트 안내
+  if ((t.includes("보금자리") || t.includes("보금자리론")) &&
+      !t.includes("생애최초") &&
+      (/ltv|한도/.test(t)) &&
+      /(서울|경기|인천|수도권|부산|대구|대전|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)/.test(t)) {
+    const isMetro = /(서울|경기|인천|수도권)/.test(t);
+    const policy = CURRENT_LOAN_POLICY;
+    const regionData = isMetro ? policy.ltv.bogeumjari.metro : policy.ltv.bogeumjari.nonMetro;
+    const apt = regionData.apartment;
+    const nonApt = regionData.nonApartment;
+
+    return {
+      content: `**보금자리론 LTV 안내** 🏠\n\n` +
+               `📍 지역: ${isMetro ? '수도권 규제지역' : '비규제지역'}\n` +
+               `🏢 주택유형별 LTV:\n` +
+               `• 아파트: ${apt}%\n` +
+               `• 아파트 외 주택: ${nonApt}% (아파트 대비 ${apt - nonApt}%p 차감)\n\n` +
+               `💡 참고: 생애최초는 별도 우대 기준이 적용됩니다.` + getCurrentPolicyDisclaimer(),
+      cards: [{
+        title: `보금자리론 LTV (${isMetro ? '수도권' : '비수도권'})`,
+        subtitle: `일반 대상 기준`,
+        monthly: `아파트 ${apt}%`,
+        totalInterest: `아파트 외 ${nonApt}%`,
+        notes: [
+          `${isMetro ? '규제지역' : '비규제지역'} 기준`,
+          `아파트 외 주택은 ${apt - nonApt}%p 차감`,
+          `절대상한: ${formatKRW(policy.maxAmount.bogeumjari)}원`
+        ]
+      }],
+      checklist: [
+        '정확한 금액 산출을 위해 매매가 확인',
+        '주택유형(아파트/아파트 외) 확인',
+        '생애최초 해당 여부 확인'
+      ]
+    };
+  }
+
   return null; // 매칭되지 않는 경우
 }
