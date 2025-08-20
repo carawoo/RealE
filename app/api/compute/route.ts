@@ -640,6 +640,73 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 일반적인 대출 상담 질문 처리 (분리된 함수에서 처리되지 않은 경우)
+    if (/대출.*처음|처음.*대출|대출.*어떻게|어떻게.*대출|대출.*진행|진행.*대출/.test(message.toLowerCase())) {
+      const context = analyzeQuestionContext(message);
+      const contextualStart = generateContextualResponse(context, "주택금융 대출", {});
+      
+      let focusArea = "";
+      let detailInfo = "";
+      
+      if (context.questionType === 'application_process') {
+        focusArea = `📋 **신청 절차** (${context.experienceLevel === 'first_time' ? '처음 신청자용' : '상세'}):\n` +
+                   (context.experienceLevel === 'first_time' ? 
+                     `1️⃣ **상품 선택**: 목적에 맞는 대출 상품 결정\n` +
+                     `2️⃣ **자격 확인**: 각 상품별 자격 요건 체크\n` +
+                     `3️⃣ **서류 준비**: 소득증명서 등 필수서류\n` +
+                     `4️⃣ **사전 심사**: 기금e든든 모의심사\n` +
+                     `5️⃣ **은행 방문**: 취급은행 신청\n` +
+                     `6️⃣ **심사 대기**: 2-4주 소요\n` +
+                     `7️⃣ **승인 후 실행**: 계약 및 실행\n\n`
+                     :
+                     `• 상품 선택 → 자격 확인 → 서류 준비 → 사전 심사 → 은행 신청 → 심사 → 승인\n` +
+                     `• 각 단계별 3-7일 소요\n` +
+                     `• 병행 가능: 모의심사와 서류준비\n\n`
+                   );
+      }
+      
+      if (context.experienceLevel === 'first_time') {
+        detailInfo = `💡 **첫 신청자 가이드**:\n` +
+                     `• **상품 추천**: 목적에 따라 보금자리론(구입), 디딤돌(구입), 버팀목(전세) 등\n` +
+                     `• **자격 확인**: 기금e든든에서 사전 모의심사 필수\n` +
+                     `• **서류 준비**: 소득증명서, 재직증명서, 주민등록등본 등\n` +
+                     `• **은행 선택**: 우대금리 조건 비교 후 선택\n` +
+                     `• **우대조건**: 신혼부부, 생애최초, 청약저축 등 확인\n\n`;
+      }
+      
+      return NextResponse.json({
+        content: contextualStart +
+                 focusArea +
+                 detailInfo +
+                 getCurrentPolicyDisclaimer(),
+        cards: [{
+          title: "주택금융 대출 상담",
+          subtitle: "전문가 수준 맞춤 상담",
+          monthly: "상품별 차등 적용",
+          totalInterest: "우대조건별 차등",
+          notes: [
+            "보금자리론: 구입자금 (LTV 50-80%)",
+            "디딤돌: 구입자금 (LTV 50-70%)",
+            "버팀목: 전세자금 (최대 2억원)",
+            "청년전용: 전세자금 (만 19-34세)",
+            "신혼부부/생애최초 우대"
+          ]
+        }],
+        checklist: context.experienceLevel === 'first_time' ? [
+          "무주택 세대주 자격 확인",
+          "소득 기준 확인",
+          "주택가격 기준 확인",
+          "기금e든든 모의심사 완료"
+        ] : [
+          "기존 대출 현황 및 DSR 재계산",
+          "신용등급 최신 상태 확인",
+          "우대금리 조건 변경사항 체크",
+          "상환방식별 월 상환액 비교"
+        ],
+        fields: mergedProfile
+      });
+    }
+
     // 일반적인 폴백 응답
     return NextResponse.json({
       content: `요청을 이해했어요. 구체적으로 알려주시면 바로 계산/비교해 드릴게요.\n\n` +
