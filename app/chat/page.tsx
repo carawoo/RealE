@@ -63,6 +63,8 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [sharedUrl, setSharedUrl] = useState<string | null>(null);
+  const [showCopyButton, setShowCopyButton] = useState(false);
 
   // 대화 ID
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -100,8 +102,43 @@ export default function Chat() {
     setInput("");
     setMsgs([INITIAL_MSG]);
     setConversationId(null);
+    setSharedUrl(null);
+    setShowCopyButton(false);
     try { localStorage.removeItem(LS_KEY); } catch {}
     requestAnimationFrame(() => listRef.current?.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+
+  // 모바일 환경 감지
+  function isMobileDevice() {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+  }
+
+  // 복사 기능
+  async function copyToClipboard(text: string) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const result = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return result;
+      }
+    } catch (error) {
+      console.error('Copy failed:', error);
+      return false;
+    }
   }
 
   async function handleShare() {
@@ -117,12 +154,37 @@ export default function Chat() {
       if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
 
       const absolute = new URL(data.url, window.location.origin).toString();
-      await navigator.clipboard?.writeText(absolute).catch(() => {});
-      alert("공유 링크가 복사되었어요!\n" + absolute);
+      setSharedUrl(absolute);
+
+      // PC에서는 자동 복사, 모바일에서는 복사 버튼 표시
+      if (isMobileDevice()) {
+        setShowCopyButton(true);
+        alert("공유 링크가 생성되었어요!\n아래 '복사하기' 버튼을 눌러주세요.");
+      } else {
+        const copySuccess = await copyToClipboard(absolute);
+        if (copySuccess) {
+          alert("공유 링크가 복사되었어요!\n" + absolute);
+        } else {
+          setShowCopyButton(true);
+          alert("공유 링크가 생성되었어요!\n아래 '복사하기' 버튼을 눌러주세요.");
+        }
+      }
     } catch (e: any) {
       alert(e?.message || "공유 중 오류가 발생했어요.");
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!sharedUrl) return;
+    
+    const copySuccess = await copyToClipboard(sharedUrl);
+    if (copySuccess) {
+      alert("공유 링크가 복사되었어요!\n" + sharedUrl);
+      setShowCopyButton(false);
+    } else {
+      alert("복사에 실패했습니다. 링크를 직접 복사해주세요:\n" + sharedUrl);
     }
   }
 
@@ -272,6 +334,13 @@ export default function Chat() {
       <button type="button" className="chat-share" onClick={handleShare} disabled={sharing} aria-label="대화 공유" title="대화 공유">
         <span className="icon">🔗</span><span className="label">{sharing ? "생성 중…" : "공유"}</span>
       </button>
+
+      {/* 복사 버튼 (모바일용) */}
+      {showCopyButton && sharedUrl && (
+        <button type="button" className="chat-copy" onClick={handleCopyLink} aria-label="링크 복사" title="링크 복사">
+          <span className="icon">📋</span><span className="label">복사하기</span>
+        </button>
+      )}
 
       {/* 스크롤 영역 */}
       <div ref={listRef} className="chat-messages">
