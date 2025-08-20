@@ -87,6 +87,85 @@ async function fetchConversationProfile(conversationId: string): Promise<Fields>
   }
 }
 
+// Supabase에 메시지 저장
+async function saveMessageToSupabase(
+  conversationId: string, 
+  role: Role, 
+  content: string, 
+  fields: Fields | null = null
+): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !conversationId) {
+    console.warn("Supabase 저장 실패: 환경변수 또는 conversationId 누락");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        role: role,
+        content: content,
+        fields: fields
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`Supabase 저장 실패: ${response.status} ${response.statusText}`);
+      return false;
+    }
+
+    console.log(`✅ Supabase 저장 성공: ${role} 메시지`);
+    return true;
+  } catch (error) {
+    console.error("Supabase 저장 중 오류:", error);
+    return false;
+  }
+}
+
+// 대화 시작 시 conversation_id 생성 (없는 경우)
+async function ensureConversationId(conversationId?: string): Promise<string> {
+  if (conversationId) return conversationId;
+  
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn("Supabase 환경변수 누락으로 임시 ID 생성");
+    return `temp_${Date.now()}`;
+  }
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        created_at: new Date().toISOString()
+      })
+    });
+
+    if (response.ok) {
+      const [conversation] = await response.json();
+      console.log(`✅ 새 대화 생성: ${conversation.id}`);
+      return conversation.id;
+    } else {
+      console.warn("대화 생성 실패, 임시 ID 사용");
+      return `temp_${Date.now()}`;
+    }
+  } catch (error) {
+    console.error("대화 생성 중 오류:", error);
+    return `temp_${Date.now()}`;
+  }
+}
+
 // 정책 데이터 신선도 확인 (개발자용)
 checkPolicyDataFreshness();
 
@@ -99,8 +178,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid message" }, { status: 400 });
     }
 
+    // conversation_id 보장
+    const finalConversationId = await ensureConversationId(conversationId);
+    
+    // 사용자 메시지를 Supabase에 저장
+    await saveMessageToSupabase(finalConversationId, "user", message, extractFieldsFrom(message));
+
     // 대화 프로필 가져오기
-    const profile = conversationId ? await fetchConversationProfile(conversationId) : {};
+    const profile = finalConversationId ? await fetchConversationProfile(finalConversationId) : {};
     
     // 새 메시지에서 필드 추출 및 병합
     const newFields = extractFieldsFrom(message);
@@ -109,19 +194,29 @@ export async function POST(request: NextRequest) {
     // 숫자만 요청 처리
     if (isNumbersOnlyAsk(message)) {
       const numbers = replyNumbersOnly(mergedProfile);
-      return NextResponse.json({
+      const response = {
         content: numbers,
         fields: mergedProfile
-      });
+      };
+      
+      // assistant 메시지를 Supabase에 저장
+      await saveMessageToSupabase(finalConversationId, "assistant", numbers, mergedProfile);
+      
+      return NextResponse.json(response);
     }
 
     // 대출 상담 및 감정평가 관련 응답 처리 (상담원 스타일)
     const consultationResponse = generateLoanConsultationResponse(message, mergedProfile);
     if (consultationResponse) {
-      return NextResponse.json({
+      const response = {
         ...consultationResponse,
         fields: mergedProfile
-      });
+      };
+      
+      // assistant 메시지를 Supabase에 저장
+      await saveMessageToSupabase(finalConversationId, "assistant", consultationResponse.content, mergedProfile);
+      
+      return NextResponse.json(response);
     }
 
     // 전세→월세 환산 처리 (맥락 기반 - 매매 관련 질문은 제외됨)
@@ -136,10 +231,15 @@ export async function POST(request: NextRequest) {
     // 대출 시나리오 요청 처리
     if (isLoanScenarioRequest(message, mergedProfile)) {
       const response = generateLoanScenariosResponse(mergedProfile);
-      return NextResponse.json({
+      const finalResponse = {
         ...response,
         fields: mergedProfile
-      });
+      };
+      
+      // assistant 메시지를 Supabase에 저장
+      await saveMessageToSupabase(finalConversationId, "assistant", response.content, mergedProfile);
+      
+      return NextResponse.json(finalResponse);
     }
 
     // 전문 정책 상담 요청 처리
