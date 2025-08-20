@@ -20,10 +20,28 @@ export function isLoanScenarioRequest(text: string, profile: Fields): boolean {
   // 프로필이 충분히 있는지 확인
   const hasBasicProfile = !!(profile.incomeMonthly && (profile.propertyPrice || profile.cashOnHand));
   
+  // 매매 관련 키워드 확인 (매매, 구입, 매수, 집 구입 등)
+  const purchaseKeywords = ["매매", "구입", "매수", "집 구입", "집 사기", "주택 구입", "아파트 구입", "매매고민", "구입고민"];
+  const hasPurchaseIntent = purchaseKeywords.some(keyword => t.includes(keyword));
+  
+  // 전세/월세 관련 키워드 확인
+  const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차"];
+  const hasRentalIntent = rentalKeywords.some(keyword => t.includes(keyword));
+  
   // 숫자만 나열된 경우 (월소득 500만원, 5억원 집 구입 등) 자동 분석 트리거
   const hasNumbersPattern = /\d+만원|\d+억|\d+천만원/.test(text) && 
-                           (text.includes("월소득") || text.includes("소득")) &&
-                           (text.includes("집") || text.includes("구입") || text.includes("매매"));
+                           (text.includes("월소득") || text.includes("소득") || text.includes("월급")) &&
+                           (text.includes("집") || text.includes("구입") || text.includes("매매") || text.includes("억"));
+  
+  // 매매 의도가 명확한 경우 우선 처리
+  if (hasPurchaseIntent && (hasBasicProfile || hasNumbersPattern)) {
+    return true;
+  }
+  
+  // 전세/월세 의도가 명확한 경우는 제외 (전세→월세 환산 로직에서 처리)
+  if (hasRentalIntent) {
+    return false;
+  }
   
   // 1. 명시적 요청이 있고 프로필이 있거나
   // 2. 숫자 패턴이 있고 기본 프로필이 있는 경우

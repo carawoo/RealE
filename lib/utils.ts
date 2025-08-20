@@ -17,12 +17,21 @@ export function toComma(n?: number | null) {
 export function extractFieldsFrom(text: string): Fields {
   const fields: Fields = {};
   
-  // 월소득 추출
+  // 월소득 추출 (개선된 패턴)
   const incM =
+    text.match(/월급\s*([0-9]+)\s*(?:만원|천만원|억원)?/i) ||
     text.match(/월\s*소득\s*([0-9억천만,\s]+)원?/i) ||
-    text.match(/(?:월소득|소득)\s*([0-9억천만,\s]+)원?/i);
+    text.match(/(?:월소득|소득)\s*([0-9억천만,\s]+)원?/i) ||
+    text.match(/월급\s*([0-9억천만,\s]+)원?/i) ||
+    text.match(/월\s*([0-9억천만,\s]+)원?\s*(?:만원|천만원|억원)?/i);
   if (incM?.[1]) {
-    const v = parseWon(incM[1] + "원");
+    let v;
+    // "월급 340" 같은 경우 340만원으로 처리
+    if (incM[1].match(/^\d+$/)) {
+      v = parseInt(incM[1]) * 10000; // 만원 단위로 처리
+    } else {
+      v = parseWon(incM[1] + "원");
+    }
     if (v) fields.incomeMonthly = v;
   }
   
@@ -33,12 +42,21 @@ export function extractFieldsFrom(text: string): Fields {
     if (v) fields.cashOnHand = v;
   }
   
-  // 매매가/집값 추출
+  // 매매가/집값 추출 (개선된 패턴)
   const priceM = 
+    text.match(/([0-9]+)억\s*(?:매매|구입|고민|집|아파트)?/i) ||
     text.match(/(?:매매가|집값|매물가|부동산가)\s*([0-9억천만,\s]+)원?/i) ||
-    text.match(/([0-9억천만,\s]+)원?\s*(?:짜리|집|매물|구입|구매)/i);
+    text.match(/([0-9억천만,\s]+)원?\s*(?:짜리|집|매물|구입|구매)/i) ||
+    text.match(/([0-9억천만,\s]+)억\s*(?:매매|구입|고민|집|아파트)?/i) ||
+    text.match(/([0-9억천만,\s]+)억원?\s*(?:매매|구입|고민|집|아파트)?/i);
   if (priceM?.[1]) {
-    const v = parseWon(priceM[1] + "원");
+    let v;
+    // "3억" 같은 경우 3억원으로 처리
+    if (priceM[1].match(/^\d+$/)) {
+      v = parseInt(priceM[1]) * 100_000_000; // 억 단위로 처리
+    } else {
+      v = parseWon(priceM[1] + "원");
+    }
     if (v) fields.propertyPrice = v;
   }
   
@@ -85,6 +103,21 @@ export function isDomain(text: string, current: Fields): boolean {
 
 // 전세→월세 환산 응답 생성
 export function replyJeonseToMonthly(text: string) {
+  const t = text.toLowerCase();
+  
+  // 매매 관련 맥락 확인 - 매매 의도가 있으면 전세→월세 환산하지 않음
+  const purchaseKeywords = ["매매", "구입", "매수", "집 구입", "집 사기", "주택 구입", "아파트 구입", "매매고민", "구입고민", "구매"];
+  const hasPurchaseIntent = purchaseKeywords.some(keyword => t.includes(keyword));
+  
+  // 전세/월세 관련 맥락 확인
+  const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차", "보증금"];
+  const hasRentalIntent = rentalKeywords.some(keyword => t.includes(keyword));
+  
+  // 매매 의도가 명확하면 전세→월세 환산하지 않음
+  if (hasPurchaseIntent && !hasRentalIntent) {
+    return null;
+  }
+  
   const deposit = parseWon(text);
   if (!deposit) return null;
   const monthly = Math.round(deposit * 0.003); // 0.3%/월

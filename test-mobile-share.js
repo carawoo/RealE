@@ -87,6 +87,91 @@ async function testShareAPI() {
   }
 }
 
+// 실제 API 테스트 - 맥락 파악 검증
+async function testContextualAPI() {
+  const API_URL = "http://localhost:3000/api/compute";
+  
+  const testCases = [
+    {
+      name: "매매 관련 질문",
+      message: "월급 340, 3억 매매고민중",
+      expectedType: "매매 대출 상담",
+      shouldNotContain: "전세→월세"
+    },
+    {
+      name: "전세 관련 질문", 
+      message: "3억 전세",
+      expectedType: "전세→월세 환산",
+      shouldContain: "전세→월세"
+    },
+    {
+      name: "집 구입 질문",
+      message: "월소득 500만원, 5억원 집 구입",
+      expectedType: "매매 대출 상담", 
+      shouldNotContain: "전세→월세"
+    }
+  ];
+  
+  console.log("=== 실제 API 맥락 파악 테스트 ===\n");
+  
+  for (const testCase of testCases) {
+    console.log(`🧪 테스트: ${testCase.name}`);
+    console.log(`📝 입력: "${testCase.message}"`);
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: testCase.message,
+          conversationId: null
+        })
+      });
+      
+      if (!response.ok) {
+        console.log(`❌ API 호출 실패: ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json();
+      const content = data.content || "";
+      
+      console.log(`📄 응답 길이: ${content.length}자`);
+      
+      // 예상 타입 확인
+      const isExpectedType = content.includes(testCase.expectedType) || 
+                           (testCase.expectedType === "매매 대출 상담" && content.includes("매매")) ||
+                           (testCase.expectedType === "전세→월세 환산" && content.includes("전세→월세"));
+      
+      // 금지된 내용 확인
+      const hasForbiddenContent = testCase.shouldNotContain && content.includes(testCase.shouldNotContain);
+      const hasRequiredContent = testCase.shouldContain && content.includes(testCase.shouldContain);
+      
+      console.log(`✅ 예상 타입: ${isExpectedType ? "맞음" : "틀림"}`);
+      console.log(`❌ 금지 내용 포함: ${hasForbiddenContent ? "문제!" : "정상"}`);
+      console.log(`✅ 필수 내용 포함: ${testCase.shouldContain ? (hasRequiredContent ? "정상" : "누락") : "해당없음"}`);
+      
+      // 응답 미리보기
+      const preview = content.substring(0, 200) + (content.length > 200 ? "..." : "");
+      console.log(`📄 응답 미리보기: ${preview}`);
+      
+      if (isExpectedType && !hasForbiddenContent) {
+        console.log("🎉 성공: 맥락이 정확히 파악되었습니다!");
+      } else {
+        console.log("⚠️ 문제: 맥락 파악에 실패했습니다.");
+      }
+      
+    } catch (error) {
+      console.log(`❌ 오류 발생: ${error.message}`);
+    }
+    
+    console.log("\n" + "-".repeat(50) + "\n");
+    
+    // 요청 간 간격
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
 // 환경별 테스트
 async function testEnvironment(testCase) {
   console.log(`\n📱 ${testCase.name}`);
@@ -185,3 +270,91 @@ runTests().catch(error => {
   console.error('💥 테스트 실행 중 오류 발생:', error);
   process.exit(1);
 });
+
+// 실제 API 테스트 - 맥락 파악 검증
+async function testContextualAPI() {
+  const API_URL = "http://localhost:3000/api/compute";
+  
+  const testCases = [
+    {
+      name: "매매 관련 질문",
+      message: "월급 340, 3억 매매고민중",
+      expectedType: "매매 대출 상담",
+      shouldNotContain: "전세→월세"
+    },
+    {
+      name: "전세 관련 질문", 
+      message: "3억 전세",
+      expectedType: "전세→월세 환산",
+      shouldContain: "전세→월세"
+    },
+    {
+      name: "집 구입 질문",
+      message: "월소득 500만원, 5억원 집 구입",
+      expectedType: "매매 대출 상담", 
+      shouldNotContain: "전세→월세"
+    }
+  ];
+  
+  console.log("=== 실제 API 맥락 파악 테스트 ===\n");
+  
+  for (const testCase of testCases) {
+    console.log(`🧪 테스트: ${testCase.name}`);
+    console.log(`📝 입력: "${testCase.message}"`);
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: testCase.message,
+          conversationId: null
+        })
+      });
+      
+      if (!response.ok) {
+        console.log(`❌ API 호출 실패: ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json();
+      const content = data.content || "";
+      
+      console.log(`📄 응답 길이: ${content.length}자`);
+      
+      // 예상 타입 확인
+      const isExpectedType = content.includes(testCase.expectedType) || 
+                           (testCase.expectedType === "매매 대출 상담" && content.includes("매매")) ||
+                           (testCase.expectedType === "전세→월세 환산" && content.includes("전세→월세"));
+      
+      // 금지된 내용 확인
+      const hasForbiddenContent = testCase.shouldNotContain && content.includes(testCase.shouldNotContain);
+      const hasRequiredContent = testCase.shouldContain && content.includes(testCase.shouldContain);
+      
+      console.log(`✅ 예상 타입: ${isExpectedType ? "맞음" : "틀림"}`);
+      console.log(`❌ 금지 내용 포함: ${hasForbiddenContent ? "문제!" : "정상"}`);
+      console.log(`✅ 필수 내용 포함: ${testCase.shouldContain ? (hasRequiredContent ? "정상" : "누락") : "해당없음"}`);
+      
+      // 응답 미리보기
+      const preview = content.substring(0, 200) + (content.length > 200 ? "..." : "");
+      console.log(`📄 응답 미리보기: ${preview}`);
+      
+      if (isExpectedType && !hasForbiddenContent) {
+        console.log("🎉 성공: 맥락이 정확히 파악되었습니다!");
+      } else {
+        console.log("⚠️ 문제: 맥락 파악에 실패했습니다.");
+      }
+      
+    } catch (error) {
+      console.log(`❌ 오류 발생: ${error.message}`);
+    }
+    
+    console.log("\n" + "-".repeat(50) + "\n");
+    
+    // 요청 간 간격
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
+// 테스트 실행
+testContextualAPI().catch(console.error);
