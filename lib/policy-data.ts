@@ -1,7 +1,8 @@
 // 최신 대출 정책 데이터 (동적 관리) - 2025년 실제 정책 반영
 export const CURRENT_LOAN_POLICY = {
   year: 2025,
-  lastUpdated: "2025-01-27",
+  lastUpdated: "2025-01-27", // 정책 수치가 실제로 변경된 마지막 날짜
+  lastVerifiedAt: "2025-08-20", // 외부 공시/공식문서 기준으로 최신 검증한 날짜
   ltv: {
     bogeumjari: {
       // 수도권 (서울/경기/인천) = 규제지역/조정대상지역
@@ -33,7 +34,8 @@ export const CURRENT_LOAN_POLICY = {
 
 // 정책 데이터 신선도 확인 (개발자용)
 export function checkPolicyDataFreshness() {
-  const lastUpdated = new Date(CURRENT_LOAN_POLICY.lastUpdated);
+  const basis = CURRENT_LOAN_POLICY.lastVerifiedAt || CURRENT_LOAN_POLICY.lastUpdated;
+  const lastUpdated = new Date(basis);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
   
@@ -44,7 +46,8 @@ export function checkPolicyDataFreshness() {
 
 // 정책 정보 disclaimer 생성
 export function getCurrentPolicyDisclaimer() {
-  return `\n\n📌 **정보 업데이트**: ${CURRENT_LOAN_POLICY.lastUpdated} 기준\n` +
+  return `\n\n📌 **정책 수치 업데이트**: ${CURRENT_LOAN_POLICY.lastUpdated}\n` +
+         `🔎 **최종 검증**: ${CURRENT_LOAN_POLICY.lastVerifiedAt || CURRENT_LOAN_POLICY.lastUpdated}\n` +
          `💡 **최신 정보**: [한국주택금융공사](https://www.hf.go.kr) | [기금e든든](https://www.hf.go.kr)\n` +
          `⚠️ 정책 변경 가능성이 있으니 신청 전 반드시 확인하세요.`;
 }
