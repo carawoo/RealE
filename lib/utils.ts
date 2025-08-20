@@ -105,6 +105,15 @@ export function isDomain(text: string, current: Fields): boolean {
 export function replyJeonseToMonthly(text: string) {
   const t = text.toLowerCase();
   
+  // 질문 의도 파악 - 이전 답변에 대한 질문이나 설명 요청은 제외
+  const questionPatterns = [
+    /뭐가|무엇이|왜|어떻게|어떤|설명해|알려줘|궁금해|이해가|의미가|뜻이/,
+    /그게|그것이|그건|저게|저것이|저건/,
+    /맞아|틀려|정말|진짜|그래|아니야|아닌데/,
+    /^(뭐|무엇|왜|어떻게|어떤)/
+  ];
+  const isQuestionAboutPrevious = questionPatterns.some(pattern => pattern.test(t));
+  
   // 매매 관련 맥락 확인 - 매매 의도가 있으면 전세→월세 환산하지 않음
   const purchaseKeywords = ["매매", "구입", "매수", "집 구입", "집 사기", "주택 구입", "아파트 구입", "매매고민", "구입고민", "구매"];
   const hasPurchaseIntent = purchaseKeywords.some(keyword => t.includes(keyword));
@@ -113,8 +122,14 @@ export function replyJeonseToMonthly(text: string) {
   const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차", "보증금"];
   const hasRentalIntent = rentalKeywords.some(keyword => t.includes(keyword));
   
-  // 매매 의도가 명확하면 전세→월세 환산하지 않음
-  if (hasPurchaseIntent && !hasRentalIntent) {
+  // 제외 조건들
+  if (isQuestionAboutPrevious || // 이전 답변에 대한 질문
+      (hasPurchaseIntent && !hasRentalIntent)) { // 매매 의도가 명확
+    return null;
+  }
+  
+  // 명시적인 전세 관련 키워드가 없고 단순 숫자만 있는 경우도 제외
+  if (!hasRentalIntent && /^\d+만원?$|^\d+억$/.test(text.replace(/[,\s]/g, ''))) {
     return null;
   }
   
