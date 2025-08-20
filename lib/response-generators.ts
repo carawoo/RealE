@@ -584,14 +584,20 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
     }
   }
   
-  // 맥락 기반 마무리 제안 (비템플릿)
-  const closing: string[] = [];
-  closing.push('다음 중 무엇부터 도와드릴까요?');
-  closing.push('1) 다른 은행/정책자금 경로 안내');
-  closing.push('2) 서류 보완 체크리스트 점검');
-  closing.push('3) 감정평가 재검토/리어필 문의 방법');
-  closing.push('4) 대안 시나리오 재계산(기간·상환방식 포함)');
-  content += `\n${closing.join('\n')}`;
+  // 맥락 기반 마무리 제안 (고정 문구 제거)
+  if (appraisalAmount > 0 && applicationAmount > 0) {
+    // 차이 규모에 따른 구체적 다음 행동 제안
+    if (differencePercent <= 10) {
+      content += `\n다음 단계로, 같은 은행에서 재심사 요청(보완서류 첨부)과 타 은행 간단 재평가 중 무엇을 먼저 진행할지 정해보면 좋아요. 제가 필요한 보완서류 목록을 바로 정리해 드릴까요?`;
+    } else if (differencePercent <= 20) {
+      content += `\n바로 실행할 수 있는 선택지는 ① 타 은행 재평가 접수, ② 보완서류 준비 후 동일 은행 재심사예요. 어떤 경로로 먼저 도와드릴까요?`;
+    } else {
+      content += `\n현 조건으로는 승인 가능성이 낮아 보입니다. ① 대출 조합/기간·상환방식 재설계, ② 다른 정책자금/은행 비교 중 하나를 먼저 택해 진행해 보시겠어요? 원하시면 두 경로 모두에 맞춰 시뮬레이션을 만들어 드릴게요.`;
+    }
+  } else {
+    // 수치가 부족한 경우 추가 정보 요청을 자연스럽게 유도
+    content += `\n상황을 더 정확히 보기 위해 '신청액', '감정가', '은행', '필요 기한'을 알려주시면 바로 대응 전략을 짜 드릴게요.`;
+  }
   
   return {
     content,
