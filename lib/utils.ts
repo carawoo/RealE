@@ -101,9 +101,25 @@ export function isDomain(text: string, current: Fields): boolean {
   return false;
 }
 
-// 전세→월세 환산 응답 생성
+// 전세→월세 환산 응답 생성 (완화된 맥락 분석)
 export function replyJeonseToMonthly(text: string) {
   const t = text.toLowerCase();
+  
+  // 감정적 표현이나 상담 요청 패턴 확인
+  const emotionalPatterns = [
+    /망했|실망|어떻게|도와|조언|상담|고민|걱정|불안|스트레스/,
+    /ㅠㅠ|ㅜㅜ|ㅡㅡ|헐|와|대박|최악|최고|좋아|나빠/,
+    /어떡해|어쩌지|어떻게|도와줘|조언해|상담해/
+  ];
+  const hasEmotionalContent = emotionalPatterns.some(pattern => pattern.test(t));
+  
+  // 대출/감정평가 관련 맥락 확인 (전세→월세 환산 제외)
+  const loanAppraisalPatterns = [
+    /대출신청|감정평가|감정가|평가액|평가가|신청했|신청했는데/,
+    /보금자리론|디딤돌|주택담보|담보대출|정책자금/,
+    /승인|거절|반려|한도|한도초과|한도부족/
+  ];
+  const hasLoanAppraisalContext = loanAppraisalPatterns.some(pattern => pattern.test(t));
   
   // 질문 의도 파악 - 이전 답변에 대한 질문이나 설명 요청은 제외
   const questionPatterns = [
@@ -118,13 +134,15 @@ export function replyJeonseToMonthly(text: string) {
   const purchaseKeywords = ["매매", "구입", "매수", "집 구입", "집 사기", "주택 구입", "아파트 구입", "매매고민", "구입고민", "구매"];
   const hasPurchaseIntent = purchaseKeywords.some(keyword => t.includes(keyword));
   
-  // 전세/월세 관련 맥락 확인
-  const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차", "보증금"];
+  // 전세/월세 관련 맥락 확인 (더 명확한 키워드)
+  const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차", "보증금", "전세보증금", "월세보증금"];
   const hasRentalIntent = rentalKeywords.some(keyword => t.includes(keyword));
   
-  // 제외 조건들
+  // 제외 조건들 (완화)
   if (isQuestionAboutPrevious || // 이전 답변에 대한 질문
-      (hasPurchaseIntent && !hasRentalIntent)) { // 매매 의도가 명확
+      hasLoanAppraisalContext || // 대출/감정평가 맥락
+      (hasPurchaseIntent && !hasRentalIntent) || // 매매 의도가 명확
+      hasEmotionalContent) { // 감정적 표현이 있는 경우
     return null;
   }
   

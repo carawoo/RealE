@@ -7,7 +7,8 @@ import {
   LoanInputs,
   formatKRW,
   analyzeSpecificLoanPolicy,
-  formatPercent
+  formatPercent,
+  parseWon
 } from './loan-calculator';
 
 // 대출 시나리오 생성 및 응답 처리
@@ -478,4 +479,126 @@ export function generateSpecificLoanPolicyResponse(text: string) {
   }
 
   return null; // 매칭되지 않는 경우
+}
+
+// 대출 상담 및 감정평가 관련 응답 생성 (상담원 스타일)
+export function generateLoanConsultationResponse(text: string, profile: Fields) {
+  const t = text.toLowerCase();
+  
+  // 감정적 표현 감지
+  const emotionalPatterns = [
+    /망했|실망|어떻게|도와|조언|상담|고민|걱정|불안|스트레스/,
+    /ㅠㅠ|ㅜㅜ|ㅡㅡ|헐|와|대박|최악|최고|좋아|나빠/,
+    /어떡해|어쩌지|어떻게|도와줘|조언해|상담해/
+  ];
+  const hasEmotionalContent = emotionalPatterns.some(pattern => pattern.test(t));
+  
+  // 대출/감정평가 관련 맥락 확인
+  const loanAppraisalPatterns = [
+    /대출신청|감정평가|감정가|평가액|평가가|신청했|신청했는데/,
+    /보금자리론|디딤돌|주택담보|담보대출|정책자금/,
+    /승인|거절|반려|한도|한도초과|한도부족/
+  ];
+  const hasLoanAppraisalContext = loanAppraisalPatterns.some(pattern => pattern.test(t));
+  
+  if (!hasLoanAppraisalContext && !hasEmotionalContent) {
+    return null;
+  }
+  
+  // 감정평가액과 신청액 추출
+  const appraisalMatch = text.match(/(?:감정평가액|감정가|평가액|평가가)\s*([0-9억천만,\s]+)원?/i);
+  const applicationMatch = text.match(/(?:신청|신청했|신청했는데)\s*([0-9억천만,\s]+)원?/i);
+  
+  let appraisalAmount = 0;
+  let applicationAmount = 0;
+  
+  if (appraisalMatch?.[1]) {
+    appraisalAmount = parseWon(appraisalMatch[1] + "원") || 0;
+  }
+  if (applicationMatch?.[1]) {
+    applicationAmount = parseWon(applicationMatch[1] + "원") || 0;
+  }
+  
+  // 숫자만 있는 경우 추출
+  const numbers = text.match(/([0-9억천만,\s]+)원?/g);
+  if (numbers && numbers.length >= 2) {
+    if (!appraisalAmount) appraisalAmount = parseWon(numbers[0]) || 0;
+    if (!applicationAmount) applicationAmount = parseWon(numbers[1]) || 0;
+  }
+  
+  // 공감과 조언 생성
+  let content = "";
+  let cards = [];
+  let checklist = [];
+  
+  if (hasEmotionalContent) {
+    content += `아, 정말 속상하시겠어요 😔 감정평가액이 예상보다 낮게 나오면 정말 당황스럽죠.\n\n`;
+  }
+  
+  if (appraisalAmount > 0 && applicationAmount > 0) {
+    const difference = applicationAmount - appraisalAmount;
+    const differencePercent = Math.round((difference / applicationAmount) * 100);
+    
+    content += `📊 **상황 분석**:\n`;
+    content += `• 신청액: ${formatKRW(applicationAmount)}원\n`;
+    content += `• 감정평가액: ${formatKRW(appraisalAmount)}원\n`;
+    content += `• 차이: ${formatKRW(difference)}원 (${differencePercent}%)\n\n`;
+    
+    if (difference > 0) {
+      content += `💡 **해결 방안**:\n`;
+      
+      if (differencePercent <= 10) {
+        content += `• 차이가 ${differencePercent}%로 크지 않아요. 조정 가능할 가능성이 높습니다.\n`;
+        content += `• 추가 서류나 보완 자료로 개선 가능할 수 있어요.\n`;
+      } else if (differencePercent <= 20) {
+        content += `• ${differencePercent}% 차이는 보통 범위입니다. 다른 은행도 시도해보세요.\n`;
+        content += `• 신용등급이나 소득 증빙을 보완하면 개선될 수 있어요.\n`;
+      } else {
+        content += `• ${differencePercent}% 차이는 다소 큰 편이에요. 대안을 찾아봐야 할 것 같습니다.\n`;
+        content += `• 다른 정책자금이나 일반 주택담보대출을 고려해보세요.\n`;
+      }
+      
+      content += `• 여러 은행의 감정평가 결과를 비교해보세요.\n`;
+      content += `• 부동산 중개업소나 전문가와 상담해보세요.\n\n`;
+      
+      cards.push({
+        title: "감정평가 차이 분석",
+        subtitle: `${differencePercent}% 차이`,
+        monthly: `${formatKRW(difference)}원`,
+        totalInterest: `${differencePercent <= 10 ? "조정 가능" : differencePercent <= 20 ? "다른 은행 시도" : "대안 검토 필요"}`,
+        notes: [
+          `신청액: ${formatKRW(applicationAmount)}원`,
+          `감정평가액: ${formatKRW(appraisalAmount)}원`,
+          `차이: ${formatKRW(difference)}원`,
+          `${differencePercent <= 10 ? "조정 가능성 높음" : differencePercent <= 20 ? "다른 은행 시도 권장" : "대안 검토 필요"}`
+        ]
+      });
+      
+      checklist = [
+        "다른 은행 감정평가 비교",
+        "추가 서류 준비",
+        "신용등급 확인",
+        "소득 증빙 보완",
+        "대안 대출 상품 검토"
+      ];
+    }
+  }
+  
+  content += `🤝 **상담원 조언**:\n`;
+  content += `• 포기하지 마세요! 이런 경우가 많아요.\n`;
+  content += `• 다른 은행이나 정책자금도 시도해보세요.\n`;
+  content += `• 전문가와 상담하면 더 좋은 방법을 찾을 수 있어요.\n`;
+  content += `• 필요하시면 언제든 다시 문의해 주세요! 💪\n\n`;
+  
+  content += `📞 **즉시 도움받기**:\n`;
+  content += `• 한국주택금융공사: 1661-8300\n`;
+  content += `• 기금e든든: https://www.hf.go.kr\n`;
+  content += `• 가까운 은행 지점 상담\n`;
+  
+  return {
+    content,
+    cards,
+    checklist,
+    fields: profile
+  };
 }

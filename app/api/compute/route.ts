@@ -38,7 +38,8 @@ import {
 import { 
   generateLoanScenariosResponse, 
   generateContextualResponse, 
-  generateSpecificLoanPolicyResponse 
+  generateSpecificLoanPolicyResponse,
+  generateLoanConsultationResponse
 } from "../../../lib/response-generators";
 
 /**
@@ -110,6 +111,15 @@ export async function POST(request: NextRequest) {
       const numbers = replyNumbersOnly(mergedProfile);
       return NextResponse.json({
         content: numbers,
+        fields: mergedProfile
+      });
+    }
+
+    // 대출 상담 및 감정평가 관련 응답 처리 (상담원 스타일)
+    const consultationResponse = generateLoanConsultationResponse(message, mergedProfile);
+    if (consultationResponse) {
+      return NextResponse.json({
+        ...consultationResponse,
         fields: mergedProfile
       });
     }
