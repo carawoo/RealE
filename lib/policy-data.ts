@@ -21,7 +21,9 @@ export const CURRENT_LOAN_POLICY = {
   maxAmount: {
     bogeumjari: 600000000, // 6억원
     didimdol: 600000000, // 6억원
-    junggicheong: 200000000 // 2억원 (종료됨)
+    junggicheong: 200000000, // 2억원 (종료됨)
+    buttumok: 200000000, // 2억원 (버팀목 전세자금)
+    youth: 200000000 // 2억원 (청년 전용 전세자금)
   },
   regulatedRegions: ["서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산", "세종"]
 };

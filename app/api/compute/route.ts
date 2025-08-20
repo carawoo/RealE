@@ -114,6 +114,121 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 월소득 기반 대출 가능성 및 상품 추천 처리 (전세→월세 환산보다 우선)
+    if (/(월소득|월급|월급여|월\s*\d+만원|\d+만원.*월소득)/.test(message.toLowerCase())) {
+      const incomeMatch = message.match(/(\d+)만원/);
+      const monthlyIncome = incomeMatch ? parseInt(incomeMatch[1]) * 10000 : null;
+      
+      if (monthlyIncome) {
+        const annualIncome = monthlyIncome * 12;
+        const context = analyzeQuestionContext(message);
+        
+        let loanRecommendations = "";
+        let possibleLoans = [];
+        
+        // 보금자리론 자격 확인 (연소득 1억원 이하)
+        if (annualIncome <= 100_000_000) {
+          possibleLoans.push("보금자리론");
+          loanRecommendations += `🏠 **보금자리론**: ✅ 가능 (연소득 ${formatKRW(annualIncome)}원)\n` +
+                                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원\n` +
+                                 `• LTV: 50-80% (지역/유형별 차등)\n` +
+                                 `• 금리: 연 2.5~3.5% (우대조건 시 최저 1.0%)\n\n`;
+        }
+        
+        // 디딤돌 대출 자격 확인 (연소득 7천만원 이하)
+        if (annualIncome <= 70_000_000) {
+          possibleLoans.push("디딤돌");
+          loanRecommendations += `🏘️ **디딤돌 대출**: ✅ 가능 (연소득 ${formatKRW(annualIncome)}원)\n` +
+                                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원\n` +
+                                 `• LTV: 50-70% (지역/유형별 차등)\n` +
+                                 `• 금리: 연 3.2~4.05% (우대조건 시 최저 2.7%)\n\n`;
+        }
+        
+        // 버팀목 전세자금 (연소득 5천만원 이하)
+        if (annualIncome <= 50_000_000) {
+          possibleLoans.push("버팀목");
+          loanRecommendations += `🏠 **버팀목 전세자금**: ✅ 가능 (연소득 ${formatKRW(annualIncome)}원)\n` +
+                                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.buttumok)}원\n` +
+                                 `• 전세보증금의 80%까지\n` +
+                                 `• 금리: 연 2.2~3.3% (우대조건 시 최저 1.0%)\n\n`;
+        }
+        
+        // 청년 전용 전세자금 (연소득 5천만원 이하, 만 19-34세)
+        if (annualIncome <= 50_000_000) {
+          possibleLoans.push("청년전용");
+          loanRecommendations += `👨‍🎓 **청년 전용 전세자금**: ✅ 가능 (연소득 ${formatKRW(annualIncome)}원)\n` +
+                                 `• 최대한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.youth)}원\n` +
+                                 `• 만 19~34세 무주택 세대주\n` +
+                                 `• 금리: 연 2.2~3.3% (우대조건 시 최저 1.0%)\n\n`;
+        }
+        
+        if (possibleLoans.length === 0) {
+          return NextResponse.json({
+            content: `**대출 자격 안내** 💼\n\n` +
+                     `📊 **현재 소득**: 월 ${formatKRW(monthlyIncome)}원 (연 ${formatKRW(annualIncome)}원)\n\n` +
+                     `❌ **가능한 대출 상품 없음**:\n` +
+                     `• 주택금융 대출은 연소득 기준으로 자격이 제한됩니다\n` +
+                     `• 현재 소득으로는 일반 주택담보대출을 고려해보세요\n\n` +
+                     `💡 **대안**:\n` +
+                     `• 일반 주택담보대출 (은행별 상품)\n` +
+                     `• 전세자금 대출 (일반 은행)\n` +
+                     `• 소득 증빙 서류 준비 후 재상담\n\n` +
+                     getCurrentPolicyDisclaimer(),
+            cards: [{
+              title: "대출 자격 미달",
+              subtitle: "일반 주택담보대출 고려",
+              monthly: "은행별 상품 확인",
+              totalInterest: "일반 금리 적용",
+              notes: [
+                "연소득 기준 미달",
+                "일반 주택담보대출 추천",
+                "은행별 상품 비교 필요",
+                "소득 증빙 서류 준비"
+              ]
+            }],
+            checklist: [
+              "일반 은행 주택담보대출 문의",
+              "소득 증빙 서류 준비",
+              "신용등급 확인",
+              "다른 은행 상품 비교"
+            ],
+            fields: mergedProfile
+          });
+        }
+        
+        return NextResponse.json({
+          content: `**월소득 ${formatKRW(monthlyIncome)}원 대출 가능 상품 안내** 💰\n\n` +
+                   `📊 **현재 소득**: 월 ${formatKRW(monthlyIncome)}원 (연 ${formatKRW(annualIncome)}원)\n\n` +
+                   `✅ **가능한 대출 상품**:\n\n` +
+                   loanRecommendations +
+                   `💡 **다음 단계**:\n` +
+                   `• 구체적인 매물 정보를 알려주시면 정확한 한도 계산\n` +
+                   `• "월소득 ${formatKRW(monthlyIncome)}원, 5억원 아파트 구입" 형태로 말씀해 주세요\n` +
+                   `• 기금e든든에서 사전 모의심사 진행\n\n` +
+                   getCurrentPolicyDisclaimer(),
+          cards: [{
+            title: `월소득 ${formatKRW(monthlyIncome)}원 대출 상품`,
+            subtitle: `${possibleLoans.length}개 상품 가능`,
+            monthly: "상품별 차등 적용",
+            totalInterest: "우대조건별 차등",
+            notes: [
+              `연소득: ${formatKRW(annualIncome)}원`,
+              `가능 상품: ${possibleLoans.join(", ")}`,
+              "구체적 매물 정보 필요",
+              "기금e든든 모의심사 필수"
+            ]
+          }],
+          checklist: [
+            "구체적 매물 정보 제공",
+            "기금e든든 모의심사 완료",
+            "우대조건 확인 (신혼부부, 생애최초)",
+            "여러 상품 비교 검토"
+          ],
+          fields: mergedProfile
+        });
+      }
+    }
+
     // 전세→월세 환산 처리
     const jeonseResponse = replyJeonseToMonthly(message);
     if (jeonseResponse) {
@@ -640,8 +755,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
+
+
     // 일반적인 대출 상담 질문 처리 (분리된 함수에서 처리되지 않은 경우)
-    if (/대출.*처음|처음.*대출|대출.*어떻게|어떻게.*대출|대출.*진행|진행.*대출/.test(message.toLowerCase())) {
+    if (/대출.*처음|처음.*대출|대출.*어떻게|어떻게.*대출|대출.*진행|진행.*대출|대출.*받고.*싶|받고.*싶.*대출|어디서.*시작|시작.*해야|주택.*대출.*받고.*싶|받고.*싶.*주택.*대출/.test(message.toLowerCase())) {
       const context = analyzeQuestionContext(message);
       const contextualStart = generateContextualResponse(context, "주택금융 대출", {});
       
