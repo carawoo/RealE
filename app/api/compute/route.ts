@@ -58,6 +58,17 @@ type MessageRow = { role: Role; content: string; fields: Fields | null };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// ---------- Helpers ----------
+function generateUuidV4(): string {
+  // Simple UUID v4 generator (fallback if crypto.randomUUID is not available)
+  const template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+  return template.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // ---------- Supabase ----------
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return {};
@@ -100,7 +111,7 @@ async function saveMessageToSupabase(
     return false;
   }
 
-  try {
+  const attempt = async () => {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
       method: 'POST',
       headers: {
@@ -116,29 +127,125 @@ async function saveMessageToSupabase(
         fields: fields
       })
     });
-
     if (!response.ok) {
-      console.error(`Supabase 저장 실패: ${response.status} ${response.statusText}`);
-      return false;
+      let detail = '';
+      try { detail = await response.text(); } catch {}
+      throw new Error(`${response.status} ${response.statusText} ${detail}`);
     }
+  };
 
-    console.log(`✅ Supabase 저장 성공: ${role} 메시지`);
-    return true;
-  } catch (error) {
-    console.error("Supabase 저장 중 오류:", error);
-    return false;
+  let tries = 0;
+  const maxTries = 3;
+  while (tries < maxTries) {
+    try {
+      await attempt();
+      console.log(`✅ Supabase 저장 성공: ${role} 메시지`);
+      return true;
+    } catch (err) {
+      tries += 1;
+      console.error(`Supabase 저장 실패 (시도 ${tries}/${maxTries}):`, err instanceof Error ? err.message : err);
+      if (tries >= maxTries) return false;
+      // backoff
+      await new Promise(res => setTimeout(res, 150 * tries));
+    }
   }
+  return false;
 }
 
 // 대화 시작 시 conversation_id 생성 (없는 경우)
 async function ensureConversationId(conversationId?: string): Promise<string> {
-  if (conversationId) return conversationId;
-  
+  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn("Supabase 환경변수 누락으로 임시 ID 생성");
     return `temp_${Date.now()}`;
   }
 
+  // Provided external conversationId
+  if (conversationId) {
+    if (!isValidUuid(conversationId)) {
+      // Ignore non-UUID external ids; create a proper conversation row
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({ created_at: new Date().toISOString() })
+        });
+        if (response.ok) {
+          const [conversation] = await response.json();
+          console.log(`✅ 새 대화 생성: ${conversation.id}`);
+          return conversation.id;
+        }
+      } catch (e) {
+        console.error('대화 생성 중 오류:', e);
+      }
+      // 최종 폴백: 로컬에서 UUID 생성 후 upsert 시도
+      const localId = generateUuidV4();
+      try {
+        const up = await fetch(`${SUPABASE_URL}/rest/v1/conversations?on_conflict=id`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify({ id: localId, created_at: new Date().toISOString() })
+        });
+        if (up.ok) {
+          console.log(`✅ 새 대화 생성(로컬): ${localId}`);
+          return localId;
+        }
+      } catch {}
+      console.warn('외부 conversationId가 UUID가 아니어서 로컬 UUID로 대체합니다.');
+      return localId;
+    }
+
+    // UUID이면 해당 id로 대화 upsert 시도 (없으면 생성)
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations?on_conflict=id`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({ id: conversationId, created_at: new Date().toISOString() })
+      });
+      if (!response.ok) {
+        console.warn('대화 upsert 실패, 새로 생성합니다.');
+        // Fallback: create new
+        const res2 = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({ created_at: new Date().toISOString() })
+        });
+        if (res2.ok) {
+          const [conv] = await res2.json();
+          console.log(`✅ 새 대화 생성: ${conv.id}`);
+          return conv.id;
+        }
+        return conversationId; // as-is fallback
+      }
+      return conversationId;
+    } catch (e) {
+      console.error('대화 upsert 중 오류:', e);
+      return conversationId;
+    }
+  }
+
+  // No conversationId provided: create new
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
       method: 'POST',
