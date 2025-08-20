@@ -151,6 +151,11 @@ export function replyJeonseToMonthly(text: string) {
     return null;
   }
   
+  // 월소득 정보만 있는 경우 제외
+  if (/월소득|소득/.test(text) && !hasRentalIntent) {
+    return null;
+  }
+  
   const deposit = parseWon(text);
   if (!deposit) return null;
   const monthly = Math.round(deposit * 0.003); // 0.3%/월

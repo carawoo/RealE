@@ -219,13 +219,126 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
+    // 구매 상담 처리 (전세→월세 환산보다 우선)
+    const hasPurchaseIntent = /사고싶|구매|구입|매수|집.*사|아파트.*사|주택.*사|살.*수|살.*있/.test(message.toLowerCase());
+    const hasLocationIntent = /서울|부산|대구|인천|광주|대전|울산|경기|강남|강북|송파|마포|서초|분당|성남|하남|용인|수원|고양|의정부/.test(message);
+    
+    // 구매 의도가 명확한 경우만 처리 (단순 정보 확인은 제외)
+    const isSimpleInfoRequest = /이에요|입니다|입니다\.|이야|이야\./.test(message);
+    
+    if ((hasPurchaseIntent && hasLocationIntent) && !isSimpleInfoRequest) {
+      // 구체적인 구매 상담 제공
+      const annualIncome = mergedProfile.incomeMonthly ? mergedProfile.incomeMonthly * 12 : 0;
+      const maxLoanAmount = annualIncome * 0.4 * 30; // DSR 40%, 30년 기준
+      
+      let content = `📊 **현재 상황 분석**:\n`;
+      if (mergedProfile.incomeMonthly) {
+        content += `• 월소득: ${toComma(mergedProfile.incomeMonthly)}원 (연 ${toComma(annualIncome)}원)\n`;
+      }
+      if (mergedProfile.cashOnHand) {
+        content += `• 보유현금: ${toComma(mergedProfile.cashOnHand)}원\n`;
+      }
+      content += `\n`;
+      
+      // 지역별 맞춤 조언
+      let regionAdvice = "";
+      if (/강남|서초/.test(message)) {
+        regionAdvice = `🏠 **강남/서초 아파트 구매 전략**:\n`;
+        regionAdvice += `• **현실적 한도**: 약 ${formatKRW(maxLoanAmount)}원 (DSR 40% 기준)\n`;
+        regionAdvice += `• **추천 가격대**: ${formatKRW(maxLoanAmount * 0.6)}원 ~ ${formatKRW(maxLoanAmount)}원\n`;
+        regionAdvice += `• **강남 신축 아파트**: 어려움 → 중고 아파트 또는 오피스텔 권장\n`;
+        regionAdvice += `• **대안**: 강남 인근 지역 (서초, 송파, 성남 분당) 검토\n\n`;
+      } else if (/서울/.test(message)) {
+        regionAdvice = `🏠 **서울 아파트 구매 전략**:\n`;
+        regionAdvice += `• **현실적 한도**: 약 ${formatKRW(maxLoanAmount)}원 (DSR 40% 기준)\n`;
+        regionAdvice += `• **추천 가격대**: ${formatKRW(maxLoanAmount * 0.8)}원 ~ ${formatKRW(maxLoanAmount)}원\n`;
+        regionAdvice += `• **필요 자금**: 계약금 ${formatKRW(maxLoanAmount * 0.1)}원 + 중개수수료\n\n`;
+      } else {
+        regionAdvice = `🏠 **주택 구매 전략**:\n`;
+        regionAdvice += `• **현실적 한도**: 약 ${formatKRW(maxLoanAmount)}원 (DSR 40% 기준)\n`;
+        regionAdvice += `• **추천 가격대**: ${formatKRW(maxLoanAmount * 0.8)}원 ~ ${formatKRW(maxLoanAmount)}원\n`;
+        regionAdvice += `• **필요 자금**: 계약금 ${formatKRW(maxLoanAmount * 0.1)}원 + 중개수수료\n\n`;
+      }
+      
+      content += regionAdvice;
+      
+      content += `💡 **구체적 해결 방안**:\n`;
+      content += `1️⃣ **정책자금 활용**:\n`;
+      content += `   • 보금자리론: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원 (연소득 1억 이하)\n`;
+      content += `   • 디딤돌 대출: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원 (연소득 7천만 이하)\n`;
+      content += `   • 생애최초/신혼부부 우대: 한도 +20%\n\n`;
+      
+      content += `2️⃣ **지역별 전략**:\n`;
+      content += `   • **강남/서초**: 신축 아파트 어려움 → 중고 아파트 또는 오피스텔\n`;
+      content += `   • **강북/도봉**: 상대적으로 저렴한 신축 아파트 가능\n`;
+      content += `   • **송파/강동**: 신축 아파트 + 청약 혜택 활용\n`;
+      content += `   • **마포/서대문**: 재개발/재건축 아파트 기회\n`;
+      content += `   • **경기 인근**: 분당, 성남, 하남 등 검토\n\n`;
+      
+      content += `3️⃣ **우회 전략**:\n`;
+      content += `   • **부부합산**: 배우자 소득 포함 시 한도 증가\n`;
+      content += `   • **부모님 연대보증**: 추가 한도 확보 가능\n`;
+      content += `   • **청약저축**: 청약 혜택으로 가격 절약\n`;
+      content += `   • **재개발/재건축**: 미분양 → 분양가 차익 활용\n\n`;
+      
+      content += `4️⃣ **단계별 접근**:\n`;
+      content += `   • **1단계**: 기금e든든 모의심사로 정확한 한도 확인\n`;
+      content += `   • **2단계**: 지역별 실거래가 조사 (국토교통부 실거래가)\n`;
+      content += `   • **3단계**: 청약 조건 확인 (무주택 기간, 청약저축 등)\n`;
+      content += `   • **4단계**: 여러 은행 상품 비교 후 최적 선택\n\n`;
+      
+      content += `🎯 **즉시 실행 가능한 액션**:\n`;
+      content += `• 기금e든든 사전 모의심사: https://www.hf.go.kr\n`;
+      content += `• 실거래가 조회: https://rt.molit.go.kr\n`;
+      content += `• 청약 정보: https://www.applyhome.co.kr\n`;
+      content += `• 가까운 은행 지점 상담 예약\n\n`;
+      
+      content += `💪 **포기하지 마세요!** 계획적으로 접근하면 충분히 가능합니다.\n`;
+      content += `더 구체적인 상황이나 궁금한 점이 있으시면 언제든 말씀해 주세요!`;
+      
+      const response = {
+        content,
+        cards: [{
+          title: "주택 구매 전략",
+          subtitle: `월소득 ${toComma(mergedProfile.incomeMonthly || 0)}원 기준`,
+          monthly: `최대 대출: ${formatKRW(maxLoanAmount)}원`,
+          totalInterest: "DSR 40% 기준",
+          notes: [
+            `연소득: ${formatKRW(annualIncome)}원`,
+            `보금자리론 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원`,
+            `디딤돌 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원`,
+            "생애최초/신혼부부 우대 가능",
+            "청약저축 활용 권장"
+          ]
+        }],
+        checklist: [
+          "기금e든든 모의심사 완료",
+          "실거래가 조사",
+          "청약 조건 확인",
+          "여러 은행 상품 비교",
+          "부모님 연대보증 검토"
+        ],
+        fields: mergedProfile
+      };
+      
+      // assistant 메시지를 Supabase에 저장
+      await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+      
+      return NextResponse.json(response);
+    }
+
     // 전세→월세 환산 처리 (맥락 기반 - 매매 관련 질문은 제외됨)
     const jeonseResponse = replyJeonseToMonthly(message);
     if (jeonseResponse) {
-      return NextResponse.json({
+      const response = {
         ...jeonseResponse,
         fields: mergedProfile
-      });
+      };
+      
+      // assistant 메시지를 Supabase에 저장
+      await saveMessageToSupabase(finalConversationId, "assistant", jeonseResponse.content, mergedProfile);
+      
+      return NextResponse.json(response);
     }
 
     // 대출 시나리오 요청 처리
@@ -348,20 +461,114 @@ export async function POST(request: NextRequest) {
           fields: mergedProfile
         });
       } else {
-        // 단순 정보 확인
-        const extracted = extractFieldsFrom(message);
-        const info = [];
-        if (extracted.incomeMonthly) info.push(`월소득: ${toComma(extracted.incomeMonthly)}원`);
-        if (extracted.cashOnHand) info.push(`보유현금: ${toComma(extracted.cashOnHand)}원`);
-        if (extracted.propertyPrice) info.push(`매매가: ${toComma(extracted.propertyPrice)}원`);
-        if (extracted.downPayment) info.push(`자기자본: ${toComma(extracted.downPayment)}원`);
+        // 구매 의도가 있는 경우 구체적 조언 제공
+        const hasPurchaseIntent = /사고싶|구매|구입|매수|집.*사|아파트.*사|주택.*사|살.*수|살.*있/.test(message.toLowerCase());
+        const hasLocationIntent = /서울|부산|대구|인천|광주|대전|울산|경기|강남|강북|송파|마포|서초|분당|성남|하남|용인|수원|고양|의정부/.test(message);
         
-        return NextResponse.json({
-          content: info.length > 0 ? 
-            `📊 **확인된 정보**:\n${info.join('\n')}` :
-            "정보를 찾을 수 없어요. 다시 입력해 주세요.",
-          fields: mergedProfile
-        });
+        if (hasPurchaseIntent || hasLocationIntent) {
+          // 구체적인 구매 상담 제공
+          const annualIncome = mergedProfile.incomeMonthly ? mergedProfile.incomeMonthly * 12 : 0;
+          const maxLoanAmount = annualIncome * 0.4 * 30; // DSR 40%, 30년 기준
+          
+          let content = `📊 **현재 상황 분석**:\n`;
+          if (mergedProfile.incomeMonthly) {
+            content += `• 월소득: ${toComma(mergedProfile.incomeMonthly)}원 (연 ${toComma(annualIncome)}원)\n`;
+          }
+          if (mergedProfile.cashOnHand) {
+            content += `• 보유현금: ${toComma(mergedProfile.cashOnHand)}원\n`;
+          }
+          content += `\n`;
+          
+          content += `🏠 **서울 아파트 구매 전략**:\n`;
+          content += `• **현실적 한도**: 약 ${formatKRW(maxLoanAmount)}원 (DSR 40% 기준)\n`;
+          content += `• **추천 가격대**: ${formatKRW(maxLoanAmount * 0.8)}원 ~ ${formatKRW(maxLoanAmount)}원\n`;
+          content += `• **필요 자금**: 계약금 ${formatKRW(maxLoanAmount * 0.1)}원 + 중개수수료\n\n`;
+          
+          content += `💡 **구체적 해결 방안**:\n`;
+          content += `1️⃣ **정책자금 활용**:\n`;
+          content += `   • 보금자리론: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원 (연소득 1억 이하)\n`;
+          content += `   • 디딤돌 대출: 최대 ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원 (연소득 7천만 이하)\n`;
+          content += `   • 생애최초/신혼부부 우대: 한도 +20%\n\n`;
+          
+          content += `2️⃣ **지역별 전략**:\n`;
+          content += `   • **강남/서초**: 신축 아파트 어려움 → 중고 아파트 또는 오피스텔\n`;
+          content += `   • **강북/도봉**: 상대적으로 저렴한 신축 아파트 가능\n`;
+          content += `   • **송파/강동**: 신축 아파트 + 청약 혜택 활용\n`;
+          content += `   • **마포/서대문**: 재개발/재건축 아파트 기회\n\n`;
+          
+          content += `3️⃣ **우회 전략**:\n`;
+          content += `   • **부부합산**: 배우자 소득 포함 시 한도 증가\n`;
+          content += `   • **부모님 연대보증**: 추가 한도 확보 가능\n`;
+          content += `   • **청약저축**: 청약 혜택으로 가격 절약\n`;
+          content += `   • **재개발/재건축**: 미분양 → 분양가 차익 활용\n\n`;
+          
+          content += `4️⃣ **단계별 접근**:\n`;
+          content += `   • **1단계**: 기금e든든 모의심사로 정확한 한도 확인\n`;
+          content += `   • **2단계**: 지역별 실거래가 조사 (국토교통부 실거래가)\n`;
+          content += `   • **3단계**: 청약 조건 확인 (무주택 기간, 청약저축 등)\n`;
+          content += `   • **4단계**: 여러 은행 상품 비교 후 최적 선택\n\n`;
+          
+          content += `🎯 **즉시 실행 가능한 액션**:\n`;
+          content += `• 기금e든든 사전 모의심사: https://www.hf.go.kr\n`;
+          content += `• 실거래가 조회: https://rt.molit.go.kr\n`;
+          content += `• 청약 정보: https://www.applyhome.co.kr\n`;
+          content += `• 가까운 은행 지점 상담 예약\n\n`;
+          
+          content += `💪 **포기하지 마세요!** 서울 아파트 구매는 계획적으로 접근하면 충분히 가능합니다.\n`;
+          content += `더 구체적인 상황이나 궁금한 점이 있으시면 언제든 말씀해 주세요!`;
+          
+          const response = {
+            content,
+            cards: [{
+              title: "서울 아파트 구매 전략",
+              subtitle: `월소득 ${toComma(mergedProfile.incomeMonthly || 0)}원 기준`,
+              monthly: `최대 대출: ${formatKRW(maxLoanAmount)}원`,
+              totalInterest: "DSR 40% 기준",
+              notes: [
+                `연소득: ${formatKRW(annualIncome)}원`,
+                `보금자리론 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원`,
+                `디딤돌 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원`,
+                "생애최초/신혼부부 우대 가능",
+                "청약저축 활용 권장"
+              ]
+            }],
+            checklist: [
+              "기금e든든 모의심사 완료",
+              "실거래가 조사",
+              "청약 조건 확인",
+              "여러 은행 상품 비교",
+              "부모님 연대보증 검토"
+            ],
+            fields: mergedProfile
+          };
+          
+          // assistant 메시지를 Supabase에 저장
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          
+          return NextResponse.json(response);
+        } else {
+          // 단순 정보 확인
+          const extracted = extractFieldsFrom(message);
+          const info = [];
+          if (extracted.incomeMonthly) info.push(`월소득: ${toComma(extracted.incomeMonthly)}원`);
+          if (extracted.cashOnHand) info.push(`보유현금: ${toComma(extracted.cashOnHand)}원`);
+          if (extracted.propertyPrice) info.push(`매매가: ${toComma(extracted.propertyPrice)}원`);
+          if (extracted.downPayment) info.push(`자기자본: ${toComma(extracted.downPayment)}원`);
+          
+          const content = info.length > 0 ? 
+            `📊 **확인된 정보**:\n${info.join('\n')}\n\n💡 **더 구체적인 도움이 필요하시면**:\n• "서울 아파트 구매하고 싶어요"\n• "월소득 300만원으로 얼마까지 살 수 있어?"\n• "정책자금 대출 받을 수 있을까?"\n처럼 말씀해 주세요!` :
+            "정보를 찾을 수 없어요. 다시 입력해 주세요.";
+          
+          const response = {
+            content,
+            fields: mergedProfile
+          };
+          
+          // assistant 메시지를 Supabase에 저장
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          
+          return NextResponse.json(response);
+        }
       }
     }
 
