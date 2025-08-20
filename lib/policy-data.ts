@@ -1,7 +1,7 @@
 // 최신 대출 정책 데이터 (동적 관리) - 2025년 실제 정책 반영
 export const CURRENT_LOAN_POLICY = {
   year: 2025,
-  lastUpdated: "2025-01-20",
+  lastUpdated: "2025-01-27",
   ltv: {
     bogeumjari: {
       // 수도권 (서울/경기/인천) = 규제지역/조정대상지역
@@ -19,8 +19,11 @@ export const CURRENT_LOAN_POLICY = {
     firstTimeLimit: 50 // 생애최초 DSR 한도 50%
   },
   maxAmount: {
-    bogeumjari: 600000000, // 6억원
-    didimdol: 600000000, // 6억원
+    bogeumjari: 360000000, // 3억 6천만원 (일반)
+    bogeumjariFirstTime: 420000000, // 4억 2천만원 (생애최초)
+    bogeumjariMultiChild: 400000000, // 4억원 (다자녀 가구)
+    bogeumjariVictim: 400000000, // 4억원 (전세사기 피해자)
+    didimdol: 250000000, // 2억 5천만원
     junggicheong: 200000000, // 2억원 (종료됨)
     buttumok: 200000000, // 2억원 (버팀목 전세자금)
     youth: 200000000 // 2억원 (청년 전용 전세자금)
