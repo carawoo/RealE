@@ -42,6 +42,7 @@ import {
   generateLoanConsultationResponse
 } from "../../../lib/response-generators";
 import { generateKnowledgeResponse } from "../../../lib/knowledge";
+import { routePrimary } from "../../../lib/intent-router";
 
 /**
  * 이 파일은 다음을 해결합니다.
@@ -97,6 +98,50 @@ async function fetchConversationProfile(conversationId: string): Promise<Fields>
   } catch {
     return {};
   }
+}
+
+// 최근 assistant 메시지 가져오기
+async function fetchLastAssistantMessage(conversationId: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  const url =
+    `${SUPABASE_URL}/rest/v1/messages` +
+    `?select=content,role,created_at` +
+    `&conversation_id=eq.${conversationId}` +
+    `&role=eq.assistant` +
+    `&order=created_at.desc` +
+    `&limit=1`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const rows: Array<{ content: string }> = await res.json();
+    return rows?.[0]?.content || null;
+  } catch {
+    return null;
+  }
+}
+
+function detectSelectionFromMessage(message: string): 1 | 2 | 3 | 4 | null {
+  const t = message.trim();
+  if (/^(1|1\)|①)\b/.test(t)) return 1;
+  if (/^(2|2\)|②)\b/.test(t)) return 2;
+  if (/^(3|3\)|③)\b/.test(t)) return 3;
+  if (/^(4|4\)|④)\b/.test(t)) return 4;
+  return null;
+}
+
+function lastAssistantHadOptions(text?: string | null): boolean {
+  if (!text) return false;
+  return /다음 중 무엇부터 도와드릴까요\?/m.test(text) ||
+         /1\).*다른 은행|정책자금/m.test(text) ||
+         /2\).*서류 보완 체크리스트/m.test(text) ||
+         /3\).*감정평가 재검토|리어필/m.test(text) ||
+         /4\).*대안 시나리오 재계산/m.test(text);
 }
 
 // Supabase에 메시지 저장
@@ -294,6 +339,58 @@ export async function POST(request: NextRequest) {
 
     // 대화 프로필 가져오기
     const profile = finalConversationId ? await fetchConversationProfile(finalConversationId) : {};
+    const lastAssistant = await fetchLastAssistantMessage(finalConversationId);
+    // 이전 메시지에서 선택지 제시 후 숫자 응답 처리
+    if (lastAssistantHadOptions(lastAssistant)) {
+      const sel = detectSelectionFromMessage(message);
+      if (sel) {
+        if (sel === 1) {
+          const content = `다음 경로를 병행하면 승인 가능성을 높일 수 있어요:\n\n` +
+                          `• 정책자금 대안: 보금자리론/디딤돌 외 지역은행 특판 주담대 확인\n` +
+                          `• 시중은행: 국민·신한·하나·우리·농협 등, 지점별 감정평가 협력사 상이\n` +
+                          `• 진행순서: 사전한도조회 → 서류준비 → 다중 신청(중복 심사 피해서 순차 진행)\n` +
+                          `• 팁: 동일 조건으로 2~3곳 비교, 우대금리/수수료 반영 견적 요청`;
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          return NextResponse.json({ content, fields: mergedProfile });
+        }
+        if (sel === 2) {
+          const content = `보완서류 핵심 체크리스트:\n\n` +
+                          `1) 소득: 소득금액증명, 원천징수영수증, 건강보험료 납부확인\n` +
+                          `2) 재직: 재직증명서, 4대보험 자격득실 확인서\n` +
+                          `3) 신용: 연체/대위변제 이력 없음 확인, 카드론·마이너스통장 잔액 정리\n` +
+                          `4) 매물: 매매계약서, 등기부등본, 건축물대장, 중개사 확인서류\n` +
+                          `5) 기타: 특이사항(부양가족, 추가소득) 입증 자료`;
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          return NextResponse.json({ content, fields: mergedProfile });
+        }
+        if (sel === 3) {
+          const content = `감정평가 재검토(리어필) 절차:\n\n` +
+                          `• 기준점 확인: 동일 단지/동일 평형 최근 거래·호가 반영 여부\n` +
+                          `• 추가자료 제출: 최근 실거래가, 리모델링 내역, 층/뷰 가점 근거\n` +
+                          `• 요청 채널: 담당 지점 통해 감정법인에 보완요청\n` +
+                          `• 타 은행 재평가: 감정법인 다르면 결과 달라질 수 있음 (병행 권장)`;
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          return NextResponse.json({ content, fields: mergedProfile });
+        }
+        if (sel === 4) {
+          // 대안 시나리오 재계산
+          const hasBasic = !!(mergedProfile.incomeMonthly && (mergedProfile.propertyPrice || mergedProfile.cashOnHand || mergedProfile.downPayment));
+          if (hasBasic) {
+            const response = generateLoanScenariosResponse(mergedProfile);
+            await saveMessageToSupabase(finalConversationId, "assistant", response.content, mergedProfile);
+            return NextResponse.json({ ...response, fields: mergedProfile });
+          }
+          const content = `시나리오 계산을 위해 최소 정보가 필요해요:\n\n` +
+                          `• 월소득(예: 450만원)\n` +
+                          `• 매매가 또는 희망가격(예: 5억원)\n` +
+                          `• 자기자본/계약금(예: 1억원)\n\n` +
+                          `예) "월소득 450, 5억 매매, 자본금 1억"처럼 알려주시면 바로 계산해 드릴게요.`;
+          await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
+          return NextResponse.json({ content, fields: mergedProfile });
+        }
+      }
+    }
+
     
     // 새 메시지에서 필드 추출 및 병합
     const newFields = extractFieldsFrom(message);
@@ -313,26 +410,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 0) 지식형 질문 처리 (정의/차이/예방법/어디서 받나/자본금 기준 전월세/최고가 등)
-    const knowledge = generateKnowledgeResponse(message, mergedProfile);
-    if (knowledge) {
-      const response = { ...knowledge, fields: mergedProfile };
-      await saveMessageToSupabase(finalConversationId, "assistant", knowledge.content, mergedProfile);
-      return NextResponse.json(response);
-    }
-
-    // 1) 대출 상담 및 감정평가 관련 응답 처리 (상담원 스타일)
-    const consultationResponse = generateLoanConsultationResponse(message, mergedProfile);
-    if (consultationResponse) {
-      const response = {
-        ...consultationResponse,
-        fields: mergedProfile
-      };
-      
-      // assistant 메시지를 Supabase에 저장
-      await saveMessageToSupabase(finalConversationId, "assistant", consultationResponse.content, mergedProfile);
-      
-      return NextResponse.json(response);
+    // 중앙 의도 라우팅 (지식/상담/구매/환산/시나리오/정책/일반)
+    const routed = routePrimary(message, mergedProfile);
+    if (routed) {
+      if (routed.content) {
+        await saveMessageToSupabase(finalConversationId, "assistant", routed.content, mergedProfile);
+      }
+      return NextResponse.json(routed);
     }
 
     // 2) 구매 상담 처리 (전세→월세 환산보다 우선)
@@ -414,27 +498,27 @@ export async function POST(request: NextRequest) {
       
       const response = {
         content,
-        cards: [{
+          cards: [{
           title: "주택 구매 전략",
           subtitle: `월소득 ${toComma(mergedProfile.incomeMonthly || 0)}원 기준`,
           monthly: `최대 대출: ${formatKRW(maxLoanAmount)}원`,
           totalInterest: "DSR 40% 기준",
-          notes: [
-            `연소득: ${formatKRW(annualIncome)}원`,
+            notes: [
+              `연소득: ${formatKRW(annualIncome)}원`,
             `보금자리론 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.bogeumjari)}원`,
             `디딤돌 한도: ${formatKRW(CURRENT_LOAN_POLICY.maxAmount.didimdol)}원`,
             "생애최초/신혼부부 우대 가능",
             "청약저축 활용 권장"
-          ]
-        }],
-        checklist: [
-          "기금e든든 모의심사 완료",
+            ]
+          }],
+          checklist: [
+            "기금e든든 모의심사 완료",
           "실거래가 조사",
           "청약 조건 확인",
           "여러 은행 상품 비교",
           "부모님 연대보증 검토"
-        ],
-        fields: mergedProfile
+          ],
+          fields: mergedProfile
       };
       
       // assistant 메시지를 Supabase에 저장
@@ -662,22 +746,22 @@ export async function POST(request: NextRequest) {
           await saveMessageToSupabase(finalConversationId, "assistant", content, mergedProfile);
           
           return NextResponse.json(response);
-        } else {
-          // 단순 정보 확인
-          const extracted = extractFieldsFrom(message);
-          const info = [];
-          if (extracted.incomeMonthly) info.push(`월소득: ${toComma(extracted.incomeMonthly)}원`);
-          if (extracted.cashOnHand) info.push(`보유현금: ${toComma(extracted.cashOnHand)}원`);
-          if (extracted.propertyPrice) info.push(`매매가: ${toComma(extracted.propertyPrice)}원`);
-          if (extracted.downPayment) info.push(`자기자본: ${toComma(extracted.downPayment)}원`);
-          
+      } else {
+        // 단순 정보 확인
+        const extracted = extractFieldsFrom(message);
+        const info = [];
+        if (extracted.incomeMonthly) info.push(`월소득: ${toComma(extracted.incomeMonthly)}원`);
+        if (extracted.cashOnHand) info.push(`보유현금: ${toComma(extracted.cashOnHand)}원`);
+        if (extracted.propertyPrice) info.push(`매매가: ${toComma(extracted.propertyPrice)}원`);
+        if (extracted.downPayment) info.push(`자기자본: ${toComma(extracted.downPayment)}원`);
+        
           const content = info.length > 0 ? 
             `📊 **확인된 정보**:\n${info.join('\n')}\n\n💡 **더 구체적인 도움이 필요하시면**:\n• "서울 아파트 구매하고 싶어요"\n• "월소득 300만원으로 얼마까지 살 수 있어?"\n• "정책자금 대출 받을 수 있을까?"\n처럼 말씀해 주세요!` :
             "정보를 찾을 수 없어요. 다시 입력해 주세요.";
           
           const response = {
             content,
-            fields: mergedProfile
+          fields: mergedProfile
           };
           
           // assistant 메시지를 Supabase에 저장

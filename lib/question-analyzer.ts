@@ -81,7 +81,9 @@ export function isSpecificLoanPolicyRequest(text: string): boolean {
   const hasRealEstateTerm = realEstateTerms.some(term => t.includes(term));
   
   // 더 포괄적인 매칭 조건
-  return hasPolicyKeyword || 
+  const explicitPolicyIntent = /ltv|dsr|한도\s*안내|정책\s*한도|지역.*ltv|서울.*ltv|아파트.*ltv/.test(t);
+
+  return hasPolicyKeyword || explicitPolicyIntent || 
          (hasLoanTerm && hasGeneralPattern) ||
          (hasLoanTerm && t.length > 5) || // 대출 용어가 있고 5자 이상이면 상담 가능
          (hasRealEstateTerm && hasGeneralPattern); // 부동산 용어 + 일반 패턴

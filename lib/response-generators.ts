@@ -500,6 +500,11 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
     /승인|거절|반려|한도|한도초과|한도부족/
   ];
   const hasLoanAppraisalContext = loanAppraisalPatterns.some(pattern => pattern.test(t));
+
+  // 정책/조건 문의(LTV/DSR 등)로 보이는 경우는 상담 모드 제외
+  if (hasLoanAppraisalContext && /ltv|dsr|자격|조건|요건|정책|한도\s*안내/.test(t) && !(/감정|평가|신청|승인|거절|반려/.test(t))) {
+    return null;
+  }
   
   if (!hasLoanAppraisalContext && !hasEmotionalContent) {
     return null;
@@ -535,9 +540,10 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
     content += `아, 정말 속상하시겠어요 😔 감정평가액이 예상보다 낮게 나오면 정말 당황스럽죠.\n\n`;
   }
   
+  let differencePercentCalc: number | null = null;
   if (appraisalAmount > 0 && applicationAmount > 0) {
     const difference = applicationAmount - appraisalAmount;
-    const differencePercent = Math.round((difference / applicationAmount) * 100);
+    differencePercentCalc = Math.round((difference / applicationAmount) * 100);
     
     content += `📊 **상황 분석**:\n`;
     content += `• 신청액: ${formatKRW(applicationAmount)}원\n`;
@@ -547,14 +553,14 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
     if (difference > 0) {
       content += `💡 **해결 방안**:\n`;
       
-      if (differencePercent <= 10) {
-        content += `• 차이가 ${differencePercent}%로 크지 않아요. 조정 가능할 가능성이 높습니다.\n`;
+      if (differencePercentCalc <= 10) {
+        content += `• 차이가 ${differencePercentCalc}%로 크지 않아요. 조정 가능할 가능성이 높습니다.\n`;
         content += `• 추가 서류나 보완 자료로 개선 가능할 수 있어요.\n`;
-      } else if (differencePercent <= 20) {
-        content += `• ${differencePercent}% 차이는 보통 범위입니다. 다른 은행도 시도해보세요.\n`;
+      } else if (differencePercentCalc <= 20) {
+        content += `• ${differencePercentCalc}% 차이는 보통 범위입니다. 다른 은행도 시도해보세요.\n`;
         content += `• 신용등급이나 소득 증빙을 보완하면 개선될 수 있어요.\n`;
       } else {
-        content += `• ${differencePercent}% 차이는 다소 큰 편이에요. 대안을 찾아봐야 할 것 같습니다.\n`;
+        content += `• ${differencePercentCalc}% 차이는 다소 큰 편이에요. 대안을 찾아봐야 할 것 같습니다.\n`;
         content += `• 다른 정책자금이나 일반 주택담보대출을 고려해보세요.\n`;
       }
       
@@ -563,14 +569,14 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
       
       cards.push({
         title: "감정평가 차이 분석",
-        subtitle: `${differencePercent}% 차이`,
+        subtitle: `${differencePercentCalc}% 차이`,
         monthly: `${formatKRW(difference)}원`,
-        totalInterest: `${differencePercent <= 10 ? "조정 가능" : differencePercent <= 20 ? "다른 은행 시도" : "대안 검토 필요"}`,
+        totalInterest: `${differencePercentCalc <= 10 ? "조정 가능" : differencePercentCalc <= 20 ? "다른 은행 시도" : "대안 검토 필요"}`,
         notes: [
           `신청액: ${formatKRW(applicationAmount)}원`,
           `감정평가액: ${formatKRW(appraisalAmount)}원`,
           `차이: ${formatKRW(difference)}원`,
-          `${differencePercent <= 10 ? "조정 가능성 높음" : differencePercent <= 20 ? "다른 은행 시도 권장" : "대안 검토 필요"}`
+          `${differencePercentCalc <= 10 ? "조정 가능성 높음" : differencePercentCalc <= 20 ? "다른 은행 시도 권장" : "대안 검토 필요"}`
         ]
       });
       
@@ -585,11 +591,11 @@ export function generateLoanConsultationResponse(text: string, profile: Fields) 
   }
   
   // 맥락 기반 마무리 제안 (고정 문구 제거)
-  if (appraisalAmount > 0 && applicationAmount > 0) {
+  if (appraisalAmount > 0 && applicationAmount > 0 && differencePercentCalc !== null) {
     // 차이 규모에 따른 구체적 다음 행동 제안
-    if (differencePercent <= 10) {
+    if (differencePercentCalc <= 10) {
       content += `\n다음 단계로, 같은 은행에서 재심사 요청(보완서류 첨부)과 타 은행 간단 재평가 중 무엇을 먼저 진행할지 정해보면 좋아요. 제가 필요한 보완서류 목록을 바로 정리해 드릴까요?`;
-    } else if (differencePercent <= 20) {
+    } else if (differencePercentCalc <= 20) {
       content += `\n바로 실행할 수 있는 선택지는 ① 타 은행 재평가 접수, ② 보완서류 준비 후 동일 은행 재심사예요. 어떤 경로로 먼저 도와드릴까요?`;
     } else {
       content += `\n현 조건으로는 승인 가능성이 낮아 보입니다. ① 대출 조합/기간·상환방식 재설계, ② 다른 정책자금/은행 비교 중 하나를 먼저 택해 진행해 보시겠어요? 원하시면 두 경로 모두에 맞춰 시뮬레이션을 만들어 드릴게요.`;

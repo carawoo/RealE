@@ -7,13 +7,6 @@ export const metadata = { title: "FAQ - RealE" };
 export default function FAQPage() {
   return (
     <main className="home">
-      <nav className="nav">
-        <div className="brand"><span className="logo">🏠</span> RealE FAQ</div>
-        <div className="nav-actions">
-          <a className="btn ghost" href="/">홈</a>
-          <a className="btn primary" href="/chat">상담 시작</a>
-        </div>
-      </nav>
 
       <section className="hero">
         <h1><span className="accent">자주 묻는 질문</span></h1>
