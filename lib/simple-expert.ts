@@ -28,6 +28,10 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   const numericScenario = handleNumericLoanScenario(message);
   if (numericScenario) return numericScenario;
 
+  // 0.2 DSR vs DTI 비교 질문 처리 (문맥 없이도 작동)
+  const compare = handleGlossaryComparison(message);
+  if (compare) return compare;
+
   // 0.1. 세금/취득세/감면 전용 처리 (우선 순위 높게)
   const taxRelief = handleAcquisitionTaxRelief(message);
   if (taxRelief) return taxRelief;
@@ -136,6 +140,26 @@ function handleGlossary(message: string): SimpleResponse | null {
   }
 
   return null;
+}
+
+// DSR vs DTI 비교 전용 처리
+function handleGlossaryComparison(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!(t.includes('dsr') && t.includes('dti')) && !t.includes('차이')) return null;
+  if (!(t.includes('차이') || t.includes('비교') || t.includes('뭐가 달라'))) return null;
+
+  const content = [
+    '요약: DSR은 “모든 대출” 상환액 기준, DTI는 “주담대 중심” 상환액 기준입니다.',
+    '- DSR(총부채원리금상환비율): 모든 대출의 월 상환액 합 / 월소득 × 100',
+    '- DTI(총부채상환비율): 주택담보대출 원리금(또는 이자 중심) / 연소득 × 100',
+    '- 심사 트렌드: 현재는 DSR를 더 널리 적용(은행·정책별 다름).',
+    '',
+    '실무 팁:',
+    '- 기존 신용·전세 대출이 있으면 DSR이 먼저 한도를 제한하는 경우가 많습니다.',
+    '- 한도를 늘리려면 기존 대출 월 상환액을 줄이거나 소득 증빙을 보강하세요.'
+  ].join('\n');
+
+  return { content, confidence: 'high', expertType: 'banking' };
 }
 
 // 금액 기반 대출 시나리오 처리

@@ -33,6 +33,31 @@ function generateUuidV4(): string {
   });
 }
 
+// 최근 메시지 내용 가져오기 (맥락용)
+async function fetchRecentMessages(conversationId: string, limit: number = 5): Promise<Array<{ role: Role; content: string }>> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !conversationId) return [];
+  const url =
+    `${SUPABASE_URL}/rest/v1/messages` +
+    `?select=role,content,created_at` +
+    `&conversation_id=eq.${conversationId}` +
+    `&order=created_at.desc` +
+    `&limit=${limit}`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows.map((r: any) => ({ role: r.role as Role, content: String(r.content || '') })) : [];
+  } catch {
+    return [];
+  }
+}
+
 
 // ---------- Supabase ----------
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
@@ -275,10 +300,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 단순한 전문가 시스템으로 라우팅
+    // 최근 3~5개 메시지로 경량 맥락 구성
+    const recent = finalConversationId ? await fetchRecentMessages(finalConversationId, 5) : [];
+
+    // 단순한 전문가 시스템으로 라우팅 (경량 맥락 포함)
     let simpleResponse = null;
     try {
-      simpleResponse = routeUserMessage(message, mergedProfile);
+      simpleResponse = routeUserMessage(message, mergedProfile, recent);
     } catch (error) {
       console.error("라우터 에러:", error);
       simpleResponse = null;

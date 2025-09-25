@@ -21,7 +21,7 @@ export type SimpleRouterResponse = {
 };
 
 // 메인 라우팅 함수
-export function routeUserMessage(message: string, profile: Fields): SimpleRouterResponse | null {
+export function routeUserMessage(message: string, profile: Fields, previousMessages?: Array<{ role: 'user' | 'assistant'; content: string }>): SimpleRouterResponse | null {
   const text = message.toLowerCase().trim();
   
   // 1. 빈 메시지 처리
@@ -46,8 +46,11 @@ export function routeUserMessage(message: string, profile: Fields): SimpleRouter
     };
   }
   
-  // 3. 전문가 조언 (메인 로직)
-  const expertResponse = generateSimpleExpertResponse(message, profile);
+  // 3. 전문가 조언 (메인 로직) - 간단 맥락 사용: 직전 용어 정의 두 개가 있었으면 "차이" 질의에 비교 답변
+  const expertResponse = generateSimpleExpertResponse(
+    enrichWithLightContext(message, previousMessages || []),
+    profile
+  );
   
   return {
     content: expertResponse.content,
@@ -55,6 +58,20 @@ export function routeUserMessage(message: string, profile: Fields): SimpleRouter
     expertType: expertResponse.expertType,
     fields: profile
   };
+}
+
+// 직전 대화 맥락을 가볍게 반영하여 비교형 질문 보강
+function enrichWithLightContext(message: string, prev: Array<{ role: 'user' | 'assistant'; content: string }>): string {
+  const t = message.toLowerCase();
+  if (t.includes('차이') || t.includes('뭐가 달라') || t.includes('비교')) {
+    const lastTwo = prev.filter(p => p.role === 'assistant').slice(0, 3).map(p => p.content.toLowerCase()).join(' ');
+    const knowDSR = lastTwo.includes('dsr') || lastTwo.includes('총부채원리금상환비율');
+    const knowDTI = lastTwo.includes('dti') || lastTwo.includes('총부채상환비율');
+    if (knowDSR || knowDTI) {
+      return `${message}\n(참고: 직전 대화에서 ${knowDSR ? 'DSR' : ''}${knowDSR && knowDTI ? ' / ' : ''}${knowDTI ? 'DTI' : ''} 정의가 설명되었습니다. 둘의 차이를 설명해줘.)`;
+    }
+  }
+  return message;
 }
 
 // 응답 후처리
