@@ -51,6 +51,14 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   // 0.18. 집 먼저 보고 문의? 절차 안내
   const processOrder = handleProcessOrder(message);
   if (processOrder) return processOrder;
+
+  // 0.19. 신혼부부 전용 구입자금/디딤돌 맵핑
+  const newlyweds = handleNewlywedsPurchaseFunds(message);
+  if (newlyweds) return newlyweds;
+
+  // 0.20. 생애최초 × 신혼부부 우대금리 중복 여부
+  const overlap = handleUdaeOverlap(message);
+  if (overlap) return overlap;
   
   // 1. 전세 만료 및 대출 연장 관련
   if (text.includes('전세') && (text.includes('만료') || text.includes('연장'))) {
@@ -389,6 +397,40 @@ function handleProcessOrder(message: string): SimpleResponse | null {
     '5) 계약 후 본심사/실행',
     '',
     '즉, “먼저 상담→그다음 매물” 순서로 진행하셔도 됩니다.'
+  ].join('\n');
+  return { content, confidence: 'high', expertType: 'banking' };
+}
+
+// 신혼부부 전용 구입자금/디딤돌 맵핑
+function handleNewlywedsPurchaseFunds(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!(t.includes('신혼부부') && (t.includes('전용') || t.includes('구입자금') || t.includes('구입 자금')))) return null;
+  const content = [
+    '신혼부부 “구입자금”은 보통 디딤돌/보금자리 계열에서 신혼부부 우대조건을 적용해 받는 방식입니다.',
+    '- 매매: 디딤돌(소득·주택가액 요건) 또는 보금자리(생애최초/소득요건)에서 신혼부부 우대금리/한도 적용',
+    '- 전세: 버팀목(청년/일반)에서 신혼부부 조건과 별개로 심사',
+    '',
+    '현실적인 선택:',
+    '- 소득이 낮고 주택가 6억 이하이면 디딤돌 신혼부부 우대 검토',
+    '- 생애최초·주택가 9억 이하면 보금자리(생애최초)도 후보',
+    '',
+    '한도·금리는 소득/지역/주택가에 따라 달라집니다. 매매가·자기자본·월소득을 알려주시면 바로 계산해 드릴게요.'
+  ].join('\n');
+  return { content, confidence: 'high', expertType: 'banking' };
+}
+
+// 생애최초 × 신혼부부 우대금리 중복 여부
+function handleUdaeOverlap(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!((t.includes('생애최초') || t.includes('생애 최초')) && t.includes('신혼부부') && (t.includes('중복') || t.includes('같이') || t.includes('동시')))) return null;
+  const content = [
+    '우대금리는 “정책/상품 기준으로 허용되는 범위”에서 중복 적용이 가능합니다.',
+    '- 예) 보금자리(생애최초) + 신혼부부 우대: 동시 충족 시 우대금리 합산(상한 존재) 적용',
+    '- 디딤돌도 생애최초/신혼부부 요건 충족 시 우대 중복이 가능하나, 세부 한도·금리 상한은 상품별 요건을 따릅니다.',
+    '',
+    '실무 팁:',
+    '- 기금e든든 모의심사에서 “생애최초, 신혼부부” 체크 → 우대금리 자동 반영',
+    '- 은행 상담 시 두 우대 조건 서류(혼인·무주택·소득)를 함께 제출하면 됩니다.'
   ].join('\n');
   return { content, confidence: 'high', expertType: 'banking' };
 }
