@@ -214,11 +214,236 @@ export function generateRealEstateExpertResponse(message: string, profile: Field
   };
 }
 
+// 실무적 질문 답변 생성
+export function generatePracticalExpertResponse(message: string, profile: Fields): NaturalResponse {
+  const text = message.toLowerCase();
+  
+  // 법무사비용 관련 질문
+  if (text.includes('법무사') && (text.includes('비용') || text.includes('보수') || text.includes('수수료'))) {
+    // 매매가격에서 법무사비용 추출 (개선된 버전)
+    let price = 0;
+    
+    // 3억2500만원 같은 경우 먼저 처리
+    const complexMatch = text.match(/(\d+)억(\d+)만원/);
+    if (complexMatch) {
+      const billion = parseInt(complexMatch[1]) * 100_000_000;
+      const million = parseInt(complexMatch[2]) * 10_000;
+      price = billion + million;
+    } else {
+      // 일반적인 경우 처리
+      const priceMatch = text.match(/(\d+)억(\d+)?만원?/);
+      if (priceMatch) {
+        const billion = parseInt(priceMatch[1]) * 100_000_000;
+        const million = priceMatch[2] ? parseInt(priceMatch[2]) * 10_000_000 : 0;
+        price = billion + million;
+      }
+    }
+    
+    // 평수 추출
+    const pyeongMatch = text.match(/(\d+)평/);
+    const pyeong = pyeongMatch ? parseInt(pyeongMatch[1]) : 0;
+    
+    let content = `법무사비용은 매매가격과 평수에 따라 달라집니다.\n\n`;
+    
+    if (price > 0) {
+      // 법무사비용 계산 (매매가격의 0.1-0.2% 정도)
+      const minCost = Math.round(price * 0.001);
+      const maxCost = Math.round(price * 0.002);
+      
+      content += `매매가격 ${(price / 100_000_000).toFixed(1)}억원 기준으로는:\n`;
+      content += `• 법무사비용: 약 ${(minCost / 10000).toFixed(0)}만원 ~ ${(maxCost / 10000).toFixed(0)}만원\n`;
+      content += `• 평균적으로 ${((minCost + maxCost) / 2 / 10000).toFixed(0)}만원 정도 예상하시면 됩니다\n\n`;
+    }
+    
+    if (pyeong > 0) {
+      content += `${pyeong}평 기준으로는:\n`;
+      content += `• 평수당 약 3-5만원 정도\n`;
+      content += `• 총 ${(pyeong * 4).toFixed(0)}만원 ~ ${(pyeong * 5).toFixed(0)}만원 예상\n\n`;
+    }
+    
+    content += `법무사비용은 다음과 같이 구성됩니다:\n`;
+    content += `• 등기신청 수수료\n`;
+    content += `• 등기부등본 발급비\n`;
+    content += `• 인지세 (매매가격의 0.1%)\n`;
+    content += `• 기타 서류비\n\n`;
+    content += `실제 비용은 법무사마다 다를 수 있으니 미리 상담받아보시는 것을 추천합니다.`;
+    
+    return {
+      content,
+      confidence: 'high',
+      expertType: 'real_estate'
+    };
+  }
+  
+  // 중개수수료 관련 질문
+  if (text.includes('중개수수료') || text.includes('중개비') || (text.includes('중개') && text.includes('비용'))) {
+    const priceMatch = text.match(/(\d+)억(\d+)?만원?/);
+    let price = 0;
+    if (priceMatch) {
+      const billion = parseInt(priceMatch[1]) * 100_000_000;
+      const million = priceMatch[2] ? parseInt(priceMatch[2]) * 10_000_000 : 0;
+      price = billion + million;
+    }
+    
+    let content = `중개수수료는 매매가격에 따라 달라집니다.\n\n`;
+    
+    if (price > 0) {
+      // 중개수수료 계산 (가격대별 차등)
+      let rate = 0;
+      if (price <= 100_000_000) {
+        rate = 0.009; // 1억원 이하: 0.9%
+      } else if (price <= 600_000_000) {
+        rate = 0.007; // 1억원 초과 6억원 이하: 0.7%
+      } else {
+        rate = 0.004; // 6억원 초과: 0.4%
+      }
+      
+      const cost = Math.round(price * rate);
+      
+      content += `매매가격 ${(price / 100_000_000).toFixed(1)}억원 기준으로는:\n`;
+      content += `• 중개수수료: 약 ${(cost / 10000).toFixed(0)}만원 (${(rate * 100).toFixed(1)}%)\n\n`;
+    }
+    
+    content += `중개수수료는 다음과 같이 계산됩니다:\n`;
+    content += `• 1억원 이하: 0.9%\n`;
+    content += `• 1억원 초과 6억원 이하: 0.7%\n`;
+    content += `• 6억원 초과: 0.4%\n\n`;
+    content += `실제로는 중개업소마다 다를 수 있으니 미리 확인해보시는 것을 추천합니다.`;
+    
+    return {
+      content,
+      confidence: 'high',
+      expertType: 'real_estate'
+    };
+  }
+  
+  // 취득세 관련 질문
+  if (text.includes('취득세') || (text.includes('세금') && text.includes('매매'))) {
+    const priceMatch = text.match(/(\d+)억(\d+)?만원?/);
+    let price = 0;
+    if (priceMatch) {
+      const billion = parseInt(priceMatch[1]) * 100_000_000;
+      const million = priceMatch[2] ? parseInt(priceMatch[2]) * 10_000_000 : 0;
+      price = billion + million;
+    }
+    
+    let content = `취득세는 매매가격과 주택 유형에 따라 달라집니다.\n\n`;
+    
+    if (price > 0) {
+      // 취득세 계산 (가격대별 차등)
+      let rate = 0;
+      if (price <= 100_000_000) {
+        rate = 0.01; // 1억원 이하: 1%
+      } else if (price <= 300_000_000) {
+        rate = 0.02; // 1억원 초과 3억원 이하: 2%
+      } else if (price <= 600_000_000) {
+        rate = 0.03; // 3억원 초과 6억원 이하: 3%
+      } else {
+        rate = 0.04; // 6억원 초과: 4%
+      }
+      
+      const tax = Math.round(price * rate);
+      
+      content += `매매가격 ${(price / 100_000_000).toFixed(1)}억원 기준으로는:\n`;
+      content += `• 취득세: 약 ${(tax / 10000).toFixed(0)}만원 (${(rate * 100).toFixed(0)}%)\n\n`;
+    }
+    
+    content += `취득세는 다음과 같이 계산됩니다:\n`;
+    content += `• 1억원 이하: 1%\n`;
+    content += `• 1억원 초과 3억원 이하: 2%\n`;
+    content += `• 3억원 초과 6억원 이하: 3%\n`;
+    content += `• 6억원 초과: 4%\n\n`;
+    content += `생애최초 주택 구입 시에는 감면 혜택이 있을 수 있으니 확인해보시는 것을 추천합니다.`;
+    
+    return {
+      content,
+      confidence: 'high',
+      expertType: 'real_estate'
+    };
+  }
+  
+  // 매매 관련 총 비용 질문
+  if (text.includes('매매') && (text.includes('비용') || text.includes('총비용') || text.includes('얼마나'))) {
+    const priceMatch = text.match(/(\d+)억(\d+)?만원?/);
+    let price = 0;
+    if (priceMatch) {
+      const billion = parseInt(priceMatch[1]) * 100_000_000;
+      const million = priceMatch[2] ? parseInt(priceMatch[2]) * 10_000_000 : 0;
+      price = billion + million;
+    }
+    
+    if (price > 0) {
+      // 각종 비용 계산
+      const brokerage = Math.round(price * 0.006); // 중개수수료 0.6%
+      const acquisition = Math.round(price * 0.025); // 취득세 2.5%
+      const legal = Math.round(price * 0.0015); // 법무사비용 0.15%
+      const total = brokerage + acquisition + legal;
+      
+      let content = `매매가격 ${(price / 100_000_000).toFixed(1)}억원 기준 총 비용은 다음과 같습니다:\n\n`;
+      content += `• 중개수수료: 약 ${(brokerage / 10000).toFixed(0)}만원\n`;
+      content += `• 취득세: 약 ${(acquisition / 10000).toFixed(0)}만원\n`;
+      content += `• 법무사비용: 약 ${(legal / 10000).toFixed(0)}만원\n`;
+      content += `• 기타 비용: 약 50-100만원\n\n`;
+      content += `총 예상 비용: 약 ${(total / 10000).toFixed(0)}만원 ~ ${((total + 1000000) / 10000).toFixed(0)}만원\n\n`;
+      content += `실제로는 주택 유형과 지역에 따라 다를 수 있으니 미리 계산해보시는 것을 추천합니다.`;
+      
+      return {
+        content,
+        confidence: 'high',
+        expertType: 'real_estate'
+      };
+    }
+  }
+  
+  // 평수 관련 질문
+  if (text.includes('평수') || text.includes('평') || text.includes('전용')) {
+    const pyeongMatch = text.match(/(\d+)평/);
+    const pyeong = pyeongMatch ? parseInt(pyeongMatch[1]) : 0;
+    
+    if (pyeong > 0) {
+      let content = `${pyeong}평 주택에 대한 정보입니다:\n\n`;
+      content += `• 전용면적: 약 ${pyeong}평 (${(pyeong * 3.3).toFixed(1)}㎡)\n`;
+      content += `• 공급면적: 약 ${(pyeong * 1.2).toFixed(0)}평 (공용면적 포함)\n`;
+      content += `• 적정 가격대: ${(pyeong * 0.3).toFixed(1)}억원 ~ ${(pyeong * 0.6).toFixed(1)}억원 (지역별 차이)\n\n`;
+      content += `평수별 특징:\n`;
+      if (pyeong >= 80) {
+        content += `• 80평 이상: 넓은 거실과 침실, 가족용 주택\n`;
+      } else if (pyeong >= 60) {
+        content += `• 60-80평: 적당한 크기의 가족용 주택\n`;
+      } else if (pyeong >= 40) {
+        content += `• 40-60평: 신혼부부나 소가족용 주택\n`;
+      } else {
+        content += `• 40평 미만: 1-2인 가구용 주택\n`;
+      }
+      
+      return {
+        content,
+        confidence: 'high',
+        expertType: 'real_estate'
+      };
+    }
+  }
+  
+  return {
+    content: `실무적 질문이시군요. 구체적인 상황을 알려주시면 더 정확한 답변을 드릴 수 있습니다.`,
+    confidence: 'medium',
+    expertType: 'real_estate'
+  };
+}
+
 // 메인 답변 생성 함수
 export function generateNaturalExpertResponse(message: string, profile: Fields): NaturalResponse {
   const text = message.toLowerCase();
   
-  // 정책 관련 질문 (우선 처리)
+  // 실무적 질문 (우선 처리) - 더 넓은 범위로 확장
+  if (text.includes('법무사') || text.includes('중개수수료') || text.includes('취득세') || 
+      text.includes('세금') || text.includes('비용') || text.includes('보수') ||
+      text.includes('매매') || text.includes('평수') || text.includes('평') || 
+      text.includes('전용') || text.includes('얼마나') || text.includes('총비용')) {
+    return generatePracticalExpertResponse(message, profile);
+  }
+  
+  // 정책 관련 질문
   if (text.includes('정책') || text.includes('보금자리') || text.includes('디딤돌') || 
       text.includes('버팀목') || text.includes('신생아') || text.includes('신혼부부') ||
       text.includes('생애최초') || text.includes('청년')) {
