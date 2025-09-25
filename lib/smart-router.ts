@@ -5,6 +5,8 @@ import { Fields } from './utils';
 import { generateNaturalExpertResponse } from './natural-expert';
 import { replyJeonseToMonthly } from './utils';
 import { generateKnowledgeResponse } from './knowledge';
+import { analyzeConversationContext, generateContextualResponse } from './context-memory';
+import { generateEnhancedFallbackResponse } from './enhanced-fallback';
 
 export type SmartResponse = {
   content: string;
@@ -19,10 +21,17 @@ export type SmartResponse = {
   fields?: Fields;
   confidence: 'high' | 'medium' | 'low';
   expertType: 'real_estate' | 'banking' | 'policy' | 'general';
+  suggestions?: string[];
+  nextSteps?: string[];
+  context?: any;
 };
 
-// 메인 라우팅 함수 - 자연스러운 전문가 답변
-export function routeUserMessage(message: string, profile: Fields): SmartResponse | null {
+// 메인 라우팅 함수 - 맥락 기반 전문가 답변
+export function routeUserMessage(
+  message: string, 
+  profile: Fields, 
+  previousContext?: any
+): SmartResponse | null {
   const text = message.toLowerCase().trim();
   
   // 1. 빈 메시지 처리
@@ -34,34 +43,51 @@ export function routeUserMessage(message: string, profile: Fields): SmartRespons
     };
   }
   
-  // 2. 전세→월세 환산 (우선 처리)
+  // 2. 대화 맥락 분석
+  const context = analyzeConversationContext(message, profile, previousContext);
+  
+  // 3. 전세→월세 환산 (우선 처리)
   const jeonseResponse = replyJeonseToMonthly(message);
   if (jeonseResponse) {
     return {
       ...jeonseResponse,
       confidence: 'high',
-      expertType: 'general'
+      expertType: 'general',
+      context
     };
   }
   
-  // 3. 지식형 질문 (FAQ 등)
+  // 4. 지식형 질문 (FAQ 등)
   const knowledgeResponse = generateKnowledgeResponse(message, profile);
   if (knowledgeResponse) {
     return {
       ...knowledgeResponse,
       confidence: 'high',
-      expertType: 'policy'
+      expertType: 'policy',
+      context
     };
   }
   
-  // 4. 자연스러운 전문가 답변 (메인 로직)
+  // 5. 맥락 기반 답변 시도
+  const contextualResponse = generateContextualResponse(message, profile, context);
+  if (contextualResponse) {
+    return {
+      content: contextualResponse,
+      confidence: 'high',
+      expertType: context.lastExpertType,
+      context
+    };
+  }
+  
+  // 6. 자연스러운 전문가 답변 (메인 로직)
   const naturalResponse = generateNaturalExpertResponse(message, profile);
   
   return {
     content: naturalResponse.content,
     confidence: naturalResponse.confidence,
     expertType: naturalResponse.expertType,
-    fields: profile
+    fields: profile,
+    context
   };
 }
 
@@ -174,36 +200,21 @@ export function validateResponse(response: SmartResponse): {
   };
 }
 
-// 폴백 응답 생성 (자연스러운 버전)
-export function generateFallbackResponse(message: string, profile: Fields): SmartResponse {
-  const text = message.toLowerCase();
+// 폴백 응답 생성 (개선된 버전)
+export function generateFallbackResponse(
+  message: string, 
+  profile: Fields, 
+  context?: any
+): SmartResponse {
+  const enhancedFallback = generateEnhancedFallbackResponse(message, profile, context);
   
-  // 사용자가 구체적인 정보를 요청한 경우
-  if (/\d+만원|\d+억|\d+천만원/.test(text)) {
-    return {
-      content: `입력해주신 정보를 바탕으로 상담을 도와드리겠습니다.\n\n` +
-               `더 정확한 조언을 위해 다음 정보를 추가로 알려주시면 좋겠습니다:\n\n` +
-               `• 월소득 (세후)\n` +
-               `• 매물 가격 또는 희망 예산\n` +
-               `• 보유 현금\n` +
-               `• 구체적인 목적 (구입/전세/투자 등)\n\n` +
-               `예시: "월소득 500만원, 5억원 아파트 구입하고 싶어요"`,
-      confidence: 'medium',
-      expertType: 'general'
-    };
-  }
-  
-  // 일반적인 질문인 경우
   return {
-    content: `안녕하세요! 부동산 대출 전문가입니다.\n\n` +
-             `어떤 도움이 필요하신지 구체적으로 말씀해 주시면, 실무 경험을 바탕으로 정확한 조언을 드리겠습니다.\n\n` +
-             `예를 들어:\n` +
-             `• "생애최초 신혼부부전용 구입자금 혼인신고 타이밍이 궁금해요"\n` +
-             `• "보금자리론과 디딤돌 중 뭐가 나을까요?"\n` +
-             `• "월소득 500만원으로 5억원 아파트 살 수 있을까요?"\n\n` +
-             `구체적인 상황을 알려주시면 더 정확한 답변을 드릴 수 있습니다.`,
-    confidence: 'high',
-    expertType: 'general'
+    content: enhancedFallback.content,
+    confidence: enhancedFallback.confidence,
+    expertType: enhancedFallback.expertType,
+    suggestions: enhancedFallback.suggestions,
+    nextSteps: enhancedFallback.nextSteps,
+    context
   };
 }
 

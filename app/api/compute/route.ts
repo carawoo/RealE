@@ -275,12 +275,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 새로운 전문가 시스템으로 라우팅
-    let smartResponse = routeUserMessage(message, mergedProfile);
+    // 대화 맥락 가져오기 (간단한 버전)
+    const conversationHistory = await fetchConversationProfile(finalConversationId);
+    
+    // 새로운 전문가 시스템으로 라우팅 (맥락 포함)
+    let smartResponse = routeUserMessage(message, mergedProfile, conversationHistory);
     
     // 라우팅 실패 시 폴백 처리
     if (!smartResponse) {
-      smartResponse = generateFallbackResponse(message, mergedProfile);
+      smartResponse = generateFallbackResponse(message, mergedProfile, conversationHistory);
     }
     
     // 응답 후처리
@@ -296,7 +299,9 @@ export async function POST(request: NextRequest) {
       content: smartResponse.content,
       cards: smartResponse.cards,
       checklist: smartResponse.checklist,
-      fields: mergedProfile
+      fields: mergedProfile,
+      suggestions: smartResponse.suggestions,
+      nextSteps: smartResponse.nextSteps
     };
     
     return NextResponse.json(response);
