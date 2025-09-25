@@ -105,9 +105,41 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
     return handleGeneralRealEstate(message);
   }
   
-  // 10. 기본 응답
+  // 10. 기본 응답 (동적 가정형: 폴백 금지)
+  // 프로필에 일부 슬롯이 있으면 즉시 가정 계산/조언, 없으면 한 줄 샘플 입력 안내
+  const hasAnySlot = Boolean((profile as any).propertyPrice || (profile as any).incomeMonthly || (profile as any).downPayment);
+  if (hasAnySlot) {
+    const price = (profile as any).propertyPrice || 0;
+    const dp = (profile as any).downPayment || 0;
+    const income = (profile as any).incomeMonthly || null;
+    const years = 30;
+    const rate = 4.5;
+    const need = Math.max(price - dp, 0);
+    const pay = need ? calculateMonthlyPayment(need, rate, years) : 0;
+    const ltv = price ? calculateLTV(need, price) : 0;
+    const dsr = income ? calculateDSR(pay, income) : null;
+
+    const lines: string[] = [];
+    if (price) lines.push(`매매가 ${formatKRW(price)}원${dp ? `, 자기자본 ${formatKRW(dp)}원` : ''}${income ? `, 월소득 ${formatKRW(income)}원` : ''} 기준`);
+    if (need) lines.push(`필요 대출 약 ${formatKRW(need)}원 (LTV≈${ltv.toFixed(0)}%)`);
+    if (pay) lines.push(`30년·${rate}% 가정 월 상환 ${formatKRW(pay)}원${dsr !== null ? ` (DSR≈${dsr.toFixed(0)}%)` : ''}`);
+    lines.push('다음 단계: 기금e든든 모의심사 → 2~3곳 은행 가심사 → 서류 준비');
+
+    return {
+      content: lines.join('\n'),
+      confidence: 'high',
+      expertType: 'banking'
+    };
+  }
+
+  // 슬롯이 전혀 없으면 구체적 한 줄 입력 예시 제공(정형 폴백 문구 금지)
   return {
-    content: "구체적인 상황을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
+    content: [
+      '바로 계산해 드릴게요. 한 줄로 알려주세요:',
+      '- 매매: “매매 5.4억, 자기자본 1억, 월소득 500만, 비규제”',
+      '- 전세 비교: “전세 3억 vs 보증금 5천·월세 80”',
+      '- 정책: “디딤돌 신혼부부, 12월 신청 소득기간?”'
+    ].join('\n'),
     confidence: 'medium',
     expertType: 'general'
   };
