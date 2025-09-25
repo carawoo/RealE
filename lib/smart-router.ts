@@ -2,14 +2,9 @@
 // 개선된 의도 라우팅 시스템 - 전문가 관점의 스마트 라우팅
 
 import { Fields } from './utils';
-import { ExpertResponse, generateExpertResponse, analyzeUserContext } from './expert-advisor';
+import { generateNaturalExpertResponse } from './natural-expert';
 import { replyJeonseToMonthly } from './utils';
 import { generateKnowledgeResponse } from './knowledge';
-import { 
-  analyzeFallbackType, 
-  generateFallbackResponse as generateSmartFallback,
-  convertFallbackToExpertResponse 
-} from './fallback-handler';
 
 export type SmartResponse = {
   content: string;
@@ -26,23 +21,20 @@ export type SmartResponse = {
   expertType: 'real_estate' | 'banking' | 'policy' | 'general';
 };
 
-// 메인 라우팅 함수 - 단순하고 직관적
+// 메인 라우팅 함수 - 자연스러운 전문가 답변
 export function routeUserMessage(message: string, profile: Fields): SmartResponse | null {
   const text = message.toLowerCase().trim();
   
   // 1. 빈 메시지 처리
   if (!text || text.length < 2) {
     return {
-      content: "안녕하세요! 부동산 대출 상담을 도와드리겠습니다. 🏠\n\n어떤 도움이 필요하신지 말씀해 주세요.",
+      content: "안녕하세요! 부동산 대출 전문가입니다.\n\n어떤 도움이 필요하신지 말씀해 주세요.",
       confidence: 'high',
       expertType: 'general'
     };
   }
   
-  // 2. 사용자 맥락 분석
-  const context = analyzeUserContext(message, profile);
-  
-  // 3. 전세→월세 환산 (우선 처리)
+  // 2. 전세→월세 환산 (우선 처리)
   const jeonseResponse = replyJeonseToMonthly(message);
   if (jeonseResponse) {
     return {
@@ -52,7 +44,7 @@ export function routeUserMessage(message: string, profile: Fields): SmartRespons
     };
   }
   
-  // 4. 지식형 질문 (FAQ 등)
+  // 3. 지식형 질문 (FAQ 등)
   const knowledgeResponse = generateKnowledgeResponse(message, profile);
   if (knowledgeResponse) {
     return {
@@ -62,11 +54,13 @@ export function routeUserMessage(message: string, profile: Fields): SmartRespons
     };
   }
   
-  // 5. 전문가 상담 (메인 로직)
-  const expertResponse = generateExpertResponse(message, profile, context);
+  // 4. 자연스러운 전문가 답변 (메인 로직)
+  const naturalResponse = generateNaturalExpertResponse(message, profile);
   
   return {
-    ...expertResponse,
+    content: naturalResponse.content,
+    confidence: naturalResponse.confidence,
+    expertType: naturalResponse.expertType,
     fields: profile
   };
 }
@@ -180,25 +174,40 @@ export function validateResponse(response: SmartResponse): {
   };
 }
 
-// 폴백 응답 생성 (개선된 버전)
+// 폴백 응답 생성 (자연스러운 버전)
 export function generateFallbackResponse(message: string, profile: Fields): SmartResponse {
-  // 폴백 타입 분석
-  const fallbackType = analyzeFallbackType(message, profile);
+  const text = message.toLowerCase();
   
-  // 스마트 폴백 응답 생성
-  const smartFallback = generateSmartFallback(message, profile, fallbackType);
+  // 사용자가 구체적인 정보를 요청한 경우
+  if (/\d+만원|\d+억|\d+천만원/.test(text)) {
+    return {
+      content: `입력해주신 정보를 바탕으로 상담을 도와드리겠습니다.\n\n` +
+               `더 정확한 조언을 위해 다음 정보를 추가로 알려주시면 좋겠습니다:\n\n` +
+               `• 월소득 (세후)\n` +
+               `• 매물 가격 또는 희망 예산\n` +
+               `• 보유 현금\n` +
+               `• 구체적인 목적 (구입/전세/투자 등)\n\n` +
+               `예시: "월소득 500만원, 5억원 아파트 구입하고 싶어요"`,
+      confidence: 'medium',
+      expertType: 'general'
+    };
+  }
   
-  // ExpertResponse 형식으로 변환
-  const expertResponse = convertFallbackToExpertResponse(smartFallback);
-  
+  // 일반적인 질문인 경우
   return {
-    content: expertResponse.content,
-    confidence: expertResponse.confidence,
-    expertType: expertResponse.expertType
+    content: `안녕하세요! 부동산 대출 전문가입니다.\n\n` +
+             `어떤 도움이 필요하신지 구체적으로 말씀해 주시면, 실무 경험을 바탕으로 정확한 조언을 드리겠습니다.\n\n` +
+             `예를 들어:\n` +
+             `• "생애최초 신혼부부전용 구입자금 혼인신고 타이밍이 궁금해요"\n` +
+             `• "보금자리론과 디딤돌 중 뭐가 나을까요?"\n` +
+             `• "월소득 500만원으로 5억원 아파트 살 수 있을까요?"\n\n` +
+             `구체적인 상황을 알려주시면 더 정확한 답변을 드릴 수 있습니다.`,
+    confidence: 'high',
+    expertType: 'general'
   };
 }
 
-// 응답 후처리 (개선된 버전)
+// 응답 후처리 (자연스러운 버전)
 export function postProcessResponse(response: SmartResponse, message: string): SmartResponse {
   // 응답 검증
   const validation = validateResponse(response);
@@ -207,14 +216,12 @@ export function postProcessResponse(response: SmartResponse, message: string): S
     console.warn('Response validation failed:', validation.issues);
   }
   
-  // 전문가 타입에 따른 추가 정보
-  if (response.expertType === 'banking' && response.confidence === 'high') {
-    response.content += `\n\n💼 **은행 과장 관점**: 위 조언은 6년차 은행 경험을 바탕으로 한 실무 중심의 상담입니다.`;
-  } else if (response.expertType === 'policy' && response.confidence === 'high') {
-    response.content += `\n\n📋 **정책 전문가 관점**: 최신 정책 정보를 반영한 정확한 상담입니다.`;
-  } else if (response.expertType === 'real_estate' && response.confidence === 'high') {
-    response.content += `\n\n🏠 **부동산 전문가 관점**: 15년 경력의 시장 분석을 바탕으로 한 조언입니다.`;
-  }
+  // 이모티콘과 불필요한 포맷팅 제거
+  response.content = response.content
+    .replace(/[🏠🏦📋💡📊🎯✅❌⚠️💼📝🔧]/g, '') // 이모티콘 제거
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 볼드 제거
+    .replace(/\n\n+/g, '\n\n') // 연속된 줄바꿈 정리
+    .trim();
   
   return response;
 }
