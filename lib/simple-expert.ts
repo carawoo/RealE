@@ -35,6 +35,10 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   // 0.1. 세금/취득세/감면 전용 처리 (우선 순위 높게)
   const taxRelief = handleAcquisitionTaxRelief(message);
   if (taxRelief) return taxRelief;
+
+  // 0.15. 디딤돌/보금자리 소득기준·원천징수 기간 질의 전용 처리
+  const incomePeriod = handlePolicyIncomePeriod(message);
+  if (incomePeriod) return incomePeriod;
   
   // 1. 전세 만료 및 대출 연장 관련
   if (text.includes('전세') && (text.includes('만료') || text.includes('연장'))) {
@@ -293,6 +297,39 @@ function handleAcquisitionTaxRelief(message: string): SimpleResponse | null {
     confidence: 'high',
     expertType: 'policy'
   };
+}
+
+// 디딤돌/보금자리 소득기준·원천징수 기간 안내
+function handlePolicyIncomePeriod(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  const mentionsPolicy = t.includes('디딤돌') || t.includes('보금자리');
+  const asksIncomePeriod = t.includes('원천징수') || t.includes('소득기준') || t.includes('몇월부터') || t.includes('몇 월부터') || t.includes('기간');
+  if (!mentionsPolicy || !asksIncomePeriod) return null;
+
+  const content = [
+    '디딤돌/보금자리 소득 확인 기간은 신청 시점 기준으로 산정합니다.',
+    '',
+    '정책자금(디딤돌/보금자리) 소득 확인:',
+    '- 원칙: 신청일 기준 직전 12개월 합산 소득(근로소득 원천징수 포함)으로 판단',
+    '- 예) 11월 신청 → 전년 11월 ~ 당해 10월 소득',
+    '- 예) 12월 신청 → 전년 12월 ~ 당해 11월 소득',
+    '',
+    '자주 묻는 점:',
+    '- 원천징수영수증은 전년도 것이 기본이지만, 정책자금 심사에서는 최근 12개월 소득을 추가 서류로 확인할 수 있습니다.',
+    '- 급여 변동이 있으면 건강보험료·급여명세 등 보완서류를 요구할 수 있습니다.',
+    '',
+    '답변 채널:',
+    '- 기금e든든 모의심사: 자격/소득기준 빠르게 1차 확인',
+    '- 취급은행 창구: 실제 접수/심사 서류 체크리스트 제공(은행별 약간 상이)',
+    '- 주택금융공사 콜센터: 정책 해석 통일 기준 안내(세부 서류는 은행 확정)',
+    '',
+    '다음 단계:',
+    '- 목표 신청월을 정하고, 해당 월 기준 최근 12개월 소득자료를 미리 모으세요.',
+    '- 급여증빙(원천징수, 급여명세, 건강보험료 납부내역) 준비 → 은행 사전상담',
+    '- 모의심사 결과와 은행 가심사 결과를 비교해 최종 신청월 확정'
+  ].join('\n');
+
+  return { content, confidence: 'high', expertType: 'banking' };
 }
 
 // 전세 만료 및 대출 연장 처리
