@@ -245,11 +245,18 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
     }
   }
 
-  // 매매가/집값 추출: "5억원", "매매가5억", "집구입5억" 등
-  let propertyPrice = parseWon(message) || null;
+  // 매매가/집값 추출: "매매 5억", "매매가 5억", "아파트 5억" 등 (엄격 매칭)
+  let propertyPrice: number | null = null;
+  const mPrice1 = message.match(/매매\s*([\d,억천만원\s]+)/);
+  const mPrice2 = message.match(/매매가\s*([\d,억천만원\s]+)/);
+  const mPrice3 = message.match(/(집|주택|아파트)\s*([\d,억천만원\s]+)/);
+  if (mPrice1 && !propertyPrice) propertyPrice = parseWon(mPrice1[1]) || null;
+  if (mPrice2 && !propertyPrice) propertyPrice = parseWon(mPrice2[1]) || null;
+  if (mPrice3 && !propertyPrice) propertyPrice = parseWon(mPrice3[2]) || null;
+  // 보조: "가격 5억" 등
   if (!propertyPrice) {
-    const mPrice = t.match(/(매매가|집값|구입|매수|가격)(\d+[억만천원]+)/);
-    if (mPrice) propertyPrice = parseWon(mPrice[2]) || null;
+    const mPrice4 = message.match(/가격\s*([\d,억천만원\s]+)/);
+    if (mPrice4) propertyPrice = parseWon(mPrice4[1]) || null;
   }
 
   // 자기자본/계약금/보유현금 추출: "자기자본1억원", "계약금1억", "보유현금1억"
@@ -257,7 +264,24 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
   const mDown = t.match(/(자기자본|계약금|보유현금)(\d+[억만천원]+)/);
   if (mDown) downPayment = parseWon(mDown[2]);
 
-  // 최소 요건: 매매가가 있어야 하고, 월소득 또는 자기자본 중 하나 이상이 있으면 분석 진행
+  // 부채 이슈 전용 응답: 빚 언급이 있고 매매가가 없다면, 부채 중심 조언 제공
+  if (t.includes('빚') && !propertyPrice) {
+    const debtMatch = message.match(/빚.*?(\d+)(?:만원|만|억)/);
+    let debtDesc = '기존 부채';
+    if (debtMatch) debtDesc = `기존 부채 약 ${debtMatch[1]} 단위`;
+    const content = [
+      '보금자리론/디딤돌은 DSR·LTV 요건을 함께 봅니다. 부채가 있으면 DSR이 먼저 한도를 제한할 수 있어요.',
+      '- 방법 1: 기존 부채 일부 상환 → 월 상환액 축소 → DSR 여유 확보',
+      '- 방법 2: 금리 낮은 대출로 대환 → 월 상환액 인하',
+      '- 방법 3: 자기자본(계약금) 비율 확대 → 필요 대출 축소',
+      '',
+      '바로 계산해 드리려면 한 줄로 알려주세요:',
+      '“매매 3억2천, 자기자본 3천, 월소득 250만, 기존부채 월상환 20만, 비규제”'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  // 최소 요건: 매매가가 있어야 분석 진행
   if (!propertyPrice) return null;
 
   const dp = downPayment ?? 0;

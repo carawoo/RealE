@@ -84,10 +84,12 @@ export function extractIntentAndSlots(message: string): { intent: UserIntent; sl
   if (!slots.incomeMonthly && slots.incomeAnnual) slots.incomeMonthly = Math.round((slots.incomeAnnual as number) / 12);
 
   // debts
-  const debtMonthly = message.match(/빚.*?(\d+)만원/);
-  if (debtMonthly) {
+  const debtMonthly = message.match(/빚.*?(\d+)\s*만원/);
+  const debtHundredMil = message.match(/빚.*?(\d+)\s*억/);
+  if (debtMonthly || debtHundredMil) {
     slots.hasExistingDebt = true;
-    slots.monthlyDebtPayment = parseInt(debtMonthly[1], 10) * 10_000;
+    if (debtMonthly) slots.monthlyDebtPayment = parseInt(debtMonthly[1], 10) * 10_000;
+    // 억 단위 표기는 월상환 불명확: 추후 보충요청 용도로만 플래그
   }
 
   // intent
