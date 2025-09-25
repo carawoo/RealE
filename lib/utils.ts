@@ -6,6 +6,9 @@ export type Fields = {
   propertyPrice?: number;
   downPayment?: number;
   loanPeriodYears?: number;
+  isFirstTimeBuyer?: boolean;
+  maritalStatus?: 'single' | 'married' | 'planning' | 'unknown';
+  propertyType?: 'apartment' | 'nonApartment' | 'unknown';
 };
 
 // ---------- utils ----------
@@ -74,6 +77,32 @@ export function extractFieldsFrom(text: string): Fields {
     if (years > 0 && years <= 50) fields.loanPeriodYears = years;
   }
   
+  // 무주택(생애최초) 추출
+  if (/무주택|생애최초/.test(text)) {
+    fields.isFirstTimeBuyer = true;
+  }
+  
+  // 소득 없음 처리
+  if (/(소득|월소득|연봉).*(없어|없음|0|제로)|소득\s*없어/.test(text)) {
+    fields.incomeMonthly = 0;
+  }
+  
+  // 결혼 상태
+  if (/결혼\s*예정|예비부부|예정된\s*결혼/.test(text)) {
+    fields.maritalStatus = 'planning';
+  } else if (/기혼|결혼했|혼인신고/.test(text)) {
+    fields.maritalStatus = 'married';
+  } else if (/미혼|솔로/.test(text)) {
+    fields.maritalStatus = 'single';
+  }
+  
+  // 주택 유형
+  if (/아파트/.test(text)) {
+    fields.propertyType = 'apartment';
+  } else if (/오피스텔|다가구|단독|연립|다세대/.test(text)) {
+    fields.propertyType = 'nonApartment';
+  }
+
   return fields;
 }
 
@@ -84,6 +113,9 @@ export function mergeFields(a?: Fields | null, b?: Fields | null): Fields {
     propertyPrice: b?.propertyPrice ?? a?.propertyPrice,
     downPayment: b?.downPayment ?? a?.downPayment,
     loanPeriodYears: b?.loanPeriodYears ?? a?.loanPeriodYears,
+    isFirstTimeBuyer: b?.isFirstTimeBuyer ?? a?.isFirstTimeBuyer,
+    maritalStatus: b?.maritalStatus ?? a?.maritalStatus,
+    propertyType: b?.propertyType ?? a?.propertyType,
   };
 }
 

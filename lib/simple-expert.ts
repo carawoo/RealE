@@ -211,8 +211,12 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
       if (price) {
         const isMetro = CURRENT_LOAN_POLICY.regulatedRegions.some(r => message.includes(r));
         const caps = CURRENT_LOAN_POLICY.ltv;
-        const generalCap = (isMetro ? caps.bogeumjari.metro.apartment : caps.bogeumjari.nonMetro.apartment) / 100;
-        const firstCap = (isMetro ? caps.firstTime.metro.apartment : caps.firstTime.nonMetro.apartment) / 100;
+        const isFirst = (profile.isFirstTimeBuyer === true) || /생애최초|무주택/.test(lower);
+        const useApt = (profile.propertyType === 'apartment') || /아파트/.test(lower);
+        const groupGeneral = isMetro ? caps.bogeumjari.metro : caps.bogeumjari.nonMetro;
+        const groupFirst = isMetro ? caps.firstTime.metro : caps.firstTime.nonMetro;
+        const generalCap = (useApt ? groupGeneral.apartment : groupGeneral.nonApartment) / 100;
+        const firstCap = (useApt ? groupFirst.apartment : groupFirst.nonApartment) / 100;
         const maxLoanGeneral = Math.floor(price * generalCap);
         const maxLoanFirst = Math.floor(price * firstCap);
         const regionLabel = isMetro ? '규제지역(수도권/광역시)' : '비규제지역';
@@ -221,7 +225,7 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
           '',
           `매매가: ${formatKRW(price)}원`,
           `일반 한도(LTV ${Math.round(generalCap*100)}%): 약 ${formatKRW(maxLoanGeneral)}원`,
-          `생애최초 한도(LTV ${Math.round(firstCap*100)}%): 약 ${formatKRW(maxLoanFirst)}원`,
+          `생애최초 한도(LTV ${Math.round(firstCap*100)}%): 약 ${formatKRW(maxLoanFirst)}원` + (isFirst ? '  ← 적용 가능성 높음' : ''),
           '',
           '유의사항: 실제 한도는 DSR, 감정가(매매가 vs 감정가 중 낮은 값), 소득·기존부채에 따라 달라집니다.'
         ].join('\n');
