@@ -23,37 +23,42 @@ export function generateNaturalAdvisorResponse(message: string, profile: Fields)
     return handleMarriageHousePurchase(message, profile);
   }
   
-  // 3. 대출 규제 및 계약 관련
+  // 3. 복잡한 대출 전환 상황 (청년버팀목 증액 등)
+  if (text.includes('버팀목') && (text.includes('증액') || text.includes('목적물변경') || text.includes('연장'))) {
+    return handleComplexLoanConversion(message, profile);
+  }
+  
+  // 4. 대출 규제 및 계약 관련
   if (text.includes('대출규제') || text.includes('계약') || text.includes('신청')) {
     return handleLoanRegulation(message, profile);
   }
   
-  // 4. 소득 및 대출 한도 관련
+  // 5. 소득 및 대출 한도 관련
   if (text.includes('연봉') || text.includes('한도') || text.includes('dti') || text.includes('dsr')) {
     return handleIncomeLoanLimit(message, profile);
   }
   
-  // 5. 정책자금 관련 (보금자리론, 디딤돌 등)
+  // 6. 정책자금 관련 (보금자리론, 디딤돌 등)
   if (text.includes('보금자리') || text.includes('디딤돌') || text.includes('버팀목') || text.includes('신생아')) {
     return handlePolicyLoans(message, profile);
   }
   
-  // 6. 전세 vs 월세 비교
+  // 7. 전세 vs 월세 비교
   if (text.includes('전세') && text.includes('월세')) {
     return handleJeonseVsMonthly(message, profile);
   }
   
-  // 7. 부동산 투자 조언
+  // 8. 부동산 투자 조언
   if (text.includes('투자') || text.includes('시세') || text.includes('수익률')) {
     return handleRealEstateInvestment(message, profile);
   }
   
-  // 8. 일반적인 부동산 조언
+  // 9. 일반적인 부동산 조언
   if (text.includes('아파트') || text.includes('주택') || text.includes('매매')) {
     return handleGeneralRealEstate(message, profile);
   }
   
-  // 9. 기본 응답
+  // 10. 기본 응답
   return {
     content: "구체적인 상황을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
     confidence: 'medium',
@@ -83,6 +88,41 @@ function handleJeonseExpiration(message: string, profile: Fields): NaturalRespon
   
   return {
     content: "전세 만료일 11월 17일이면 대출 연장 신청하시기에 충분한 시간이 있어요. 소득 증명만 잘 준비하시면 문제없을 것 같습니다!",
+    confidence: 'high',
+    expertType: 'banking'
+  };
+}
+
+// 복잡한 대출 전환 상황 처리 (청년버팀목 증액 등)
+function handleComplexLoanConversion(message: string, profile: Fields): NaturalResponse {
+  const text = message.toLowerCase();
+  
+  if (text.includes('청년버팀목') && text.includes('증액') && text.includes('목적물변경')) {
+    return {
+      content: "아, 이 상황은 정말 복잡하네요! 청년버팀목 증액이 어려워진 건 최근 정책 변경 때문이에요. 2-3달 전과 지금이 달라진 게 맞습니다.\n\n현실적인 대안을 말씀드리면:\n1. 기존 청년버팀목은 그대로 두고, 부족한 자금은 일반 대출로 보완하는 방법\n2. 아니면 기존 대출을 상환하고 새로운 조건으로 재신청하는 방법\n\n11월 중순 이사라면 시간이 촉박하니까, 1번 방법이 더 현실적일 것 같아요. 구체적인 금액을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
+      confidence: 'high',
+      expertType: 'banking'
+    };
+  }
+  
+  if (text.includes('오피스텔') && text.includes('아파트') && text.includes('이사')) {
+    return {
+      content: "오피스텔에서 아파트로 이사 가시는 거군요! 목적물변경이 어려워진 건 최근 기금대출 정책이 보수적으로 바뀌었기 때문이에요. 임차보증금도 80%에서 70%로 줄어들었고요.\n\n가장 현실적인 방법은 기존 대출은 그대로 두고, 부족한 부분만 추가 대출로 보완하는 거예요. 이렇게 하면 시간도 절약되고 안정적이에요!",
+      confidence: 'high',
+      expertType: 'banking'
+    };
+  }
+  
+  if (text.includes('반환보증') && text.includes('hug') && text.includes('hf')) {
+    return {
+      content: "반환보증이 없이 들어오셨다면 HUG나 HF 중 하나로 받으신 거예요. 이 부분은 대출 조건에 영향을 줄 수 있으니까, 정확히 어떤 걸로 받으셨는지 확인해보시는 게 좋아요.\n\n일반적으로 HF(주택금융공사)가 더 안정적이고 조건도 좋은 편이에요. 이 정보가 대출 증액이나 목적물변경에 영향을 줄 수 있으니까 꼭 확인해보세요!",
+      confidence: 'high',
+      expertType: 'banking'
+    };
+  }
+  
+  return {
+    content: "복잡한 대출 전환 상황이시네요! 구체적인 금액이나 조건을 알려주시면 더 정확한 조언을 드릴 수 있어요. 특히 증액이 필요한 금액이나 현재 대출 조건을 알려주시면 좋겠어요!",
     confidence: 'high',
     expertType: 'banking'
   };

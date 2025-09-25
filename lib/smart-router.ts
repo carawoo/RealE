@@ -56,7 +56,7 @@ export function routeUserMessage(
   
   // 3. 자연스러운 전문가 조언 (최우선 처리)
   const naturalAdvisorResponse = generateNaturalAdvisorResponse(message, profile);
-  if (naturalAdvisorResponse && naturalAdvisorResponse.confidence === 'high') {
+  if (naturalAdvisorResponse && (naturalAdvisorResponse.confidence === 'high' || naturalAdvisorResponse.confidence === 'medium')) {
     return {
       content: naturalAdvisorResponse.content,
       confidence: naturalAdvisorResponse.confidence,
