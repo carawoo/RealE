@@ -157,7 +157,7 @@ function generateVerificationGuidance(
     content += `   • 개인별 구체적인 상담 가능\n\n`;
   }
   
-  content += `구체적인 상황을 알려주시면 더 정확한 안내를 드릴 수 있습니다.`;
+  content += `원하시면, 매매가/소득/자기자본 한 줄만 알려주셔도 바로 계산해 드릴게요.`;
   
   return {
     content,
@@ -214,7 +214,7 @@ function generateBenefitGuidance(
     content += `3. 부동산 중개업소 (중개수수료)\n\n`;
   }
   
-  content += `구체적인 상황을 알려주시면 더 정확한 안내를 드릴 수 있습니다.`;
+  content += `필요하면 한 줄 예시로 보내주세요: “매매 5억4천, 자기자본 1억, 월소득 500만”.`;
   
   return {
     content,

@@ -99,8 +99,14 @@ export function postProcessResponse(response: SimpleRouterResponse, message: str
 
 // 폴백 응답 생성 (최후의 수단)
 export function generateFallbackResponse(message: string, profile: Fields): SimpleRouterResponse {
+  // 동적 기본 답변: 즉시 실행 가능한 예시를 제시해 대화를 전진시킵니다.
+  const examples = [
+    '- 매매: “매매 5.4억, 자기자본 1억, 월소득 500만, 비규제”',
+    '- 전세 비교: “전세 3억 vs 보증금 5천·월세 80”',
+    '- 정책: “디딤돌 신혼부부, 12월 신청 소득기간?”'
+  ].join('\n');
   return {
-    content: "구체적인 상황을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
+    content: `바로 계산/분석해 드릴게요. 한 줄로 알려주세요:\n${examples}`,
     confidence: 'medium',
     expertType: 'general',
     fields: profile

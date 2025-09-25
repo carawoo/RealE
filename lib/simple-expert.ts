@@ -760,7 +760,7 @@ function handleGeneralRealEstate(message: string): SimpleResponse {
   }
   
   return {
-    content: "부동산 관련해서 궁금한 점이 있으시면 언제든 말씀해 주세요! 구체적인 상황을 알려주시면 더 정확한 조언을 드릴 수 있어요.",
+    content: "부동산 관련해서 궁금한 점이 있으시면 언제든 말씀해 주세요! 원하시면 한 줄 예시로 보내주시면 바로 계산/비교해 드릴게요.",
     confidence: 'medium',
     expertType: 'real_estate'
   };

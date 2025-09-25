@@ -245,7 +245,7 @@ export function analyzeLoanProducts(
   content += `• 계약금은 최소한으로 설정\n`;
   content += `• 대출 조건을 계약서에 명시\n\n`;
   
-  content += `구체적인 상황을 알려주시면 더 정확한 대안을 제시해드릴 수 있습니다.`;
+  content += `추가 금액이나 일정이 있으면 알려주시면, 대안별 비용/일정까지 바로 계산해 드리겠습니다.`;
   
   return {
     content,
