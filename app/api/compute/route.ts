@@ -14,7 +14,6 @@ import {
   CURRENT_LOAN_POLICY, 
   checkPolicyDataFreshness
 } from "../../../lib/policy-data";
-
 type Role = "user" | "assistant";
 type MessageRow = { role: Role; content: string; fields: Fields | null };
 
@@ -33,6 +32,7 @@ function generateUuidV4(): string {
     return v.toString(16);
   });
 }
+
 
 // ---------- Supabase ----------
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
@@ -276,22 +276,53 @@ export async function POST(request: NextRequest) {
     }
 
     // 대화 맥락 가져오기 (간단한 버전)
-    const conversationHistory = await fetchConversationProfile(finalConversationId);
+    let conversationHistory = null;
+    try {
+      conversationHistory = await fetchConversationProfile(finalConversationId);
+    } catch (error) {
+      console.warn("대화 맥락 가져오기 실패:", error);
+      conversationHistory = null;
+    }
     
     // 새로운 전문가 시스템으로 라우팅 (맥락 포함)
-    let smartResponse = routeUserMessage(message, mergedProfile, conversationHistory);
+    let smartResponse = null;
+    try {
+      smartResponse = routeUserMessage(message, mergedProfile, conversationHistory);
+    } catch (error) {
+      console.error("라우터 에러:", error);
+      smartResponse = null;
+    }
     
     // 라우팅 실패 시 폴백 처리
     if (!smartResponse) {
-      smartResponse = generateFallbackResponse(message, mergedProfile, conversationHistory);
+      try {
+        smartResponse = generateFallbackResponse(message, mergedProfile, conversationHistory);
+      } catch (error) {
+        console.error("폴백 에러:", error);
+        smartResponse = {
+          content: "죄송합니다. 현재 시스템에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+          confidence: 'low',
+          expertType: 'general'
+        };
+      }
     }
     
     // 응답 후처리
-    smartResponse = postProcessResponse(smartResponse, message);
+    try {
+      smartResponse = postProcessResponse(smartResponse, message);
+    } catch (error) {
+      console.error("후처리 에러:", error);
+      // 후처리 실패해도 기본 응답은 유지
+    }
     
-    // Supabase에 저장
+    // Supabase에 저장 (에러가 발생해도 응답은 반환)
     if (smartResponse.content) {
-      await saveMessageToSupabase(finalConversationId, "assistant", smartResponse.content, mergedProfile);
+      try {
+        await saveMessageToSupabase(finalConversationId, "assistant", smartResponse.content, mergedProfile);
+      } catch (error) {
+        console.error("Supabase 저장 에러:", error);
+        // 저장 실패해도 응답은 반환
+      }
     }
     
     // 응답 반환 (기존 형식 유지)
@@ -308,8 +339,24 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error("API Error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    
+    // 더 구체적인 에러 메시지 제공
+    let errorMessage = "분석에 실패했어요. 한 번만 다시 시도해 주세요.";
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Supabase')) {
+        errorMessage = "데이터베이스 연결에 문제가 있습니다. 잠시 후 다시 시도해 주세요.";
+      } else if (error.message.includes('import') || error.message.includes('module')) {
+        errorMessage = "시스템 모듈 로딩에 문제가 있습니다. 잠시 후 다시 시도해 주세요.";
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }
