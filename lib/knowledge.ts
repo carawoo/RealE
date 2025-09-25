@@ -44,6 +44,18 @@ function isAboutHighestPrice15Pyeong(text: string) {
   return /(한국|대한민국).*(제일|가장).*비싼.*(아파트).*(가격).*15\s*평/.test(t);
 }
 
+// 전세보증금 반환보증(보증보험) 질의
+function isAboutJeonseDepositInsurance(text: string) {
+  const t = text.toLowerCase();
+  return /전세.*(보증보험|반환보증)|\b(보증보험|반환보증)\b.*(가능|가입|조건|되나|되나요|돼\?|돼요)/.test(t);
+}
+
+// 등기부등본 확인/발급 방법 질의
+function isAboutEungibudeungbonHowTo(text: string) {
+  const t = text.toLowerCase();
+  return /(등기부등본|등기부|등본).*(어떻게|발급|확인|조회|보는법|보는 법|열람)/.test(t);
+}
+
 // --- Responders ---
 function respondAboutBogeumjari(): KnowledgeResult {
   const p = CURRENT_LOAN_POLICY;
@@ -240,6 +252,65 @@ function respondHighestPrice15Pyeong(): KnowledgeResult {
   return { content, cards: null, checklist: ['단지명/전용면적 입력', '최근 거래사례 확인', '시세 그래프 확인'] };
 }
 
+function respondJeonseDepositInsurance(text?: string): KnowledgeResult {
+  const content = [
+    '🛡 전세보증금 반환보증(보증보험) 가입 가능 여부',
+    '',
+    '핵심 요건(요약):',
+    '- 대상 주택: 아파트·연립·다세대·주택 등(전입·확정일자 가능한 주택)',
+    '- 계약 요건: 확정일자 부여, 전입신고(또는 입주 예정), 임대인 실명계약',
+    '- 보증금 한도: 지역·주택유형별 상한 적용(일반적으로 시세/공시가 대비 한도)',
+    '- 선순위 권리: 근저당·선순위 임차보증금이 과다하면 제한',
+    '',
+    '자체 체크리스트:',
+    '1) 등기부등본 을구에서 근저당·가압류 확인',
+    '2) 전입신고 + 확정일자(계약 직후/잔금 전) 준비',
+    '3) 임대인 본인 확인(신분증/인감/위임장)',
+    '',
+    '진행 경로:',
+    '- HUG(주택도시보증공사) 또는 HF(주택금융공사) 보증센터',
+    '- 은행 창구(전세자금대출과 동시 진행 가능)',
+    '',
+    '필요 서류(예): 임대차계약서, 확정일자, 주민등록등본(또는 예정확인), 등기부등본, 집주인 신분·계좌 정보 등',
+  ].join('\n');
+  return {
+    content,
+    cards: [{
+      title: '보증보험 가입 체크포인트',
+      notes: [
+        '확정일자·전입신고 준비',
+        '등기부 을구 선순위 확인',
+        '지역/유형별 한도 확인'
+      ]
+    }],
+    checklist: ['확정일자 부여', '전입신고(또는 예정)', '등기부등본 확인', 'HUG/HF 문의']
+  };
+}
+
+function respondEungibudeungbonHowTo(): KnowledgeResult {
+  const content = [
+    '📄 등기부등본 확인/발급 방법',
+    '',
+    '온라인(권장):',
+    '- 인터넷등기소(ros.moj.go.kr) 접속 → 부동산 등기 → 열람/발급',
+    '- 주소 또는 지번으로 검색 → 표제부/갑구/을구 모두 확인',
+    '',
+    '오프라인:',
+    '- 가까운 등기소 방문 → 무인발급기/창구 이용',
+    '',
+    '확인 포인트:',
+    '- 갑구: 소유자·가압류/압류 등 권리변동',
+    '- 을구: 근저당·전세권 등 담보권(선순위 위험 확인)',
+    '',
+    '열람은 유효시간이 있어 거래 직전에 최신본으로 재확인하세요.'
+  ].join('\n');
+  return {
+    content,
+    cards: [{ title: '등기부등본 체크리스트', notes: ['표제부/갑구/을구 모두 확인', '선순위 권리 존재 여부', '소유자 일치 여부'] }],
+    checklist: ['인터넷등기소 접속', '주소 검색', '갑구/을구 위험요소 체크']
+  };
+}
+
 export function generateKnowledgeResponse(text: string, _profile: Fields): KnowledgeResult | null {
   if (isAboutBogeumjari(text)) return respondAboutBogeumjari();
   if (isAboutChungyakDifference(text)) return respondChungyakDifference();
@@ -247,6 +318,8 @@ export function generateKnowledgeResponse(text: string, _profile: Fields): Knowl
   if (isAboutWhereToGetLoan(text)) return respondWhereToGetLoan();
   if (isAboutJeonseVsWolseWithCapital(text)) return respondJeonseVsWolseWithCapital(text);
   if (isAboutHighestPrice15Pyeong(text)) return respondHighestPrice15Pyeong();
+  if (isAboutJeonseDepositInsurance(text)) return respondJeonseDepositInsurance(text);
+  if (isAboutEungibudeungbonHowTo(text)) return respondEungibudeungbonHowTo();
   return null;
 }
 

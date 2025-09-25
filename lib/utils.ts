@@ -137,6 +137,11 @@ export function replyJeonseToMonthly(text: string) {
   // 전세/월세 관련 맥락 확인 (더 명확한 키워드)
   const rentalKeywords = ["전세", "월세", "임대", "전세자금", "월세자금", "임대차", "보증금", "전세보증금", "월세보증금"];
   const hasRentalIntent = rentalKeywords.some(keyword => t.includes(keyword));
+
+  // 전세 보증보험/반환보증 문의는 환산 대상에서 제외
+  if (/(보증보험|반환보증)/.test(t)) {
+    return null;
+  }
   
   // 제외 조건들 (완화)
   if (isQuestionAboutPrevious || // 이전 답변에 대한 질문
