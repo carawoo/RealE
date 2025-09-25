@@ -16,137 +16,123 @@ export type SimpleResponse = {
   expertType: 'real_estate' | 'banking' | 'policy' | 'general';
 };
 
+// ---------- Intent & Financial extractors (flexible) ----------
+function extractIntent(message: string): {
+  isQuestion: boolean;
+  isCalculation: boolean;
+  isComparison: boolean;
+  isAdvice: boolean;
+  topic: string[];
+  urgency: 'high' | 'medium' | 'low';
+} {
+  const text = message.toLowerCase();
+  const q = ['어떻게', '뭐', '무엇', '언제', '어디서', '왜', '어떤', '몇', '?'];
+  const calc = ['계산', '얼마', '한도', '금액', '비용', '월상환', '원'];
+  const comp = ['비교', 'vs', '차이', '어떤게', '어떤 게', '더', '좋은'];
+  const adv = ['추천', '조언', '도움', '방법', '어떻게 해야', '좋을까', '무슨 대출'];
+  const topics: string[] = [];
+  if (text.includes('대출') || text.includes('자금')) topics.push('loan');
+  if (text.includes('매매') || text.includes('구입') || text.includes('주택') || text.includes('아파트')) topics.push('purchase');
+  if (text.includes('전세') || text.includes('월세') || text.includes('임대')) topics.push('rental');
+  if (text.includes('정책') || text.includes('디딤돌') || text.includes('보금자리') || text.includes('버팀목')) topics.push('policy');
+  if (text.includes('세금') || text.includes('취득세') || text.includes('중개수수료') || text.includes('법무사')) topics.push('tax');
+  if (text.includes('투자') || text.includes('시세')) topics.push('investment');
+  const urgency = ['급해', '빨리', '당장', '내일', '이번주'].some(w => text.includes(w)) ? 'high' : 'medium';
+  return {
+    isQuestion: q.some(w => text.includes(w)) || text.includes('?'),
+    isCalculation: calc.some(w => text.includes(w)),
+    isComparison: comp.some(w => text.includes(w)),
+    isAdvice: adv.some(w => text.includes(w)),
+    topic: topics,
+    urgency
+  };
+}
+
+function extractFinancialInfo(message: string): {
+  amounts: number[];
+  hasPropertyPrice: boolean;
+  hasIncome: boolean;
+  hasDownPayment: boolean;
+} {
+  const text = message;
+  const amounts: number[] = [];
+  const patterns = [/(\d+)억/g, /(\d+)천만/g, /(\d+)만원/g, /(\d+)만/g, /(\d+)원/g];
+  patterns.forEach((p) => {
+    const it = text.matchAll(p);
+    for (const m of it) {
+      const num = parseInt(m[1]);
+      if (p.source.includes('억')) amounts.push(num * 100_000_000);
+      else if (p.source.includes('천만')) amounts.push(num * 10_000_000);
+      else if (p.source.includes('만') && !p.source.includes('천만')) amounts.push(num * 10_000);
+      else amounts.push(num);
+    }
+  });
+  return {
+    amounts,
+    hasPropertyPrice: /매매|매매가|집값|주택가|아파트\s*\d/.test(text),
+    hasIncome: /(소득|연봉|월급|수입).*\d/.test(text),
+    hasDownPayment: /(자기자본|계약금|보유).*\d/.test(text)
+  };
+}
+
 // 메인 전문가 답변 생성 함수
 export function generateSimpleExpertResponse(message: string, profile: Fields): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  // 0.0 용어 설명(DSR/LTV/DTI 등) 우선 처리
-  const glossary = handleGlossary(message);
-  if (glossary) return glossary;
+  const intent = extractIntent(message);
+  const fin = extractFinancialInfo(message);
 
-  // 0.05 개방형 일반 질문 처리(시장/카탈로그/추천)
+  const g = handleGlossary(message);
+  if (g) return g;
+  const cmpGloss = handleGlossaryComparison(message);
+  if (cmpGloss) return cmpGloss;
+
+  if (fin.amounts.length > 0 && intent.isCalculation) {
+    const num = handleNumericLoanScenario(message);
+    if (num) return num;
+  }
+
   const generalOpen = handleGeneralOpenEnded(message);
   if (generalOpen) return generalOpen;
 
-  // 0. 금액 기반 대출 시나리오 (숫자 중심 질문 우선 처리)
-  const numericScenario = handleNumericLoanScenario(message);
-  if (numericScenario) return numericScenario;
-
-  // 0.2 DSR vs DTI 비교 질문 처리 (문맥 없이도 작동)
-  const compare = handleGlossaryComparison(message);
-  if (compare) return compare;
-
-  // 0.1. 세금/취득세/감면 전용 처리 (우선 순위 높게)
   const taxRelief = handleAcquisitionTaxRelief(message);
   if (taxRelief) return taxRelief;
-
-  // 0.15. 디딤돌/보금자리 소득기준·원천징수 기간 질의 전용 처리
   const incomePeriod = handlePolicyIncomePeriod(message);
   if (incomePeriod) return incomePeriod;
-
-  // 0.16. 중기청 vs 버팀목 비교 전용 처리
   const policyCompare = handlePolicyComparison(message);
   if (policyCompare) return policyCompare;
-
-  // 0.17. 모델하우스 방문/예약 안내
   const modelhouse = handleModelhouseVisit(message);
   if (modelhouse) return modelhouse;
-
-  // 0.18. 집 먼저 보고 문의? 절차 안내
   const processOrder = handleProcessOrder(message);
   if (processOrder) return processOrder;
-
-  // 0.19. 신혼부부 전용 구입자금/디딤돌 맵핑
   const newlyweds = handleNewlywedsPurchaseFunds(message);
   if (newlyweds) return newlyweds;
-
-  // 0.20. 생애최초 × 신혼부부 우대금리 중복 여부
   const overlap = handleUdaeOverlap(message);
   if (overlap) return overlap;
-  
-  // 1. 전세 만료 및 대출 연장 관련
-  if (text.includes('전세') && (text.includes('만료') || text.includes('연장'))) {
-    return handleJeonseExpiration(message);
-  }
-  
-  // 2. 결혼 및 주택 구입 관련
-  if (text.includes('결혼') && (text.includes('매매') || text.includes('아파트') || text.includes('구입'))) {
-    return handleMarriageHousePurchase(message);
-  }
-  
-  // 3. 복잡한 대출 전환 상황 (청년버팀목 증액 등)
-  if (text.includes('버팀목') && (text.includes('증액') || text.includes('목적물변경') || text.includes('연장'))) {
-    return handleComplexLoanConversion(message);
-  }
-  
-  // 4. 대출 규제 및 계약 관련
-  if (text.includes('대출규제') || text.includes('계약') || text.includes('신청')) {
-    return handleLoanRegulation(message);
-  }
-  
-  // 5. 소득 및 대출 한도 관련
-  if (text.includes('연봉') || text.includes('한도') || text.includes('dti') || text.includes('dsr')) {
-    return handleIncomeLoanLimit(message);
-  }
-  
-  // 6. 정책자금 관련 (보금자리론, 디딤돌 등)
-  if (text.includes('보금자리') || text.includes('디딤돌') || text.includes('버팀목') || text.includes('신생아')) {
-    return handlePolicyLoans(message);
-  }
-  
-  // 7. 전세 vs 월세 비교
-  if (text.includes('전세') && text.includes('월세')) {
-    return handleJeonseVsMonthly(message);
-  }
-  
-  // 8. 부동산 투자 조언
-  if (text.includes('투자') || text.includes('시세') || text.includes('수익률')) {
-    return handleRealEstateInvestment(message);
-  }
-  
-  // 9. 일반적인 부동산 조언
-  if (text.includes('아파트') || text.includes('주택') || text.includes('매매')) {
-    return handleGeneralRealEstate(message);
-  }
-  
-  // 10. 기본 응답 (동적 가정형: 폴백 금지)
-  // 프로필에 일부 슬롯이 있으면 즉시 가정 계산/조언, 없으면 한 줄 샘플 입력 안내
-  const hasAnySlot = Boolean((profile as any).propertyPrice || (profile as any).incomeMonthly || (profile as any).downPayment);
-  if (hasAnySlot) {
-    const price = (profile as any).propertyPrice || 0;
-    const dp = (profile as any).downPayment || 0;
-    const income = (profile as any).incomeMonthly || null;
-    const years = 30;
-    const rate = 4.5;
-    const need = Math.max(price - dp, 0);
-    const pay = need ? calculateMonthlyPayment(need, rate, years) : 0;
-    const ltv = price ? calculateLTV(need, price) : 0;
-    const dsr = income ? calculateDSR(pay, income) : null;
 
-    const lines: string[] = [];
-    if (price) lines.push(`매매가 ${formatKRW(price)}원${dp ? `, 자기자본 ${formatKRW(dp)}원` : ''}${income ? `, 월소득 ${formatKRW(income)}원` : ''} 기준`);
-    if (need) lines.push(`필요 대출 약 ${formatKRW(need)}원 (LTV≈${ltv.toFixed(0)}%)`);
-    if (pay) lines.push(`30년·${rate}% 가정 월 상환 ${formatKRW(pay)}원${dsr !== null ? ` (DSR≈${dsr.toFixed(0)}%)` : ''}`);
-    lines.push('다음 단계: 기금e든든 모의심사 → 2~3곳 은행 가심사 → 서류 준비');
+  // Fallback to existing topic handlers
+  const text = message.toLowerCase();
+  if (text.includes('전세') && text.includes('월세')) return handleJeonseVsMonthly(message);
+  if (text.includes('투자') || text.includes('시세') || text.includes('수익률')) return handleRealEstateInvestment(message);
+  if (text.includes('아파트') || text.includes('주택') || text.includes('매매')) return handleGeneralRealEstate(message);
 
-    return {
-      content: lines.join('\n'),
-      confidence: 'high',
-      expertType: 'banking'
-    };
+  if (hasUsableProfile(profile)) return generateProfileBasedResponse(profile, intent);
+
+  return generateSmartFallback(message, intent);
+}
+
+// ---------- Smart fallback ----------
+function generateSmartFallback(message: string, intent: any): SimpleResponse {
+  const t = message.toLowerCase();
+  const topics = intent.topic;
+  if (topics.includes('loan') || t.includes('대출')) {
+    return { content: '대출 계산/추천 원하시면 매매가·자기자본·월소득·지역을 한 줄로 알려주세요. 예) 매매 5억, 자기자본 1억, 월소득 500만, 비규제', confidence: 'medium', expertType: 'banking' };
   }
-
-  // 슬롯이 전혀 없으면 구체적 한 줄 입력 예시 제공(정형 폴백 문구 금지)
-  return {
-    content: [
-      '바로 계산해 드릴게요. 한 줄로 알려주세요:',
-      '- 매매: “매매 5.4억, 자기자본 1억, 월소득 500만, 비규제”',
-      '- 전세 비교: “전세 3억 vs 보증금 5천·월세 80”',
-      '- 정책: “디딤돌 신혼부부, 12월 신청 소득기간?”'
-    ].join('\n'),
-    confidence: 'medium',
-    expertType: 'general'
-  };
+  if (topics.includes('rental')) {
+    return { content: '전세 vs 월세 비교 원하시면 보증금/월세를 알려주세요. 예) 전세 3억 vs 보증금 1억·월세 100만', confidence: 'medium', expertType: 'real_estate' };
+  }
+  if (topics.includes('policy')) {
+    return { content: '정책자금 질문이면 소득·주택가·무주택·혼인 여부를 알려주시면 맞춤으로 안내합니다.', confidence: 'medium', expertType: 'policy' };
+  }
+  return { content: '원하시는 내용을 조금만 더 알려주시면 바로 분석해 드릴게요.', confidence: 'medium', expertType: 'general' };
 }
 
 // 용어 설명 처리 (DSR/LTV/DTI/근저당 등)
