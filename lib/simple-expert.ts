@@ -24,6 +24,10 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   const glossary = handleGlossary(message);
   if (glossary) return glossary;
 
+  // 0.05 개방형 일반 질문 처리(시장/카탈로그/추천)
+  const generalOpen = handleGeneralOpenEnded(message);
+  if (generalOpen) return generalOpen;
+
   // 0. 금액 기반 대출 시나리오 (숫자 중심 질문 우선 처리)
   const numericScenario = handleNumericLoanScenario(message);
   if (numericScenario) return numericScenario;
@@ -490,6 +494,55 @@ function handleUdaeOverlap(message: string): SimpleResponse | null {
     '- 은행 상담 시 두 우대 조건 서류(혼인·무주택·소득)를 함께 제출하면 됩니다.'
   ].join('\n');
   return { content, confidence: 'high', expertType: 'banking' };
+}
+
+// 개방형 일반 질문 처리
+function handleGeneralOpenEnded(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+
+  // 시장 탐색: "서울에서 제일 싼 아파트"
+  if ((t.includes('서울') || t.includes('수도권')) && (t.includes('제일 싼') || t.includes('가장 싼') || (t.includes('싼') && t.includes('아파트')))) {
+    const content = [
+      '실시간 최저가는 변동이 커서, 다음 경로로 빠르게 찾아보세요.',
+      '- 국토부 실거래가 공개시스템: 최저 실거래가 확인(과거 기준)',
+      '- 한국부동산원/지자체 공공 데이터: 시세 흐름',
+      '- 포털/앱(호갱노노·직방·다방): “매매가 오름차순” 필터 + 준공연도·면적 조건',
+      '',
+      '현실적인 저가 지역(참고): 노원·도봉·강북·금천·구로 일부, 외곽 신도시 구축',
+      '체크포인트: 관리비·수선충당금·엘리베이터 유무·층고·일조·학군·교통. 지나치게 저렴하면 건물 상태/권리관계 재확인.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'real_estate' };
+  }
+
+  // 대출 카탈로그: "대출 어떤 거 있어?"
+  if ((t.includes('대출') || t.includes('자금')) && (t.includes('어떤') || t.includes('종류') || t.includes('카탈로그') || t.includes('리스트'))) {
+    const content = [
+      '대출은 크게 3축입니다.',
+      '1) 정책자금: 보금자리(매매, 생애최초/우대), 디딤돌(매매, 소득·가액 제한), 버팀목(전세), 특례/우대 프로그램',
+      '2) 일반 주담대: 고정/변동/혼합, 은행별 금리·한도·우대금리 상이',
+      '3) 보조: 신용대출·부모자금·보증금 대출 등(DSR 영향)',
+      '',
+      '선택 기준: 주택가·자기자본·소득·지역(규제)·무주택/혼인/자녀·신용/기존부채.',
+      '원하시면 “매매가/자기자본/월소득/지역”만 알려주시면 맞춤 조합을 바로 제안드릴게요.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  // 추천형: "나는 무슨 대출 받아야 돼?"
+  if ((t.includes('나는') || t.includes('저는') || t.includes('본인')) && (t.includes('무슨 대출') || t.includes('어떤 대출') || t.includes('추천'))) {
+    const content = [
+      '간단 기준으로 바로 가이드합니다.',
+      '- 무주택·생애최초·주택가≤9억: 보금자리(생애최초) 우선 검토',
+      '- 무주택·주택가≤6억·소득 요건 충족: 디딤돌(신혼/우대 적용 가능)',
+      '- 전세 예정: 버팀목(청년/일반) → 보증금 70~80% 범위',
+      '- 위 조건 미충족 또는 한도 부족: 일반 주담대(혼합고정) + 필요시 보조대출',
+      '',
+      '맞춤으로 좁히려면 한 줄로 알려주세요: “매매 5억, 자기자본 1억, 월소득 450만, 비규제, 무주택”.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  return null;
 }
 
 // 전세 만료 및 대출 연장 처리
