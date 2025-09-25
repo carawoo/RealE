@@ -7,6 +7,13 @@ import { replyJeonseToMonthly } from './utils';
 import { generateKnowledgeResponse } from './knowledge';
 import { analyzeConversationContext, generateContextualResponse } from './context-memory';
 import { generateEnhancedFallbackResponse } from './enhanced-fallback';
+import { 
+  analyzeLoanEligibility, 
+  analyzeIncomeVerification, 
+  analyzeLoanProducts, 
+  analyzeLegalFees, 
+  analyzeLoanConversion 
+} from './complex-scenario-handler';
 
 export type SmartResponse = {
   content: string;
@@ -68,7 +75,30 @@ export function routeUserMessage(
     };
   }
   
-  // 5. 맥락 기반 답변 시도
+  // 5. 복잡한 시나리오 분석 (우선 처리)
+  const complexScenarios = [
+    analyzeLoanEligibility(message, profile),
+    analyzeIncomeVerification(message, profile),
+    analyzeLoanProducts(message, profile),
+    analyzeLegalFees(message, profile),
+    analyzeLoanConversion(message, profile)
+  ];
+  
+  for (const scenario of complexScenarios) {
+    if (scenario) {
+      return {
+        content: scenario.content,
+        confidence: scenario.confidence,
+        expertType: scenario.expertType,
+        fields: profile,
+        context,
+        suggestions: scenario.alternatives,
+        nextSteps: scenario.nextSteps
+      };
+    }
+  }
+  
+  // 6. 맥락 기반 답변 시도
   const contextualResponse = generateContextualResponse(message, profile, context);
   if (contextualResponse) {
     return {
@@ -79,7 +109,7 @@ export function routeUserMessage(
     };
   }
   
-  // 6. 자연스러운 전문가 답변 (메인 로직)
+  // 7. 자연스러운 전문가 답변 (메인 로직)
   const naturalResponse = generateNaturalExpertResponse(message, profile);
   
   return {
