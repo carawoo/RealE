@@ -20,6 +20,10 @@ export type SimpleResponse = {
 export function generateSimpleExpertResponse(message: string, profile: Fields): SimpleResponse {
   const text = message.toLowerCase();
   
+  // 0.0 용어 설명(DSR/LTV/DTI 등) 우선 처리
+  const glossary = handleGlossary(message);
+  if (glossary) return glossary;
+
   // 0. 금액 기반 대출 시나리오 (숫자 중심 질문 우선 처리)
   const numericScenario = handleNumericLoanScenario(message);
   if (numericScenario) return numericScenario;
@@ -79,6 +83,59 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
     confidence: 'medium',
     expertType: 'general'
   };
+}
+
+// 용어 설명 처리 (DSR/LTV/DTI/근저당 등)
+function handleGlossary(message: string): SimpleResponse | null {
+  const t = message.toLowerCase().trim();
+  if (!t) return null;
+
+  // DSR
+  if (/(^|\s)dsr(이|가|는|이뭐|이 뭐|가 뭐|이 뭐야|가 뭐야|\?)?/.test(t) || t.includes('총부채원리금상환비율')) {
+    const content = [
+      'DSR(총부채원리금상환비율)은 “내 월소득 대비 모든 대출의 월 상환액 비중”입니다.',
+      '- 계산: 모든 대출의 월 상환액 합 / 월소득 × 100',
+      '- 예: 월소득 500만원, 월 상환 200만원이면 DSR≈40%',
+      '- 심사: 보통 DSR 40% 내에서 한도가 정해집니다(정책/은행별 차이).',
+      '',
+      '팁:',
+      '- 기존 대출(신용/카드론/전세자금) 월 상환액도 포함됩니다.',
+      '- 한도를 늘리려면 상환액을 줄이거나 소득을 입증해야 합니다.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  // LTV
+  if (/(^|\s)ltv(이|가|는|\?)?/.test(t) || t.includes('담보인정비율')) {
+    const content = [
+      'LTV(담보인정비율)은 “주택가격 대비 최대 대출 가능 비율”입니다.',
+      '- 예: 비규제지역 80%면 5억원 주택은 최대 4억원까지 가능(조건 충족 시).',
+      '- 실제 한도는 LTV와 DSR 중 더 보수적인 값으로 결정됩니다.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  // DTI
+  if (/(^|\s)dti(이|가|는|\?)?/.test(t) || t.includes('총부채상환비율')) {
+    const content = [
+      'DTI(총부채상환비율)은 “연소득 대비 주택담보대출 이자+원금 상환 비중”입니다.',
+      '- DSR이 모든 대출을 보지만, DTI는 주담대 중심으로 봅니다.',
+      '- 현재는 DSR이 주요 심사 지표로 더 널리 적용됩니다.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  // 근저당
+  if (t.includes('근저당')) {
+    const content = [
+      '근저당은 대출을 담보로 잡을 때 설정하는 권리로, 연체 시 담보를 처분할 수 있는 권리입니다.',
+      '- 보통 채권최고액(대출금의 120~130%)으로 설정됩니다.',
+      '- 상환 후 말소 등기하면 권리는 소멸합니다.'
+    ].join('\n');
+    return { content, confidence: 'high', expertType: 'banking' };
+  }
+
+  return null;
 }
 
 // 금액 기반 대출 시나리오 처리
