@@ -85,12 +85,28 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
 function handleNumericLoanScenario(message: string): SimpleResponse | null {
   const t = message.replace(/\s+/g, '');
 
-  // 월소득 추출: "월소득500만원", "월500", "월수입500만" 등
+  // 소득 추출
+  // 월소득: "월소득500만원", "월500", "월수입500만" 등
   let incomeMonthly: number | null = null;
-  const mIncome1 = t.match(/월소득(\d+)(?:만)?원?/);
-  const mIncome2 = t.match(/월(\d+)(?:만)?원?/);
-  if (mIncome1) incomeMonthly = parseInt(mIncome1[1], 10) * 10_000;
-  else if (mIncome2) incomeMonthly = parseInt(mIncome2[1], 10) * 10_000;
+  const mIncomeMonthly1 = t.match(/월소득(\d+)(?:만)?원?/);
+  const mIncomeMonthly2 = t.match(/월(\d+)(?:만)?원?/);
+  if (mIncomeMonthly1) incomeMonthly = parseInt(mIncomeMonthly1[1], 10) * 10_000;
+  else if (mIncomeMonthly2) incomeMonthly = parseInt(mIncomeMonthly2[1], 10) * 10_000;
+  
+  // 연봉: "연봉6천", "연봉6000", "연봉 6,000만원"
+  if (incomeMonthly === null) {
+    const mIncomeAnnual1 = t.match(/연봉(\d+)천/); // 연봉6천
+    const mIncomeAnnual2 = t.match(/연봉(\d+)(?:만)?원?/); // 연봉6000만원 또는 연봉6000만
+    if (mIncomeAnnual1) {
+      const annual = parseInt(mIncomeAnnual1[1], 10) * 10_000_000;
+      incomeMonthly = Math.round(annual / 12);
+    } else if (mIncomeAnnual2) {
+      // 해석: 숫자가 4자리 이상이면 만원 단위로 간주
+      const raw = parseInt(mIncomeAnnual2[1], 10);
+      const annual = raw >= 1000 ? raw * 10_000 : raw * 10_000; // 두 경우 모두 만원 단위 처리
+      incomeMonthly = Math.round(annual / 12);
+    }
+  }
 
   // 매매가/집값 추출: "5억원", "매매가5억", "집구입5억" 등
   let propertyPrice = parseWon(message) || null;
@@ -104,8 +120,8 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
   const mDown = t.match(/(자기자본|계약금|보유현금)(\d+[억만천원]+)/);
   if (mDown) downPayment = parseWon(mDown[2]);
 
-  // 최소 요건: 매매가가 있어야 하고, 월소득 또는 자기자본 중 하나 이상이 있어야 의미있는 분석 가능
-  if (!propertyPrice || (!incomeMonthly && !downPayment)) return null;
+  // 최소 요건: 매매가가 있어야 하고, 월소득 또는 자기자본 중 하나 이상이 있으면 분석 진행
+  if (!propertyPrice) return null;
 
   const dp = downPayment ?? 0;
   const neededLoan = Math.max(propertyPrice - dp, 0);
@@ -122,7 +138,7 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
 
   // 응답 생성 (간결하고 실무적인 톤)
   const lines: string[] = [];
-  lines.push(`매매가 ${formatKRW(propertyPrice)}원, 자기자본 ${formatKRW(dp)}원 기준입니다.`);
+  lines.push(`매매가 ${formatKRW(propertyPrice)}원, 자기자본 ${formatKRW(dp)}원 기준입니다${incomeMonthly ? `, 월소득 ${formatKRW(incomeMonthly)}원 반영` : ''}.`);
   lines.push(`필요 대출은 약 ${formatKRW(neededLoan)}원입니다 (LTV ≈ ${ltv.toFixed(0)}%).`);
   lines.push(`30년·금리 ${rate}% 가정 시 월 상환액은 약 ${formatKRW(monthlyPay)}원입니다${dsr !== null ? ` (DSR ≈ ${dsr.toFixed(0)}%)` : ''}.`);
   lines.push(`안전하게 가려면 대출을 ${formatKRW(safeLoan)}원 수준으로 잡으면 월 ${formatKRW(safeMonthly)}원${safeDsr !== null ? ` (DSR ≈ ${safeDsr.toFixed(0)}%)` : ''} 정도입니다.`);
@@ -132,6 +148,7 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
   next.push('기금e든든 모의심사로 정책자금 가능 여부 먼저 확인');
   next.push('주거래 은행 포함 2~3곳 금리·한도 비교 상담');
   next.push('필요 서류(소득·재직) 준비 후 사전심사 진행');
+  next.push('가능하면 LTV 60~70% 구간에서 한도·DSR 균형 맞추기');
 
   const content = [
     '요약:',
