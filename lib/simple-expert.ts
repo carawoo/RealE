@@ -2,6 +2,7 @@
 // 고도화된 의도 분석 기반 전문가 답변 시스템
 
 import { Fields } from './utils';
+import { CURRENT_LOAN_POLICY } from './policy-data';
 import {
   parseWon,
   calculateMonthlyPayment,
@@ -199,6 +200,35 @@ function extractFinancialInfo(message: string): {
 export function generateSimpleExpertResponse(message: string, profile: Fields): SimpleResponse {
   const intent = extractIntent(message);
   const financial = extractFinancialInfo(message);
+  
+  // 0단계: LTV 직접 질의(가격+지역 포함) → 즉시 최대 대출 추정치 반환
+  {
+    const lower = message.toLowerCase();
+    const asksLtv = /ltv|담보인정비율|담보.*비율/.test(lower);
+    const hasPrice = !!financial.propertyPrice || /\d|억|만원|원/.test(lower);
+    if (asksLtv && hasPrice) {
+      const price = financial.propertyPrice ?? parseWon(message) ?? null;
+      if (price) {
+        const isMetro = CURRENT_LOAN_POLICY.regulatedRegions.some(r => message.includes(r));
+        const caps = CURRENT_LOAN_POLICY.ltv;
+        const generalCap = (isMetro ? caps.bogeumjari.metro.apartment : caps.bogeumjari.nonMetro.apartment) / 100;
+        const firstCap = (isMetro ? caps.firstTime.metro.apartment : caps.firstTime.nonMetro.apartment) / 100;
+        const maxLoanGeneral = Math.floor(price * generalCap);
+        const maxLoanFirst = Math.floor(price * firstCap);
+        const regionLabel = isMetro ? '규제지역(수도권/광역시)' : '비규제지역';
+        const content = [
+          `${regionLabel} 기준 LTV 추정치`,
+          '',
+          `매매가: ${formatKRW(price)}원`,
+          `일반 한도(LTV ${Math.round(generalCap*100)}%): 약 ${formatKRW(maxLoanGeneral)}원`,
+          `생애최초 한도(LTV ${Math.round(firstCap*100)}%): 약 ${formatKRW(maxLoanFirst)}원`,
+          '',
+          '유의사항: 실제 한도는 DSR, 감정가(매매가 vs 감정가 중 낮은 값), 소득·기존부채에 따라 달라집니다.'
+        ].join('\n');
+        return { content, confidence: 'high', expertType: 'banking' };
+      }
+    }
+  }
   
   // 1단계: 명확한 용어 설명 (최우선)
   if (intent.topics.includes('glossary') || intent.primaryIntent === 'question') {
