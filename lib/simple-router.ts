@@ -4,6 +4,7 @@
 import { Fields } from './utils';
 import { generateSimpleExpertResponse, SimpleResponse } from './simple-expert';
 import { replyJeonseToMonthly, JeonseResponse } from './jeonse-calculator';
+import { extractIntentAndSlots, oneLineMissingPrompt } from './intent-slots';
 
 export type SimpleRouterResponse = {
   content: string;
@@ -46,11 +47,21 @@ export function routeUserMessage(message: string, profile: Fields, previousMessa
     };
   }
   
-  // 3. 전문가 조언 (메인 로직) - 간단 맥락 사용: 직전 용어 정의 두 개가 있었으면 "차이" 질의에 비교 답변
-  const expertResponse = generateSimpleExpertResponse(
-    enrichWithLightContext(message, previousMessages || []),
-    profile
-  );
+  // 3. 의도/슬롯 추출 → 부족 슬롯 가정/요청 병행 → 전문가 조언
+  const enriched = enrichWithLightContext(message, previousMessages || []);
+  const { intent, slots, missing } = extractIntentAndSlots(enriched);
+
+  let expertResponse = generateSimpleExpertResponse(enriched, { ...profile, ...slots });
+
+  // 부족 슬롯이 있고 응답 내용이 너무 일반적이면, 가정 기반 문구 + 한 줄 안내 추가
+  if (missing.length && expertResponse.confidence !== 'high') {
+    const tail = oneLineMissingPrompt(missing);
+    expertResponse = {
+      ...expertResponse,
+      content: tail ? `${expertResponse.content}\n\n${tail}` : expertResponse.content,
+      confidence: expertResponse.confidence === 'low' ? 'medium' : expertResponse.confidence
+    };
+  }
   
   return {
     content: expertResponse.content,
