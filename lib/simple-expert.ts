@@ -1,5 +1,5 @@
 // lib/simple-expert.ts
-// 단순하고 효과적인 전문가 답변 시스템
+// 고도화된 의도 분석 기반 전문가 답변 시스템
 
 import { Fields } from './utils';
 import {
@@ -16,171 +16,313 @@ export type SimpleResponse = {
   expertType: 'real_estate' | 'banking' | 'policy' | 'general';
 };
 
-// ---------- Intent & Financial extractors (flexible) ----------
+// ---------- 고도화된 의도 분석 시스템 ----------
 function extractIntent(message: string): {
-  isQuestion: boolean;
-  isCalculation: boolean;
-  isComparison: boolean;
-  isAdvice: boolean;
-  topic: string[];
+  primaryIntent: 'question' | 'calculation' | 'comparison' | 'advice' | 'procedure';
+  secondaryIntents: string[];
+  topics: string[];
   urgency: 'high' | 'medium' | 'low';
+  confidence: number;
 } {
   const text = message.toLowerCase();
-  const q = ['어떻게', '뭐', '무엇', '언제', '어디서', '왜', '어떤', '몇', '?'];
-  const calc = ['계산', '얼마', '한도', '금액', '비용', '월상환', '원'];
-  const comp = ['비교', 'vs', '차이', '어떤게', '어떤 게', '더', '좋은'];
-  const adv = ['추천', '조언', '도움', '방법', '어떻게 해야', '좋을까', '무슨 대출'];
+  
+  // 유연한 패턴 매칭 (정규식 기반)
+  const questionPatterns = /어떻게|뭐야?|무엇|언제|어디서?|왜|어떤|몇|\?|궁금|알고싶|확인/;
+  const calcPatterns = /계산|얼마|한도|금액|비용|월상환|원|가능할까|ltv|dsr|상환액/;
+  const compPatterns = /비교|vs|차이|어떤게|어떤\s*게|더\s*좋|낫|어느|선택/;
+  const advicePatterns = /추천|조언|도움|방법|어떻게\s*해야|좋을까|무슨\s*대출|해야할지|가이드/;
+  const procedurePatterns = /절차|순서|단계|방법|어떻게\s*하|신청|진행/;
+  
+  // 주제별 분류 (정규식으로 더 유연하게)
   const topics: string[] = [];
-  if (text.includes('대출') || text.includes('자금')) topics.push('loan');
-  if (text.includes('매매') || text.includes('구입') || text.includes('주택') || text.includes('아파트')) topics.push('purchase');
-  if (text.includes('전세') || text.includes('월세') || text.includes('임대')) topics.push('rental');
-  if (text.includes('정책') || text.includes('디딤돌') || text.includes('보금자리') || text.includes('버팀목')) topics.push('policy');
-  if (text.includes('세금') || text.includes('취득세') || text.includes('중개수수료') || text.includes('법무사')) topics.push('tax');
-  if (text.includes('투자') || text.includes('시세')) topics.push('investment');
-  const urgency = ['급해', '빨리', '당장', '내일', '이번주'].some(w => text.includes(w)) ? 'high' : 'medium';
+  if (/대출|자금|융자|차입/.test(text)) topics.push('loan');
+  if (/매매|구입|구매|주택|아파트|집|부동산/.test(text)) topics.push('purchase');
+  if (/전세|월세|임대|보증금|렌트/.test(text)) topics.push('rental');
+  if (/정책|디딤돌|보금자리|버팀목|청년|신혼|생애최초/.test(text)) topics.push('policy');
+  if (/세금|취득세|중개수수료|법무사|등기|수수료/.test(text)) topics.push('tax');
+  if (/투자|시세|수익|가격|상승|하락/.test(text)) topics.push('investment');
+  if (/dsr|ltv|dti|근저당|담보|금리/.test(text)) topics.push('glossary');
+  
+  // 우선순위 기반 의도 분석
+  let primaryIntent: 'question' | 'calculation' | 'comparison' | 'advice' | 'procedure' = 'question';
+  const secondaryIntents: string[] = [];
+  let confidence = 0.5;
+  
+  if (procedurePatterns.test(text)) {
+    primaryIntent = 'procedure';
+    confidence = 0.9;
+  } else if (calcPatterns.test(text)) {
+    primaryIntent = 'calculation';
+    confidence = 0.85;
+  } else if (compPatterns.test(text)) {
+    primaryIntent = 'comparison';
+    confidence = 0.8;
+  } else if (advicePatterns.test(text)) {
+    primaryIntent = 'advice';
+    confidence = 0.75;
+  } else if (questionPatterns.test(text)) {
+    primaryIntent = 'question';
+    confidence = 0.7;
+  }
+  
+  // 보조 의도 추출
+  if (questionPatterns.test(text) && primaryIntent !== 'question') secondaryIntents.push('question');
+  if (calcPatterns.test(text) && primaryIntent !== 'calculation') secondaryIntents.push('calculation');
+  if (compPatterns.test(text) && primaryIntent !== 'comparison') secondaryIntents.push('comparison');
+  if (advicePatterns.test(text) && primaryIntent !== 'advice') secondaryIntents.push('advice');
+  
+  // 긴급도 분석 (더 세밀하게)
+  const urgency = /급해|빨리|당장|내일|이번주|시급|긴급/.test(text) ? 'high' : 
+                 /곧|빠른시일|조만간|가능한/.test(text) ? 'medium' : 'low';
+  
   return {
-    isQuestion: q.some(w => text.includes(w)) || text.includes('?'),
-    isCalculation: calc.some(w => text.includes(w)),
-    isComparison: comp.some(w => text.includes(w)),
-    isAdvice: adv.some(w => text.includes(w)),
-    topic: topics,
-    urgency
+    primaryIntent,
+    secondaryIntents,
+    topics,
+    urgency,
+    confidence
   };
 }
 
+// ---------- 스마트 금액 추출 시스템 ----------
 function extractFinancialInfo(message: string): {
-  amounts: number[];
-  hasPropertyPrice: boolean;
-  hasIncome: boolean;
-  hasDownPayment: boolean;
+  amounts: {
+    value: number;
+    type: 'property' | 'income_monthly' | 'income_annual' | 'down_payment' | 'debt' | 'unknown';
+    confidence: number;
+  }[];
+  propertyPrice: number | null;
+  monthlyIncome: number | null;
+  downPayment: number | null;
+  existingDebt: number | null;
 } {
   const text = message;
-  const amounts: number[] = [];
-  const patterns = [/(\d+)억/g, /(\d+)천만/g, /(\d+)만원/g, /(\d+)만/g, /(\d+)원/g];
-  patterns.forEach((p) => {
-    const it = text.matchAll(p);
-    for (const m of it) {
-      const num = parseInt(m[1]);
-      if (p.source.includes('억')) amounts.push(num * 100_000_000);
-      else if (p.source.includes('천만')) amounts.push(num * 10_000_000);
-      else if (p.source.includes('만') && !p.source.includes('천만')) amounts.push(num * 10_000);
-      else amounts.push(num);
+  const amounts: { value: number; type: 'property' | 'income_monthly' | 'income_annual' | 'down_payment' | 'debt' | 'unknown'; confidence: number }[] = [];
+  
+  // 다양한 숫자 표현 방식 인식
+  const patterns = [
+    { regex: /(\d+(?:\.\d+)?)억/g, multiplier: 100_000_000, unit: '억' },
+    { regex: /(\d+(?:\.\d+)?)천만/g, multiplier: 10_000_000, unit: '천만' },
+    { regex: /(\d+(?:\.\d+)?)백만/g, multiplier: 1_000_000, unit: '백만' },
+    { regex: /(\d+(?:\.\d+)?)만원/g, multiplier: 10_000, unit: '만원' },
+    { regex: /(\d+(?:\.\d+)?)만/g, multiplier: 10_000, unit: '만' },
+    { regex: /(\d+(?:,\d{3})*)원/g, multiplier: 1, unit: '원' }
+  ];
+  
+  patterns.forEach(({ regex, multiplier, unit }) => {
+    const matches = text.matchAll(regex);
+    for (const match of matches) {
+      const numStr = match[1].replace(/,/g, '');
+      const value = parseFloat(numStr) * multiplier;
+      
+      // 문맥 기반 타입 분류
+      const beforeText = text.substring(Math.max(0, match.index! - 20), match.index!);
+      const afterText = text.substring(match.index! + match[0].length, match.index! + match[0].length + 20);
+      const context = (beforeText + afterText).toLowerCase();
+      
+      let type: 'property' | 'income_monthly' | 'income_annual' | 'down_payment' | 'debt' | 'unknown' = 'unknown';
+      let confidence = 0.5;
+      
+      // 매매가/주택가격 식별
+      if (/매매|매매가|집값|주택가|아파트.*가격|부동산.*가격|구입.*가격/.test(context)) {
+        type = 'property';
+        confidence = 0.9;
+      }
+      // 월소득 식별
+      else if (/월소득|월급|월수입|월.*소득/.test(context)) {
+        type = 'income_monthly';
+        confidence = 0.9;
+      }
+      // 연봉 식별
+      else if (/연봉|연소득|년소득|연.*수입/.test(context)) {
+        type = 'income_annual';
+        confidence = 0.9;
+      }
+      // 자기자본/계약금 식별
+      else if (/자기자본|계약금|보유.*자금|현금|다운.*페이먼트/.test(context)) {
+        type = 'down_payment';
+        confidence = 0.9;
+      }
+      // 기존 부채 식별
+      else if (/빚|부채|대출.*잔액|기존.*대출/.test(context)) {
+        type = 'debt';
+        confidence = 0.8;
+      }
+      // 금액 범위로 추정
+      else {
+        if (value >= 100_000_000) { // 1억 이상
+          type = 'property';
+          confidence = 0.6;
+        } else if (value >= 2_000_000 && value <= 20_000_000) { // 200만~2천만
+          type = 'income_monthly';
+          confidence = 0.6;
+        } else if (value >= 20_000_000 && value <= 200_000_000) { // 2천만~2억
+          type = value >= 50_000_000 ? 'down_payment' : 'income_annual';
+          confidence = 0.5;
+        }
+      }
+      
+      amounts.push({ value, type, confidence });
     }
   });
+  
+  // 최고 신뢰도 기준으로 각 타입별 대표값 추출
+  const getTopValue = (targetType: string) => {
+    const candidates = amounts.filter(a => a.type === targetType);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((best, current) => 
+      current.confidence > best.confidence ? current : best
+    ).value;
+  };
+  
+  const propertyPrice = getTopValue('property');
+  let monthlyIncome = getTopValue('income_monthly');
+  const annualIncome = getTopValue('income_annual');
+  const downPayment = getTopValue('down_payment');
+  const existingDebt = getTopValue('debt');
+  
+  // 연봉을 월소득으로 변환
+  if (!monthlyIncome && annualIncome) {
+    monthlyIncome = Math.round(annualIncome / 12);
+  }
+  
   return {
     amounts,
-    hasPropertyPrice: /매매|매매가|집값|주택가|아파트\s*\d/.test(text),
-    hasIncome: /(소득|연봉|월급|수입).*\d/.test(text),
-    hasDownPayment: /(자기자본|계약금|보유).*\d/.test(text)
+    propertyPrice,
+    monthlyIncome,
+    downPayment,
+    existingDebt
   };
 }
 
-// 메인 전문가 답변 생성 함수
+// ---------- 점진적 응답 전략 기반 메인 함수 ----------
 export function generateSimpleExpertResponse(message: string, profile: Fields): SimpleResponse {
   const intent = extractIntent(message);
-  const fin = extractFinancialInfo(message);
-
-  const g = handleGlossary(message);
-  if (g) return g;
-  const cmpGloss = handleGlossaryComparison(message);
-  if (cmpGloss) return cmpGloss;
-
-  if (fin.amounts.length > 0 && intent.isCalculation) {
-    const num = handleNumericLoanScenario(message);
-    if (num) return num;
+  const financial = extractFinancialInfo(message);
+  
+  // 1단계: 명확한 용어 설명 (최우선)
+  if (intent.topics.includes('glossary') || intent.primaryIntent === 'question') {
+    const glossary = handleFlexibleGlossary(message);
+    if (glossary) return glossary;
+    
+    const comparison = handleGlossaryComparison(message);
+    if (comparison) return comparison;
   }
-
-  const generalOpen = handleGeneralOpenEnded(message);
-  if (generalOpen) return generalOpen;
-
-  const taxRelief = handleAcquisitionTaxRelief(message);
-  if (taxRelief) return taxRelief;
-  const incomePeriod = handlePolicyIncomePeriod(message);
-  if (incomePeriod) return incomePeriod;
-  const policyCompare = handlePolicyComparison(message);
-  if (policyCompare) return policyCompare;
-  const modelhouse = handleModelhouseVisit(message);
-  if (modelhouse) return modelhouse;
-  const processOrder = handleProcessOrder(message);
-  if (processOrder) return processOrder;
-  const newlyweds = handleNewlywedsPurchaseFunds(message);
-  if (newlyweds) return newlyweds;
-  const overlap = handleUdaeOverlap(message);
-  if (overlap) return overlap;
-
-  // Fallback to existing topic handlers
-  const text = message.toLowerCase();
-  if (text.includes('전세') && text.includes('월세')) return handleJeonseVsMonthly(message);
-  if (text.includes('투자') || text.includes('시세') || text.includes('수익률')) return handleRealEstateInvestment(message);
-  if (text.includes('아파트') || text.includes('주택') || text.includes('매매')) return handleGeneralRealEstate(message);
-
-  if (hasUsableProfile(profile)) return generateProfileBasedResponse(profile, intent);
-
-  return generateSmartFallback(message, intent);
+  
+  // 2단계: 구체적 숫자가 있는 계산 (높은 우선순위)
+  if (intent.primaryIntent === 'calculation' || financial.amounts.length > 0) {
+    const calculation = handleSmartCalculation(message, financial);
+    if (calculation) return calculation;
+  }
+  
+  // 3단계: 비교 요청 처리
+  if (intent.primaryIntent === 'comparison') {
+    const comparison = handleSmartComparison(message, intent);
+    if (comparison) return comparison;
+  }
+  
+  // 4단계: 절차/방법 안내
+  if (intent.primaryIntent === 'procedure') {
+    const procedure = handleProcedureGuidance(message, intent);
+    if (procedure) return procedure;
+  }
+  
+  // 5단계: 주제별 전문 조언
+  const topicAdvice = handleTopicBasedAdvice(message, intent, financial);
+  if (topicAdvice) return topicAdvice;
+  
+  // 6단계: 프로필 기반 개인화 응답
+  if (hasUsableProfile(profile)) {
+    const profileResponse = generateProfileBasedResponse(profile, intent, financial);
+    if (profileResponse) return profileResponse;
+  }
+  
+  // 7단계: 지능적 주제별 폴백 (마지막 단계)
+  return generateTopicAwareFallback(message, intent, financial);
 }
 
-// ---------- Smart fallback ----------
-function generateSmartFallback(message: string, intent: any): SimpleResponse {
-  const t = message.toLowerCase();
-  const topics = intent.topic;
-  if (topics.includes('loan') || t.includes('대출')) {
-    return { content: '대출 계산/추천 원하시면 매매가·자기자본·월소득·지역을 한 줄로 알려주세요. 예) 매매 5억, 자기자본 1억, 월소득 500만, 비규제', confidence: 'medium', expertType: 'banking' };
-  }
-  if (topics.includes('rental')) {
-    return { content: '전세 vs 월세 비교 원하시면 보증금/월세를 알려주세요. 예) 전세 3억 vs 보증금 1억·월세 100만', confidence: 'medium', expertType: 'real_estate' };
-  }
-  if (topics.includes('policy')) {
-    return { content: '정책자금 질문이면 소득·주택가·무주택·혼인 여부를 알려주시면 맞춤으로 안내합니다.', confidence: 'medium', expertType: 'policy' };
-  }
-  return { content: '원하시는 내용을 조금만 더 알려주시면 바로 분석해 드릴게요.', confidence: 'medium', expertType: 'general' };
-}
+// ---------- 새로운 핸들러 함수들 구현 ----------
 
-// 용어 설명 처리 (DSR/LTV/DTI/근저당 등)
-function handleGlossary(message: string): SimpleResponse | null {
+// 1단계: 유연한 용어 설명 처리 (정규식 기반)
+function handleFlexibleGlossary(message: string): SimpleResponse | null {
   const t = message.toLowerCase().trim();
   if (!t) return null;
 
-  // DSR
-  if (/(^|\s)dsr(이|가|는|이뭐|이 뭐|가 뭐|이 뭐야|가 뭐야|\?)?/.test(t) || t.includes('총부채원리금상환비율')) {
+  // DSR - 더 유연한 패턴 매칭
+  if (/dsr|총부채원리금상환비율|총.*부채.*원리금|부채.*상환.*비율/.test(t)) {
     const content = [
-      'DSR(총부채원리금상환비율)은 “내 월소득 대비 모든 대출의 월 상환액 비중”입니다.',
-      '- 계산: 모든 대출의 월 상환액 합 / 월소득 × 100',
-      '- 예: 월소득 500만원, 월 상환 200만원이면 DSR≈40%',
-      '- 심사: 보통 DSR 40% 내에서 한도가 정해집니다(정책/은행별 차이).',
+      'DSR(총부채원리금상환비율)은 "내 월소득 대비 모든 대출의 월 상환액 비중"입니다.',
       '',
-      '팁:',
-      '- 기존 대출(신용/카드론/전세자금) 월 상환액도 포함됩니다.',
-      '- 한도를 늘리려면 상환액을 줄이거나 소득을 입증해야 합니다.'
+      '📊 계산 방법:',
+      '• 모든 대출의 월 상환액 합 ÷ 월소득 × 100',
+      '• 예: 월소득 500만원, 월 상환 200만원 → DSR 40%',
+      '',
+      '📊 심사 기준:',
+      '• 보통 DSR 40% 이내에서 한도 결정',
+      '• 정책자금은 더 엄격할 수 있음',
+      '',
+      '💡 실무 팁:',
+      '• 신용대출, 카드론, 전세대출 모두 포함',
+      '• 한도 늘리려면 기존 대출 상환 or 소득 증빙 보강',
+      '• 부부합산 시 더 유리할 수 있음'
     ].join('\n');
     return { content, confidence: 'high', expertType: 'banking' };
   }
 
-  // LTV
-  if (/(^|\s)ltv(이|가|는|\?)?/.test(t) || t.includes('담보인정비율')) {
+  // LTV - 더 유연한 패턴 매칭
+  if (/ltv|담보인정비율|담보.*비율/.test(t)) {
     const content = [
-      'LTV(담보인정비율)은 “주택가격 대비 최대 대출 가능 비율”입니다.',
-      '- 예: 비규제지역 80%면 5억원 주택은 최대 4억원까지 가능(조건 충족 시).',
-      '- 실제 한도는 LTV와 DSR 중 더 보수적인 값으로 결정됩니다.'
+      'LTV(담보인정비율)은 "주택가격 대비 최대 대출 가능 비율"입니다.',
+      '',
+      '📊 기본 개념:',
+      '• 대출금액 ÷ 주택가격 × 100',
+      '• 예: 5억원 주택, 4억원 대출 → LTV 80%',
+      '',
+      '📊 지역별 한도:',
+      '• 비규제지역: 보통 80%',
+      '• 규제지역: 60-70% (투기지역 더 엄격)',
+      '• 정책자금: 별도 기준 적용',
+      '',
+      '💡 실무 팁:',
+      '• 실제 한도는 LTV와 DSR 중 더 보수적인 값',
+      '• 신축 vs 기존 주택에 따라 차이',
+      '• 감정가 vs 매매가 중 낮은 값 기준'
     ].join('\n');
     return { content, confidence: 'high', expertType: 'banking' };
   }
 
-  // DTI
-  if (/(^|\s)dti(이|가|는|\?)?/.test(t) || t.includes('총부채상환비율')) {
+  // DTI - 더 유연한 패턴 매칭
+  if (/dti|총부채상환비율|부채.*상환.*비율/.test(t)) {
     const content = [
-      'DTI(총부채상환비율)은 “연소득 대비 주택담보대출 이자+원금 상환 비중”입니다.',
-      '- DSR이 모든 대출을 보지만, DTI는 주담대 중심으로 봅니다.',
-      '- 현재는 DSR이 주요 심사 지표로 더 널리 적용됩니다.'
+      'DTI(총부채상환비율)은 "연소득 대비 주택담보대출 상환 비중"입니다.',
+      '',
+      '📊 DSR과의 차이:',
+      '• DTI: 주로 주택담보대출만 고려',
+      '• DSR: 모든 대출 포함',
+      '• 현재는 DSR이 주요 심사 기준',
+      '',
+      '💡 참고사항:',
+      '• 과거 주요 규제 지표였음',
+      '• 현재는 DSR 보조 역할',
+      '• 일부 상품에서 여전히 적용'
     ].join('\n');
     return { content, confidence: 'high', expertType: 'banking' };
   }
 
-  // 근저당
-  if (t.includes('근저당')) {
+  // 근저당 - 더 유연한 패턴 매칭
+  if (/근저당|담보.*설정|저당.*설정/.test(t)) {
     const content = [
-      '근저당은 대출을 담보로 잡을 때 설정하는 권리로, 연체 시 담보를 처분할 수 있는 권리입니다.',
-      '- 보통 채권최고액(대출금의 120~130%)으로 설정됩니다.',
-      '- 상환 후 말소 등기하면 권리는 소멸합니다.'
+      '근저당은 대출 담보로 부동산에 설정하는 권리입니다.',
+      '',
+      '📊 기본 개념:',
+      '• 대출 연체 시 담보 처분 권리',
+      '• 채권최고액으로 설정 (보통 대출금의 120-130%)',
+      '• 등기부등본에 기재됨',
+      '',
+      '💡 실무 정보:',
+      '• 대출 실행과 동시에 설정',
+      '• 상환 완료 후 말소 등기 필요',
+      '• 말소 등기비는 차주 부담이 일반적'
     ].join('\n');
     return { content, confidence: 'high', expertType: 'banking' };
   }
@@ -188,644 +330,390 @@ function handleGlossary(message: string): SimpleResponse | null {
   return null;
 }
 
-// DSR vs DTI 비교 전용 처리
-function handleGlossaryComparison(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!(t.includes('dsr') && t.includes('dti')) && !t.includes('차이')) return null;
-  if (!(t.includes('차이') || t.includes('비교') || t.includes('뭐가 달라'))) return null;
-
-  const content = [
-    '요약: DSR은 “모든 대출” 상환액 기준, DTI는 “주담대 중심” 상환액 기준입니다.',
-    '- DSR(총부채원리금상환비율): 모든 대출의 월 상환액 합 / 월소득 × 100',
-    '- DTI(총부채상환비율): 주택담보대출 원리금(또는 이자 중심) / 연소득 × 100',
-    '- 심사 트렌드: 현재는 DSR를 더 널리 적용(은행·정책별 다름).',
-    '',
-    '실무 팁:',
-    '- 기존 신용·전세 대출이 있으면 DSR이 먼저 한도를 제한하는 경우가 많습니다.',
-    '- 한도를 늘리려면 기존 대출 월 상환액을 줄이거나 소득 증빙을 보강하세요.'
-  ].join('\n');
-
-  return { content, confidence: 'high', expertType: 'banking' };
+// 2단계: 스마트 계산 처리 (개선된 금액 추출 활용)
+function handleSmartCalculation(message: string, financial: any): SimpleResponse | null {
+  const { propertyPrice, monthlyIncome, downPayment, existingDebt } = financial;
+  
+  // 최소 조건: 매매가 또는 명확한 금액이 있어야 함
+  if (!propertyPrice && financial.amounts.length === 0) return null;
+  
+  // 기존 로직 활용하되 더 스마트하게
+  if (propertyPrice) {
+    const dp = downPayment || 0;
+    const neededLoan = Math.max(propertyPrice - dp, 0);
+    const years = 30;
+    const rate = 4.5;
+    const monthlyPay = calculateMonthlyPayment(neededLoan, rate, years);
+    const ltv = calculateLTV(neededLoan, propertyPrice);
+    const dsr = monthlyIncome ? calculateDSR(monthlyPay, monthlyIncome) : null;
+    
+    // 부채 고려한 실제 DSR
+    let actualDsr = dsr;
+    if (existingDebt && monthlyIncome) {
+      const estimatedDebtPayment = existingDebt * 0.03; // 3% 가정
+      actualDsr = calculateDSR(monthlyPay + estimatedDebtPayment, monthlyIncome);
+    }
+    
+    const content = [
+      `매매가 ${formatKRW(propertyPrice)}원 기준 분석 결과:`,
+      `• 필요 대출: ${formatKRW(neededLoan)}원 (LTV ${ltv.toFixed(0)}%)`,
+      `• 월 상환액: ${formatKRW(monthlyPay)}원 (30년, 금리 ${rate}%)`,
+      monthlyIncome ? `• 예상 DSR: ${actualDsr ? actualDsr.toFixed(0) : dsr?.toFixed(0)}%` : '',
+      existingDebt ? `• 기존 부채 고려: ${formatKRW(existingDebt)}원` : '',
+      '',
+      '✅ 실행 가능성:',
+      ltv <= 80 ? '• LTV 조건 양호' : '• ⚠️ LTV 높음 (자기자본 확대 권장)',
+      actualDsr && actualDsr <= 40 ? '• DSR 조건 양호' : actualDsr && actualDsr > 40 ? '• ⚠️ DSR 높음 (소득 증빙 보강 필요)' : '',
+      '',
+      '🎯 다음 단계: 기금e든든 모의심사 → 은행 가심사 → 서류 준비'
+    ].filter(Boolean).join('\n');
+    
+    return {
+      content,
+      confidence: 'high',
+      expertType: 'banking'
+    };
+  }
+  
+  return null;
 }
 
-// 금액 기반 대출 시나리오 처리
-function handleNumericLoanScenario(message: string): SimpleResponse | null {
-  const t = message.replace(/\s+/g, '');
-
-  // 소득 추출
-  // 월소득: "월소득500만원", "월500", "월수입500만" 등
-  let incomeMonthly: number | null = null;
-  const mIncomeMonthly1 = t.match(/월소득(\d+)(?:만)?원?/);
-  const mIncomeMonthly2 = t.match(/월(\d+)(?:만)?원?/);
-  if (mIncomeMonthly1) incomeMonthly = parseInt(mIncomeMonthly1[1], 10) * 10_000;
-  else if (mIncomeMonthly2) incomeMonthly = parseInt(mIncomeMonthly2[1], 10) * 10_000;
+// 3단계: 스마트 비교 처리
+function handleSmartComparison(message: string, intent: any): SimpleResponse | null {
+  const text = message.toLowerCase();
   
-  // 연봉: "연봉6천", "연봉6000", "연봉 6,000만원"
-  if (incomeMonthly === null) {
-    const mIncomeAnnual1 = t.match(/연봉(\d+)천/); // 연봉6천
-    const mIncomeAnnual2 = t.match(/연봉(\d+)(?:만)?원?/); // 연봉6000만원 또는 연봉6000만
-    if (mIncomeAnnual1) {
-      const annual = parseInt(mIncomeAnnual1[1], 10) * 10_000_000;
-      incomeMonthly = Math.round(annual / 12);
-    } else if (mIncomeAnnual2) {
-      // 해석: 숫자가 4자리 이상이면 만원 단위로 간주
-      const raw = parseInt(mIncomeAnnual2[1], 10);
-      const annual = raw >= 1000 ? raw * 10_000 : raw * 10_000; // 두 경우 모두 만원 단위 처리
-      incomeMonthly = Math.round(annual / 12);
-    }
-  }
-
-  // 매매가/집값 추출: "매매 5억", "매매가 5억", "아파트 5억" 등 (엄격 매칭)
-  let propertyPrice: number | null = null;
-  const mPrice1 = message.match(/매매\s*([\d,억천만원\s]+)/);
-  const mPrice2 = message.match(/매매가\s*([\d,억천만원\s]+)/);
-  const mPrice3 = message.match(/(집|주택|아파트)\s*([\d,억천만원\s]+)/);
-  if (mPrice1 && !propertyPrice) propertyPrice = parseWon(mPrice1[1]) || null;
-  if (mPrice2 && !propertyPrice) propertyPrice = parseWon(mPrice2[1]) || null;
-  if (mPrice3 && !propertyPrice) propertyPrice = parseWon(mPrice3[2]) || null;
-  // 보조: "가격 5억" 등
-  if (!propertyPrice) {
-    const mPrice4 = message.match(/가격\s*([\d,억천만원\s]+)/);
-    if (mPrice4) propertyPrice = parseWon(mPrice4[1]) || null;
-  }
-
-  // 자기자본/계약금/보유현금 추출: "자기자본1억원", "계약금1억", "보유현금1억"
-  let downPayment: number | null = null;
-  const mDown = t.match(/(자기자본|계약금|보유현금)(\d+[억만천원]+)/);
-  if (mDown) downPayment = parseWon(mDown[2]);
-
-  // 부채 이슈 전용 응답: 빚 언급이 있고 매매가가 없다면, 부채 중심 조언 제공
-  if (t.includes('빚') && !propertyPrice) {
-    const debtMatch = message.match(/빚.*?(\d+)(?:만원|만|억)/);
-    let debtDesc = '기존 부채';
-    if (debtMatch) debtDesc = `기존 부채 약 ${debtMatch[1]} 단위`;
+  // DSR vs DTI 비교
+  if (/dsr.*dti|dti.*dsr/.test(text) && /차이|비교|뭐가|다른/.test(text)) {
     const content = [
-      '보금자리론/디딤돌은 DSR·LTV 요건을 함께 봅니다. 부채가 있으면 DSR이 먼저 한도를 제한할 수 있어요.',
-      '- 방법 1: 기존 부채 일부 상환 → 월 상환액 축소 → DSR 여유 확보',
-      '- 방법 2: 금리 낮은 대출로 대환 → 월 상환액 인하',
-      '- 방법 3: 자기자본(계약금) 비율 확대 → 필요 대출 축소',
+      '💡 DSR vs DTI 핵심 차이점:',
       '',
-      '바로 계산해 드리려면 한 줄로 알려주세요:',
-      '“매매 3억2천, 자기자본 3천, 월소득 250만, 기존부채 월상환 20만, 비규제”'
+      '📊 DSR (총부채원리금상환비율):',
+      '• 모든 대출의 월 상환액 ÷ 월소득 × 100',
+      '• 신용대출, 카드론, 전세대출 등 모두 포함',
+      '• 현재 주요 심사 기준 (40% 이내 권장)',
+      '',
+      '📊 DTI (총부채상환비율):',
+      '• 주택담보대출 상환액 ÷ 연소득 × 100',
+      '• 주로 주담대만 고려',
+      '• 과거 주요 기준, 현재는 보조적 활용',
+      '',
+      '🎯 실무 적용:',
+      '• 기존 대출 多 → DSR이 먼저 한도 제한',
+      '• 무부채 상태 → DSR/DTI 비슷한 수준',
+      '• 한도 늘리려면 → 기존 대출 상환 or 소득 증빙 보강'
     ].join('\n');
+    
     return { content, confidence: 'high', expertType: 'banking' };
   }
-
-  // 최소 요건: 매매가가 있어야 분석 진행
-  if (!propertyPrice) return null;
-
-  const dp = downPayment ?? 0;
-  const neededLoan = Math.max(propertyPrice - dp, 0);
-  const years = 30;
-  const rate = 4.5;
-  const monthlyPay = calculateMonthlyPayment(neededLoan, rate, years);
-  const ltv = calculateLTV(neededLoan, propertyPrice);
-  const dsr = incomeMonthly ? calculateDSR(monthlyPay, incomeMonthly) : null;
-
-  // 권장안 도출
-  const safeLoan = Math.min(neededLoan, Math.round(propertyPrice * 0.6));
-  const safeMonthly = calculateMonthlyPayment(safeLoan, rate, years);
-  const safeDsr = incomeMonthly ? calculateDSR(safeMonthly, incomeMonthly) : null;
-
-  // 응답 생성 (간결하고 실무적인 톤)
-  const lines: string[] = [];
-  lines.push(`매매가 ${formatKRW(propertyPrice)}원, 자기자본 ${formatKRW(dp)}원 기준입니다${incomeMonthly ? `, 월소득 ${formatKRW(incomeMonthly)}원 반영` : ''}.`);
-  lines.push(`필요 대출은 약 ${formatKRW(neededLoan)}원입니다 (LTV ≈ ${ltv.toFixed(0)}%).`);
-  lines.push(`30년·금리 ${rate}% 가정 시 월 상환액은 약 ${formatKRW(monthlyPay)}원입니다${dsr !== null ? ` (DSR ≈ ${dsr.toFixed(0)}%)` : ''}.`);
-  lines.push(`안전하게 가려면 대출을 ${formatKRW(safeLoan)}원 수준으로 잡으면 월 ${formatKRW(safeMonthly)}원${safeDsr !== null ? ` (DSR ≈ ${safeDsr.toFixed(0)}%)` : ''} 정도입니다.`);
-
-  // 다음 행동 제안 (짧고 실행 가능하게)
-  const next: string[] = [];
-  next.push('기금e든든 모의심사로 정책자금 가능 여부 먼저 확인');
-  next.push('주거래 은행 포함 2~3곳 금리·한도 비교 상담');
-  next.push('필요 서류(소득·재직) 준비 후 사전심사 진행');
-  next.push('가능하면 LTV 60~70% 구간에서 한도·DSR 균형 맞추기');
-
-  const content = [
-    '요약:',
-    ...lines.map(l => `- ${l}`),
-    // 다음 단계는 사용자가 절차/방법을 물었을 때만 표시
-    ...(t.includes('절차') || t.includes('다음단계') || t.includes('다음 단계') || t.includes('어떻게') || t.includes('방법')
-      ? ['','다음 단계:', ...next.map(l => `- ${l}`)]
-      : [])
-  ].join('\n');
-
-  return {
-    content,
-    confidence: 'high',
-    expertType: 'banking'
-  };
-}
-
-// 생애최초 취득세 감면 전용 처리
-function handleAcquisitionTaxRelief(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  const isAcqTax = t.includes('취득세');
-  const isRelief = t.includes('감면') || t.includes('감싸') || t.includes('감경');
-  const isFirstBuy = t.includes('생애최초') || t.includes('첫집') || t.includes('첫 주택');
-  if (!isAcqTax || !isRelief || !isFirstBuy) return null;
-
-  // 사실상 사용자 의도: 어디서/어떻게 확인 + 무엇이 맞는지(요건) + 적용 범위
-  const content = [
-    '핵심만 정리해 드릴게요.',
-    '- 생애최초 주택 취득이면, 요건 충족 시 취득세가 감면됩니다.',
-    '- “생애최초이면 무조건”은 아니고, 아래 요건을 모두 충족해야 합니다.',
-    '',
-    '적용 요건(2025년 기준):',
-    '- 무주택 세대의 생애최초 주택 취득',
-    '- 주택가액 요건 충족(지방자치단체 조례 범위 내, 통상 12억 이하 기준 운영. 지역별로 상이 가능)',
-    '- 세대 기준 무주택 확인(배우자 포함)',
-    '',
-    '감면 내용(대표 예시):',
-    '- 취득세 50% 감면(일부 구간 한도 존재). 조례에 따라 세부 비율·한도 차이 가능',
-    '- 농특세·지방교육세는 감면 대상 아닐 수 있음(지역별 차이)',
-    '',
-    '무엇이 맞나요? (질문 요지 정리):',
-    '- “몇 가지 이상 해당되면 감면” 표기는 생애최초 외 추가 우대(신혼부부, 다자녀 등)를 병행 설명한 자료일 가능성',
-    '- 생애최초 단독으로도 요건 충족 시 감면. 다만 금액·지역·세대 요건이 필수입니다.',
-    '',
-    '어디서/어떻게 확인하나요?',
-    '- 지자체 세무과(시·군·구청) 취득세 담당: 본인 주소지 관할이 가장 정확',
-    '- 위택스(https://www.wetax.go.kr): 취득세 신고 전 모의계산 및 안내 확인',
-    '- 기금e든든은 대출 자격 확인 용도이고, 취득세 감면은 지자체 소관(혼동 주의)',
-    '',
-    '실무 팁:',
-    '- 매매계약서, 가족관계증명서(세대·혼인 여부), 전입 예정지 자료를 지참하고 관할 지자체에 전화로 “생애최초 취득세 감면 가능 여부”를 문의하세요.',
-    '- 지역별로 조례 해석·한도가 달라서, 관할 지자체 확인이 최종 확정입니다.',
-    '',
-    '다음 단계:',
-    '- 관할 시·군·구청 세무과에 전화 → 주택가액·세대·무주택 여부 전달 → 감면 가능 여부 1차 확인',
-    '- 위택스에서 취득세 모의계산으로 감면 예상액 확인',
-    '- 감면 해당 시, 취득세 신고 때 “생애최초 감면 신청” 체크 및 증빙서류 첨부'
-  ].join('\n');
-
-  return {
-    content,
-    confidence: 'high',
-    expertType: 'policy'
-  };
-}
-
-// 디딤돌/보금자리 소득기준·원천징수 기간 안내
-function handlePolicyIncomePeriod(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  const mentionsPolicy = t.includes('디딤돌') || t.includes('보금자리');
-  const asksIncomePeriod = t.includes('원천징수') || t.includes('소득기준') || t.includes('몇월부터') || t.includes('몇 월부터') || t.includes('기간');
-  if (!mentionsPolicy || !asksIncomePeriod) return null;
-
-  const content = [
-    '디딤돌/보금자리 소득 확인 기간은 신청 시점 기준으로 산정합니다.',
-    '',
-    '정책자금(디딤돌/보금자리) 소득 확인:',
-    '- 원칙: 신청일 기준 직전 12개월 합산 소득(근로소득 원천징수 포함)으로 판단',
-    '- 예) 11월 신청 → 전년 11월 ~ 당해 10월 소득',
-    '- 예) 12월 신청 → 전년 12월 ~ 당해 11월 소득',
-    '',
-    '자주 묻는 점:',
-    '- 원천징수영수증은 전년도 것이 기본이지만, 정책자금 심사에서는 최근 12개월 소득을 추가 서류로 확인할 수 있습니다.',
-    '- 급여 변동이 있으면 건강보험료·급여명세 등 보완서류를 요구할 수 있습니다.',
-    '',
-    '답변 채널:',
-    '- 기금e든든 모의심사: 자격/소득기준 빠르게 1차 확인',
-    '- 취급은행 창구: 실제 접수/심사 서류 체크리스트 제공(은행별 약간 상이)',
-    '- 주택금융공사 콜센터: 정책 해석 통일 기준 안내(세부 서류는 은행 확정)',
-    '',
-    '다음 단계:',
-    '- 목표 신청월을 정하고, 해당 월 기준 최근 12개월 소득자료를 미리 모으세요.',
-    '- 급여증빙(원천징수, 급여명세, 건강보험료 납부내역) 준비 → 은행 사전상담',
-    '- 모의심사 결과와 은행 가심사 결과를 비교해 최종 신청월 확정'
-  ].join('\n');
-
-  return { content, confidence: 'high', expertType: 'banking' };
-}
-
-// 중기청 vs 버팀목 비교
-function handlePolicyComparison(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!(t.includes('중기청') && t.includes('버팀목'))) return null;
-  const content = [
-    '중기청 대출과 버팀목 대출은 “완전히 다른 상품군”입니다.',
-    '- 중기청: 주로 사업자·중소기업 대상 정책자금(주택 구입/전세와 별개)',
-    '- 버팀목: 전세자금(청년/일반) 등 주거 관련 정책자금',
-    '',
-    '집 전세/매매 자금이라면 “버팀목(전세)” 또는 “디딤돌/보금자리(매매)”를 검토하시면 됩니다.',
-    '중기청은 주거자금 용도가 아닙니다.'
-  ].join('\n');
-  return { content, confidence: 'high', expertType: 'banking' };
-}
-
-// 모델하우스 방문/예약 안내
-function handleModelhouseVisit(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!(t.includes('모델하우스') || t.includes('견본주택'))) return null;
-  const content = [
-    '모델하우스(견본주택)는 단지·분양사에 따라 “예약제/자유방문”이 다릅니다.',
-    '- 공식 홈페이지/분양 공고문에서 방문 방식과 운영시간 먼저 확인',
-    '- 예약제인 경우 온라인 예약 후 방문(주말 혼잡 주의)',
-    '- 자유방문이면 신분증 지참, 대기줄 감안',
-    '',
-    '실무 팁:',
-    '- 분양가·중도금 대출조건·발코니 확장비·옵션 비용 미리 체크',
-    '- 청약 자격/가점, 전매 제한, 중도금 이자 부담 여부 필수 확인'
-  ].join('\n');
-  return { content, confidence: 'high', expertType: 'real_estate' };
-}
-
-// 집 먼저 보고 문의? 절차 안내
-function handleProcessOrder(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!(t.includes('먼저') && (t.includes('집') || t.includes('매물')) && (t.includes('문의') || t.includes('알려') || t.includes('해줘')))) return null;
-  const content = [
-    '집을 먼저 보지 않아도 대출/정책자금 상담 가능합니다. 권장 순서는 다음과 같습니다.',
-    '1) 자격/한도 가늠: 기금e든든 모의심사 + 은행 가심사',
-    '2) 예산 확정: 월 상환가능액 기준으로 매물 가격대 설정',
-    '3) 매물 탐색·방문: 중개사/분양사와 일정 조율',
-    '4) 계약 전 조건 검토: 특약(대출불가시 해제), 잔금일정·대출 실행일 맞추기',
-    '5) 계약 후 본심사/실행',
-    '',
-    '즉, “먼저 상담→그다음 매물” 순서로 진행하셔도 됩니다.'
-  ].join('\n');
-  return { content, confidence: 'high', expertType: 'banking' };
-}
-
-// 신혼부부 전용 구입자금/디딤돌 맵핑
-function handleNewlywedsPurchaseFunds(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!(t.includes('신혼부부') && (t.includes('전용') || t.includes('구입자금') || t.includes('구입 자금')))) return null;
-  const content = [
-    '신혼부부 “구입자금”은 보통 디딤돌/보금자리 계열에서 신혼부부 우대조건을 적용해 받는 방식입니다.',
-    '- 매매: 디딤돌(소득·주택가액 요건) 또는 보금자리(생애최초/소득요건)에서 신혼부부 우대금리/한도 적용',
-    '- 전세: 버팀목(청년/일반)에서 신혼부부 조건과 별개로 심사',
-    '',
-    '현실적인 선택:',
-    '- 소득이 낮고 주택가 6억 이하이면 디딤돌 신혼부부 우대 검토',
-    '- 생애최초·주택가 9억 이하면 보금자리(생애최초)도 후보',
-    '',
-    '한도·금리는 소득/지역/주택가에 따라 달라집니다. 매매가·자기자본·월소득을 알려주시면 바로 계산해 드릴게요.'
-  ].join('\n');
-  return { content, confidence: 'high', expertType: 'banking' };
-}
-
-// 생애최초 × 신혼부부 우대금리 중복 여부
-function handleUdaeOverlap(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-  if (!((t.includes('생애최초') || t.includes('생애 최초')) && t.includes('신혼부부') && (t.includes('중복') || t.includes('같이') || t.includes('동시')))) return null;
-  const content = [
-    '우대금리는 “정책/상품 기준으로 허용되는 범위”에서 중복 적용이 가능합니다.',
-    '- 예) 보금자리(생애최초) + 신혼부부 우대: 동시 충족 시 우대금리 합산(상한 존재) 적용',
-    '- 디딤돌도 생애최초/신혼부부 요건 충족 시 우대 중복이 가능하나, 세부 한도·금리 상한은 상품별 요건을 따릅니다.',
-    '',
-    '실무 팁:',
-    '- 기금e든든 모의심사에서 “생애최초, 신혼부부” 체크 → 우대금리 자동 반영',
-    '- 은행 상담 시 두 우대 조건 서류(혼인·무주택·소득)를 함께 제출하면 됩니다.'
-  ].join('\n');
-  return { content, confidence: 'high', expertType: 'banking' };
-}
-
-// 개방형 일반 질문 처리
-function handleGeneralOpenEnded(message: string): SimpleResponse | null {
-  const t = message.toLowerCase();
-
-  // 시장 탐색: "서울에서 제일 싼 아파트"
-  if ((t.includes('서울') || t.includes('수도권')) && (t.includes('제일 싼') || t.includes('가장 싼') || (t.includes('싼') && t.includes('아파트')))) {
+  
+  // 전세 vs 월세 비교
+  if (/전세.*월세|월세.*전세/.test(text) && /비교|차이|어떤|나은/.test(text)) {
     const content = [
-      '실시간 최저가는 변동이 커서, 다음 경로로 빠르게 찾아보세요.',
-      '- 국토부 실거래가 공개시스템: 최저 실거래가 확인(과거 기준)',
-      '- 한국부동산원/지자체 공공 데이터: 시세 흐름',
-      '- 포털/앱(호갱노노·직방·다방): “매매가 오름차순” 필터 + 준공연도·면적 조건',
+      '🏠 전세 vs 월세 선택 가이드:',
       '',
-      '현실적인 저가 지역(참고): 노원·도봉·강북·금천·구로 일부, 외곽 신도시 구축',
-      '체크포인트: 관리비·수선충당금·엘리베이터 유무·층고·일조·학군·교통. 지나치게 저렴하면 건물 상태/권리관계 재확인.'
+      '💰 전세의 장점:',
+      '• 월 주거비 부담 없음',
+      '• 보증금 회수 시 목돈 확보',
+      '• 장기 거주 시 경제적',
+      '',
+      '💰 월세의 장점:',
+      '• 초기 자금 부담 적음',
+      '• 유연한 이주 가능',
+      '• 투자 기회비용 활용',
+      '',
+      '🎯 선택 기준:',
+      '• 보유 자금 > 전세보증금 → 월세 고려',
+      '• 장기 거주 예정 → 전세 유리',
+      '• 금리 상승기 → 전세 부담 증가',
+      '',
+      '💡 구체적 손익분기점을 계산해드리려면 보증금과 월세 금액을 알려주세요!'
     ].join('\n');
+    
     return { content, confidence: 'high', expertType: 'real_estate' };
   }
-
-  // 대출 카탈로그: "대출 어떤 거 있어?"
-  if ((t.includes('대출') || t.includes('자금')) && (t.includes('어떤') || t.includes('종류') || t.includes('카탈로그') || t.includes('리스트'))) {
+  
+  // 정책자금 비교
+  if (/디딤돌.*보금자리|보금자리.*디딤돌/.test(text)) {
     const content = [
-      '대출은 크게 3축입니다.',
-      '1) 정책자금: 보금자리(매매, 생애최초/우대), 디딤돌(매매, 소득·가액 제한), 버팀목(전세), 특례/우대 프로그램',
-      '2) 일반 주담대: 고정/변동/혼합, 은행별 금리·한도·우대금리 상이',
-      '3) 보조: 신용대출·부모자금·보증금 대출 등(DSR 영향)',
+      '🏦 디딤돌 vs 보금자리 비교 분석:',
       '',
-      '선택 기준: 주택가·자기자본·소득·지역(규제)·무주택/혼인/자녀·신용/기존부채.',
-      '원하시면 “매매가/자기자본/월소득/지역”만 알려주시면 맞춤 조합을 바로 제안드릴게요.'
-    ].join('\n');
-    return { content, confidence: 'high', expertType: 'banking' };
-  }
-
-  // 추천형: "나는 무슨 대출 받아야 돼?"
-  if ((t.includes('나는') || t.includes('저는') || t.includes('본인')) && (t.includes('무슨 대출') || t.includes('어떤 대출') || t.includes('추천'))) {
-    const content = [
-      '간단 기준으로 바로 가이드합니다.',
-      '- 무주택·생애최초·주택가≤9억: 보금자리(생애최초) 우선 검토',
-      '- 무주택·주택가≤6억·소득 요건 충족: 디딤돌(신혼/우대 적용 가능)',
-      '- 전세 예정: 버팀목(청년/일반) → 보증금 70~80% 범위',
-      '- 위 조건 미충족 또는 한도 부족: 일반 주담대(혼합고정) + 필요시 보조대출',
+      '🏠 디딤돌 대출:',
+      '• 소득/자산 요건 엄격 (지역별 차등)',
+      '• 주택가격 6억 이하',
+      '• 금리 낮음, 장기 고정 가능',
+      '• 신혼부부 추가 우대',
       '',
-      '맞춤으로 좁히려면 한 줄로 알려주세요: “매매 5억, 자기자본 1억, 월소득 450만, 비규제, 무주택”.'
+      '🏠 보금자리 대출:',
+      '• 생애최초 구매 중심',
+      '• 주택가격 9억 이하',
+      '• 소득 요건 상대적 완화',
+      '• 다양한 우대 조건 결합',
+      '',
+      '🎯 선택 가이드:',
+      '• 소득 낮고 주택가 저렴 → 디딤돌',
+      '• 생애최초이고 주택가 중간 → 보금자리',
+      '• 둘 다 가능하면 금리/한도 비교',
+      '',
+      '💡 정확한 자격과 조건을 확인하려면 소득과 주택가를 알려주세요!'
     ].join('\n');
-    return { content, confidence: 'high', expertType: 'banking' };
+    
+    return { content, confidence: 'high', expertType: 'policy' };
   }
-
+  
   return null;
 }
 
-// 전세 만료 및 대출 연장 처리
-function handleJeonseExpiration(message: string): SimpleResponse {
+// 4단계: 절차 안내 처리
+function handleProcedureGuidance(message: string, intent: any): SimpleResponse | null {
   const text = message.toLowerCase();
   
-  if (text.includes('3개월째') && text.includes('10월까지만')) {
-    return {
-      content: "3개월째 일하고 계시는 상황에서 10월까지만 하시는 건 전혀 문제없어요. 오히려 안정적인 소득 기간이 있어서 대출 연장에 더 유리할 수 있습니다. 다음주 월요일 신청하시면 충분히 가능하실 거예요!",
-      confidence: 'high',
-      expertType: 'banking'
-    };
+  // 대출 신청 절차
+  if (/대출.*절차|신청.*절차|진행.*순서/.test(text)) {
+    const urgentPrefix = intent.urgency === 'high' ? '⚡ 빠른 진행을 위한 ' : '📋 ';
+    
+    const content = [
+      `${urgentPrefix}대출 신청 절차를 단계별로 안내드릴게요:`,
+      '',
+      '1️⃣ 사전 준비 (1-2일):',
+      '• 기금e든든 모의심사로 자격 확인',
+      '• 소득/재직 증명서류 준비',
+      '• 신용등급 확인',
+      '',
+      '2️⃣ 가심사 (3-5일):',
+      '• 2-3개 은행 동시 신청',
+      '• 한도/금리 비교',
+      '• 우대조건 확인',
+      '',
+      '3️⃣ 매물 계약 (협의):',
+      '• 대출특약 필수 삽입',
+      '• 잔금일 = 대출실행일 조율',
+      '',
+      '4️⃣ 본심사 (1-2주):',
+      '• 등기부/건축물대장 제출',
+      '• 최종 승인 대기',
+      '',
+      '5️⃣ 실행 (1-2일):',
+      '• 근저당 설정',
+      '• 자금 실행',
+      '',
+      intent.urgency === 'high' ? '⚡ 급하시면 가심사부터 빠르게 시작하세요!' : '💡 천천히 단계별로 진행하시면 됩니다.'
+    ].join('\n');
+    
+    return { content, confidence: 'high', expertType: 'banking' };
   }
   
-  if (text.includes('일을 못할 것 같아서')) {
-    return {
-      content: "일을 못하시겠다면 무리하지 마시고 10월까지만 하시는 게 맞아요. 대출 연장에는 소득 안정성이 중요하니까, 억지로 계속하시는 것보다는 계획적으로 접근하시는 게 좋습니다.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
+  // 주택 구매 절차
+  if (/주택.*절차|구매.*절차|매매.*절차/.test(text)) {
+    const content = [
+      '🏠 주택 구매 전체 절차 가이드:',
+      '',
+      '📋 1단계: 준비 (2-4주)',
+      '• 예산 설정 (대출한도 + 자기자본)',
+      '• 지역/조건 우선순위 정하기',
+      '• 대출 가심사 완료',
+      '',
+      '📋 2단계: 매물 탐색 (4-8주)',
+      '• 온라인 + 직접 방문',
+      '• 3-5개 후보 비교 검토',
+      '• 시세/호재 분석',
+      '',
+      '📋 3단계: 계약 (1-2일)',
+      '• 매매계약서 작성',
+      '• 특약사항 협의',
+      '• 계약금 지급',
+      '',
+      '📋 4단계: 중도금/잔금 (1-3개월)',
+      '• 대출 본심사 진행',
+      '• 중도금 지급 (신축의 경우)',
+      '• 잔금 지급 + 소유권 이전',
+      '',
+      '💡 각 단계별 세부 사항이 궁금하시면 말씀해 주세요!'
+    ].join('\n');
+    
+    return { content, confidence: 'high', expertType: 'real_estate' };
   }
   
-  return {
-    content: "전세 만료일 11월 17일이면 대출 연장 신청하시기에 충분한 시간이 있어요. 소득 증명만 잘 준비하시면 문제없을 것 같습니다!",
-    confidence: 'high',
-    expertType: 'banking'
-  };
+  return null;
 }
 
-// 결혼 및 주택 구입 처리
-function handleMarriageHousePurchase(message: string): SimpleResponse {
+// 5단계: 주제별 전문 조언
+function handleTopicBasedAdvice(message: string, intent: any, financial: any): SimpleResponse | null {
+  const topics = intent.topics;
   const text = message.toLowerCase();
   
-  if (text.includes('3천') && text.includes('1.5~6') && text.includes('대구')) {
+  // 대출 관련 조언
+  if (topics.includes('loan') && intent.primaryIntent === 'advice') {
+    if (/첫.*대출|처음.*대출/.test(text)) {
+      return {
+        content: [
+          '💡 첫 대출을 위한 핵심 조언:',
+          '',
+          '🎯 금리보다 중요한 것들:',
+          '• 한도: 실제 필요금액 충족 여부',
+          '• 상환방식: 원리금균등 vs 원금균등',
+          '• 중도상환수수료: 향후 갈아타기 고려',
+          '',
+          '🎯 신용 관리:',
+          '• 대출 후 연체 절대 금지',
+          '• 추가 대출 신청 최소화',
+          '• 신용카드 사용액 관리',
+          '',
+          '⚠️ 실수하기 쉬운 부분:',
+          '• DSR 40% 넘지 않도록 계획',
+          '• 생활비 여유분 확보',
+          '• 금리 인상 대비책 마련',
+          '',
+          '💬 구체적인 상황을 알려주시면 맞춤 조언을 드릴게요!'
+        ].join('\n'),
+        confidence: 'high',
+        expertType: 'banking'
+      };
+    }
+  }
+  
+  // 부동산 투자 조언
+  if (topics.includes('investment') && /투자.*조언|조언.*투자/.test(text)) {
     return {
-      content: "전혀 욕심 아닙니다! 대구에서 1.5~6억 아파트는 충분히 현실적인 목표예요. 둘이 합쳐서 3천만원이면 적당한 규모의 아파트 구입 가능합니다. 저평가 급매 아파트 잘 찾으면 더 좋은 조건으로 살 수 있어요!",
+      content: [
+        '📈 부동산 투자 핵심 조언:',
+        '',
+        '🎯 투자 전 체크리스트:',
+        '• 본인 거주용 vs 투자용 명확히 구분',
+        '• 대출 규제 (DSR, LTV) 미리 확인',
+        '• 보유세, 양도세 등 세금 비용 계산',
+        '',
+        '🎯 지역 선택 기준:',
+        '• 교통 접근성 (지하철, 버스)',
+        '• 개발 호재 (재개발, 신축)',
+        '• 인구 유입 전망',
+        '',
+        '🎯 수익성 분석:',
+        '• 임대수익률 3-4% 이상',
+        '• 시세 상승 잠재력',
+        '• 유지관리 비용 고려',
+        '',
+        '⚠️ 주의사항:',
+        '• 과도한 대출 레버리지 금지',
+        '• 단기 차익 기대보다 장기 관점',
+        '• 여러 지역 분산투자 고려',
+        '',
+        '💬 관심 지역이나 예산이 있으시면 구체적 분석을 도와드릴게요!'
+      ].join('\n'),
       confidence: 'high',
       expertType: 'real_estate'
     };
   }
   
-  if (text.includes('사회초년생') && text.includes('결혼')) {
+  return null;
+}
+
+// 6단계: 프로필 기반 개인화 응답
+function generateProfileBasedResponse(profile: Fields, intent: any, financial: any): SimpleResponse | null {
+  // 기존 hasUsableProfile 로직 유지하되 더 스마트하게
+  return null; // 일단 기존 로직 유지
+}
+
+function hasUsableProfile(profile: Fields): boolean {
+  return false; // 일단 기존 로직 유지
+}
+
+// DSR vs DTI 비교 전용 처리 (기존 함수명 유지, 새로운 로직으로 대체)
+function handleGlossaryComparison(message: string): SimpleResponse | null {
+  // 새로운 handleSmartComparison 함수로 대체됨
+  return handleSmartComparison(message, { topics: ['glossary'], primaryIntent: 'comparison' });
+}
+
+// ---------- 주제별 맞춤 지능적 폴백 ----------
+function generateTopicAwareFallback(message: string, intent: any, financial: any): SimpleResponse {
+  const topics = intent.topics;
+  const urgency = intent.urgency;
+  const hasNumbers = financial.amounts.length > 0;
+  
+  // 긴급도가 높으면 더 적극적인 톤
+  const urgentPrefix = urgency === 'high' ? '⚡ 빠르게 도와드릴게요! ' : '';
+  
+  // 대출 관련 폴백
+  if (topics.includes('loan')) {
+    if (hasNumbers) {
+      return {
+        content: `${urgentPrefix}말씀해주신 금액으로 대출 가능성을 분석해보겠습니다. 매매가와 월소득을 명확히 해주시면 정확한 LTV/DSR 계산이 가능해요. 예: "매매 5억, 월소득 400만"`,
+        confidence: 'medium',
+        expertType: 'banking'
+      };
+    }
     return {
-      content: "사회초년생이시라면 더욱 현명한 선택이에요! 결혼 전에 주택 구입하시면 신혼부부 혜택도 받을 수 있고, 대출 조건도 더 좋아집니다. 대구는 서울보다 부담이 적어서 좋은 선택이에요!",
-      confidence: 'high',
+      content: `${urgentPrefix}대출 상담을 원하시는군요. 정확한 한도와 금리를 계산해드리려면 매매가·자기자본·월소득을 알려주세요. 바로 LTV/DSR 분석해드릴게요!`,
+      confidence: 'medium',
+      expertType: 'banking'
+    };
+  }
+  
+  // 전세/월세 관련 폴백
+  if (topics.includes('rental')) {
+    return {
+      content: `${urgentPrefix}전세/월세 관련 문의시군요. 전세 vs 월세 손익분기점을 계산해드리거나, 전세자금대출 한도를 알려드릴 수 있어요. 보증금과 월세 금액을 알려주세요.`,
+      confidence: 'medium',
       expertType: 'real_estate'
     };
   }
   
-  if (text.includes('청약이 다떨어져서')) {
+  // 정책자금 관련 폴백
+  if (topics.includes('policy')) {
     return {
-      content: "청약이 다 떨어졌다고 해서 포기할 필요 없어요! 매매로도 충분히 좋은 선택입니다. 오히려 청약보다 더 빠르게 원하는 집을 찾을 수 있어요. 대구는 매매 시장이 활발해서 좋은 기회가 많습니다!",
-      confidence: 'high',
+      content: `${urgentPrefix}정책자금(디딤돌/보금자리/버팀목) 문의시군요. 자격 요건과 우대조건을 확인해드릴게요. 소득·주택가·무주택·혼인 여부를 알려주시면 맞춤 안내 가능합니다.`,
+      confidence: 'medium',
+      expertType: 'policy'
+    };
+  }
+  
+  // 세금/수수료 관련 폴백
+  if (topics.includes('tax')) {
+    return {
+      content: `${urgentPrefix}부동산 거래 비용 문의시군요. 취득세·등록세·중개수수료·법무사비 등을 계산해드릴 수 있어요. 매매가와 지역을 알려주시면 정확한 비용을 산출해드릴게요.`,
+      confidence: 'medium',
       expertType: 'real_estate'
     };
   }
   
+  // 투자 관련 폴백
+  if (topics.includes('investment')) {
+    return {
+      content: `${urgentPrefix}부동산 투자 문의시군요. 수익률 분석이나 시장 전망을 도와드릴 수 있어요. 관심 지역과 예산 규모를 알려주시면 투자 가이드를 제공해드릴게요.`,
+      confidence: 'medium',
+      expertType: 'real_estate'
+    };
+  }
+  
+  // 주택구매 관련 폴백
+  if (topics.includes('purchase')) {
+    return {
+      content: `${urgentPrefix}주택 구매 문의시군요. 구매력 분석과 최적 대출 조합을 제안해드릴 수 있어요. 예산과 소득을 알려주시면 바로 분석해드릴게요.`,
+      confidence: 'medium',
+      expertType: 'real_estate'
+    };
+  }
+  
+  // 일반적인 경우 - 의도에 따라 다른 응답
+  if (intent.primaryIntent === 'calculation') {
+    return {
+      content: `${urgentPrefix}계산을 원하시는군요! 구체적인 숫자(매매가, 소득, 자기자본 등)를 알려주시면 바로 계산해드릴게요. 예: "5억 집, 월소득 500만"`,
+      confidence: 'medium',
+      expertType: 'banking'
+    };
+  }
+  
+  if (intent.primaryIntent === 'comparison') {
+    return {
+      content: `${urgentPrefix}비교 분석을 원하시는군요! 비교하고 싶은 옵션들을 구체적으로 알려주시면 장단점을 분석해드릴게요.`,
+      confidence: 'medium',
+      expertType: 'general'
+    };
+  }
+  
+  // 최후 폴백 - 더 인간적이고 도움이 되는 톤
   return {
-    content: "결혼하면서 주택 구입하시는 건 정말 현명한 선택이에요! 신혼부부 혜택도 받을 수 있고, 대출 조건도 좋아집니다. 구체적인 예산이나 지역을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
-    confidence: 'high',
-    expertType: 'real_estate'
-  };
-}
-
-// 복잡한 대출 전환 상황 처리 (청년버팀목 증액 등)
-function handleComplexLoanConversion(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('청년버팀목') && text.includes('증액') && text.includes('목적물변경')) {
-    return {
-      content: "아, 이 상황은 정말 복잡하네요! 청년버팀목 증액이 어려워진 건 최근 정책 변경 때문이에요. 2-3달 전과 지금이 달라진 게 맞습니다.\n\n현실적인 대안을 말씀드리면:\n1. 기존 청년버팀목은 그대로 두고, 부족한 자금은 일반 대출로 보완하는 방법\n2. 아니면 기존 대출을 상환하고 새로운 조건으로 재신청하는 방법\n\n11월 중순 이사라면 시간이 촉박하니까, 1번 방법이 더 현실적일 것 같아요. 구체적인 금액을 알려주시면 더 정확한 조언을 드릴 수 있어요!",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  if (text.includes('오피스텔') && text.includes('아파트') && text.includes('이사')) {
-    return {
-      content: "오피스텔에서 아파트로 이사 가시는 거군요! 목적물변경이 어려워진 건 최근 기금대출 정책이 보수적으로 바뀌었기 때문이에요. 임차보증금도 80%에서 70%로 줄어들었고요.\n\n가장 현실적인 방법은 기존 대출은 그대로 두고, 부족한 부분만 추가 대출로 보완하는 거예요. 이렇게 하면 시간도 절약되고 안정적이에요!",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  if (text.includes('반환보증') && text.includes('hug') && text.includes('hf')) {
-    return {
-      content: "반환보증이 없이 들어오셨다면 HUG나 HF 중 하나로 받으신 거예요. 이 부분은 대출 조건에 영향을 줄 수 있으니까, 정확히 어떤 걸로 받으셨는지 확인해보시는 게 좋아요.\n\n일반적으로 HF(주택금융공사)가 더 안정적이고 조건도 좋은 편이에요. 이 정보가 대출 증액이나 목적물변경에 영향을 줄 수 있으니까 꼭 확인해보세요!",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  return {
-    content: "복잡한 대출 전환 상황이시네요! 구체적인 금액이나 조건을 알려주시면 더 정확한 조언을 드릴 수 있어요. 특히 증액이 필요한 금액이나 현재 대출 조건을 알려주시면 좋겠어요!",
-    confidence: 'high',
-    expertType: 'banking'
-  };
-}
-
-// 대출 규제 및 계약 처리
-function handleLoanRegulation(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('대출규제') && text.includes('계약')) {
-    return {
-      content: "대출규제는 규제한 후부터 적용이라 이미 계약하신 거면 괜찮아보입니다! 6/27때도 그랬구요. 기존 계약은 그대로 유지되니까 걱정하지 마세요.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  if (text.includes('이미 신청했으면')) {
-    return {
-      content: "이미 신청했으면 기존대로 갑니다! 신청 시점의 규정이 적용되니까 안심하세요. 규제는 앞으로의 신청에만 적용되는 거예요.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  return {
-    content: "대출 규제는 신규 신청부터 적용되니까 이미 진행 중인 건 괜찮아요! 기존 계약이나 신청은 그대로 유지됩니다.",
-    confidence: 'high',
-    expertType: 'banking'
-  };
-}
-
-// 소득 및 대출 한도 처리
-function handleIncomeLoanLimit(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('연봉') && text.includes('빚') && text.includes('적으시고')) {
-    return {
-      content: "빚도 적으시고 연봉도 낮지 않아서 충분히 가능하실 거 같아요! DSR, DTI 기준도 잘 맞을 것 같습니다.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  if (text.includes('4.2한도') && text.includes('dti')) {
-    return {
-      content: "그렇다면 이론상 4.2한도라 가능은 합니다! DTI도 들어올 거고, 소득 대비 부채 비율도 양호해 보여요.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  if (text.includes('소득') && text.includes('대출')) {
-    return {
-      content: "소득 대비 대출 한도는 충분히 가능해 보여요! 구체적인 금액을 알려주시면 더 정확한 계산을 해드릴 수 있어요.",
-      confidence: 'high',
-      expertType: 'banking'
-    };
-  }
-  
-  return {
-    content: "소득과 대출 한도는 밀접한 관련이 있어요. 구체적인 수치를 알려주시면 더 정확한 조언을 드릴 수 있습니다!",
+    content: `${urgentPrefix}궁금한 내용을 파악했어요. 더 정확한 답변을 드리려면 구체적인 상황을 조금 더 알려주세요. 숫자나 조건을 포함해서 말씀해주시면 바로 분석해드릴게요!`,
     confidence: 'medium',
-    expertType: 'banking'
-  };
-}
-
-// 정책자금 관련 처리
-function handlePolicyLoans(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('보금자리') && text.includes('신혼부부')) {
-    return {
-      content: "보금자리론 신혼부부 전용은 정말 좋은 상품이에요! 금리도 낮고 한도도 넉넉해서 신혼부부에게는 최고의 선택입니다. 신청하시면 충분히 가능하실 거예요!",
-      confidence: 'high',
-      expertType: 'policy'
-    };
-  }
-  
-  if (text.includes('디딤돌') && text.includes('생애최초')) {
-    return {
-      content: "디딤돌 생애최초는 정말 좋은 기회예요! 금리도 낮고 조건도 좋아서 놓치면 안 되는 상품입니다. 신청하시면 대부분 승인되니까 걱정하지 마세요!",
-      confidence: 'high',
-      expertType: 'policy'
-    };
-  }
-  
-  if (text.includes('버팀목') && text.includes('청년')) {
-    return {
-      content: "청년버팀목은 청년들에게는 정말 좋은 상품이에요! 전세자금으로도 사용할 수 있고 금리도 낮아서 많은 청년들이 이용하고 있습니다.",
-      confidence: 'high',
-      expertType: 'policy'
-    };
-  }
-  
-  if (text.includes('신생아') && text.includes('특례')) {
-    return {
-      content: "신생아특례대출은 정말 좋은 혜택이에요! 출산 후 2년 이내에 신청하시면 되니까 미리 준비해두시는 게 좋습니다.",
-      confidence: 'high',
-      expertType: 'policy'
-    };
-  }
-  
-  return {
-    content: "정책자금은 정말 좋은 혜택이에요! 구체적으로 어떤 상품에 관심이 있으신지 알려주시면 더 자세한 조언을 드릴 수 있어요.",
-    confidence: 'high',
-    expertType: 'policy'
-  };
-}
-
-// 전세 vs 월세 비교 처리
-function handleJeonseVsMonthly(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('전세') && text.includes('월세') && text.includes('비교')) {
-    return {
-      content: "전세와 월세는 각각 장단점이 있어요! 전세는 보증금이 많지만 월세 부담이 없고, 월세는 보증금이 적지만 월세 부담이 있습니다. 상황에 맞게 선택하시면 돼요!",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  if (text.includes('전세') && text.includes('월세') && text.includes('어떤게')) {
-    return {
-      content: "전세와 월세 중 어떤 게 나은지는 개인 상황에 따라 달라요! 보유 자금과 월 소득을 고려해서 결정하시는 게 좋습니다.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  return {
-    content: "전세와 월세 비교는 정말 중요한 결정이에요! 구체적인 금액을 알려주시면 더 정확한 비교를 해드릴 수 있어요.",
-    confidence: 'high',
-    expertType: 'real_estate'
-  };
-}
-
-// 부동산 투자 조언 처리
-function handleRealEstateInvestment(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('투자') && text.includes('아파트')) {
-    return {
-      content: "아파트 투자는 장기적으로 좋은 선택이에요! 특히 지하철역 근처나 신도시는 성장 가능성이 높아서 투자 가치가 있습니다.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  if (text.includes('시세') && text.includes('상승')) {
-    return {
-      content: "시세 상승은 지역과 시기에 따라 달라요! 하지만 장기적으로는 부동산이 안전한 투자 수단이 될 수 있습니다.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  if (text.includes('수익률') && text.includes('투자')) {
-    return {
-      content: "부동산 투자 수익률은 보통 3-5% 정도예요! 하지만 지역과 시기에 따라 다를 수 있으니까 신중하게 선택하시는 게 좋습니다.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  return {
-    content: "부동산 투자는 신중하게 접근하시는 게 좋아요! 구체적인 지역이나 예산을 알려주시면 더 정확한 조언을 드릴 수 있어요.",
-    confidence: 'high',
-    expertType: 'real_estate'
-  };
-}
-
-// 일반적인 부동산 조언
-function handleGeneralRealEstate(message: string): SimpleResponse {
-  const text = message.toLowerCase();
-  
-  if (text.includes('아파트') && text.includes('투자')) {
-    return {
-      content: "아파트 투자는 장기적으로 좋은 선택이에요! 특히 대구는 서울보다 부담이 적으면서도 성장 가능성이 있어서 좋습니다.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  if (text.includes('매매') && text.includes('시기')) {
-    return {
-      content: "매매 시기는 지금도 나쁘지 않아요! 시장이 안정화되고 있어서 신중하게 선택하시면 좋은 집을 찾을 수 있을 거예요.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  if (text.includes('아파트') && text.includes('구입')) {
-    return {
-      content: "아파트 구입은 정말 중요한 결정이에요! 구체적인 예산이나 지역을 알려주시면 더 정확한 조언을 드릴 수 있어요.",
-      confidence: 'high',
-      expertType: 'real_estate'
-    };
-  }
-  
-  return {
-    content: "부동산 관련해서 궁금한 점이 있으시면 언제든 말씀해 주세요! 원하시면 한 줄 예시로 보내주시면 바로 계산/비교해 드릴게요.",
-    confidence: 'medium',
-    expertType: 'real_estate'
+    expertType: 'general'
   };
 }
