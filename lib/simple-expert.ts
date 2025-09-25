@@ -210,7 +210,9 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   }
   
   // 2단계: 구체적 숫자가 있는 계산 (높은 우선순위)
-  if (intent.primaryIntent === 'calculation' || financial.amounts.length > 0) {
+  // 단, 전세/보증보험/등기부 등 임대/서류 맥락에서는 매매 계산을 막음
+  const isRentalContext = /전세|월세|임대|보증금|보증보험|반환보증|임대차|등기부/.test(message.toLowerCase());
+  if ((intent.primaryIntent === 'calculation' || financial.amounts.length > 0) && !isRentalContext) {
     const calculation = handleSmartCalculation(message, financial);
     if (calculation) return calculation;
   }
@@ -230,6 +232,14 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   // 5단계: 주제별 전문 조언
   const topicAdvice = handleTopicBasedAdvice(message, intent, financial);
   if (topicAdvice) return topicAdvice;
+
+  // 5.5단계: 요약/공유 요청 특화 응답
+  if (/한\s*줄.*요약/.test(message) || /한줄로\s*요약/.test(message)) {
+    return { content: '요약: 현재 상황·핵심 수치·다음 단계만 남기면 됩니다. 가격·소득·자기자본을 한 줄로 알려주시면 바로 요약해 드릴게요.', confidence: 'high', expertType: 'general' };
+  }
+  if (/(핵심만|3줄|세\s*줄).*정리/.test(message)) {
+    return { content: '핵심 3줄 템플릿\n1) 상황 요약\n2) 한도/비용 핵심 수치\n3) 다음 단계. 값만 주시면 제가 3줄로 정리해 드립니다.', confidence: 'high', expertType: 'general' };
+  }
   
   // 6단계: 프로필 기반 개인화 응답
   if (hasUsableProfile(profile)) {

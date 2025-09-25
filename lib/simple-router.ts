@@ -5,6 +5,7 @@ import { Fields } from './utils';
 import { generateSimpleExpertResponse, SimpleResponse } from './simple-expert';
 import { replyJeonseToMonthly, JeonseResponse } from './jeonse-calculator';
 import { extractIntentAndSlots, oneLineMissingPrompt } from './intent-slots';
+import { generateKnowledgeResponse } from './knowledge';
 
 export type SimpleRouterResponse = {
   content: string;
@@ -43,6 +44,19 @@ export function routeUserMessage(message: string, profile: Fields, previousMessa
       checklist: jeonseResponse.checklist,
       confidence: 'high',
       expertType: 'general',
+      fields: profile
+    };
+  }
+  
+  // 2.5 지식형 질문 (FAQ/가이드)
+  const knowledge = generateKnowledgeResponse(message, profile);
+  if (knowledge) {
+    return {
+      content: knowledge.content,
+      cards: knowledge.cards || null,
+      checklist: knowledge.checklist || null,
+      confidence: 'high',
+      expertType: 'policy',
       fields: profile
     };
   }
