@@ -23,6 +23,10 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   // 0. 금액 기반 대출 시나리오 (숫자 중심 질문 우선 처리)
   const numericScenario = handleNumericLoanScenario(message);
   if (numericScenario) return numericScenario;
+
+  // 0.1. 세금/취득세/감면 전용 처리 (우선 순위 높게)
+  const taxRelief = handleAcquisitionTaxRelief(message);
+  if (taxRelief) return taxRelief;
   
   // 1. 전세 만료 및 대출 연장 관련
   if (text.includes('전세') && (text.includes('만료') || text.includes('연장'))) {
@@ -141,6 +145,55 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
     content,
     confidence: 'high',
     expertType: 'banking'
+  };
+}
+
+// 생애최초 취득세 감면 전용 처리
+function handleAcquisitionTaxRelief(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  const isAcqTax = t.includes('취득세');
+  const isRelief = t.includes('감면') || t.includes('감싸') || t.includes('감경');
+  const isFirstBuy = t.includes('생애최초') || t.includes('첫집') || t.includes('첫 주택');
+  if (!isAcqTax || !isRelief || !isFirstBuy) return null;
+
+  // 사실상 사용자 의도: 어디서/어떻게 확인 + 무엇이 맞는지(요건) + 적용 범위
+  const content = [
+    '핵심만 정리해 드릴게요.',
+    '- 생애최초 주택 취득이면, 요건 충족 시 취득세가 감면됩니다.',
+    '- “생애최초이면 무조건”은 아니고, 아래 요건을 모두 충족해야 합니다.',
+    '',
+    '적용 요건(2025년 기준):',
+    '- 무주택 세대의 생애최초 주택 취득',
+    '- 주택가액 요건 충족(지방자치단체 조례 범위 내, 통상 12억 이하 기준 운영. 지역별로 상이 가능)',
+    '- 세대 기준 무주택 확인(배우자 포함)',
+    '',
+    '감면 내용(대표 예시):',
+    '- 취득세 50% 감면(일부 구간 한도 존재). 조례에 따라 세부 비율·한도 차이 가능',
+    '- 농특세·지방교육세는 감면 대상 아닐 수 있음(지역별 차이)',
+    '',
+    '무엇이 맞나요? (질문 요지 정리):',
+    '- “몇 가지 이상 해당되면 감면” 표기는 생애최초 외 추가 우대(신혼부부, 다자녀 등)를 병행 설명한 자료일 가능성',
+    '- 생애최초 단독으로도 요건 충족 시 감면. 다만 금액·지역·세대 요건이 필수입니다.',
+    '',
+    '어디서/어떻게 확인하나요?',
+    '- 지자체 세무과(시·군·구청) 취득세 담당: 본인 주소지 관할이 가장 정확',
+    '- 위택스(https://www.wetax.go.kr): 취득세 신고 전 모의계산 및 안내 확인',
+    '- 기금e든든은 대출 자격 확인 용도이고, 취득세 감면은 지자체 소관(혼동 주의)',
+    '',
+    '실무 팁:',
+    '- 매매계약서, 가족관계증명서(세대·혼인 여부), 전입 예정지 자료를 지참하고 관할 지자체에 전화로 “생애최초 취득세 감면 가능 여부”를 문의하세요.',
+    '- 지역별로 조례 해석·한도가 달라서, 관할 지자체 확인이 최종 확정입니다.',
+    '',
+    '다음 단계:',
+    '- 관할 시·군·구청 세무과에 전화 → 주택가액·세대·무주택 여부 전달 → 감면 가능 여부 1차 확인',
+    '- 위택스에서 취득세 모의계산으로 감면 예상액 확인',
+    '- 감면 해당 시, 취득세 신고 때 “생애최초 감면 신청” 체크 및 증빙서류 첨부'
+  ].join('\n');
+
+  return {
+    content,
+    confidence: 'high',
+    expertType: 'policy'
   };
 }
 
