@@ -39,6 +39,18 @@ export function generateSimpleExpertResponse(message: string, profile: Fields): 
   // 0.15. 디딤돌/보금자리 소득기준·원천징수 기간 질의 전용 처리
   const incomePeriod = handlePolicyIncomePeriod(message);
   if (incomePeriod) return incomePeriod;
+
+  // 0.16. 중기청 vs 버팀목 비교 전용 처리
+  const policyCompare = handlePolicyComparison(message);
+  if (policyCompare) return policyCompare;
+
+  // 0.17. 모델하우스 방문/예약 안내
+  const modelhouse = handleModelhouseVisit(message);
+  if (modelhouse) return modelhouse;
+
+  // 0.18. 집 먼저 보고 문의? 절차 안내
+  const processOrder = handleProcessOrder(message);
+  if (processOrder) return processOrder;
   
   // 1. 전세 만료 및 대출 연장 관련
   if (text.includes('전세') && (text.includes('만료') || text.includes('연장'))) {
@@ -329,6 +341,55 @@ function handlePolicyIncomePeriod(message: string): SimpleResponse | null {
     '- 모의심사 결과와 은행 가심사 결과를 비교해 최종 신청월 확정'
   ].join('\n');
 
+  return { content, confidence: 'high', expertType: 'banking' };
+}
+
+// 중기청 vs 버팀목 비교
+function handlePolicyComparison(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!(t.includes('중기청') && t.includes('버팀목'))) return null;
+  const content = [
+    '중기청 대출과 버팀목 대출은 “완전히 다른 상품군”입니다.',
+    '- 중기청: 주로 사업자·중소기업 대상 정책자금(주택 구입/전세와 별개)',
+    '- 버팀목: 전세자금(청년/일반) 등 주거 관련 정책자금',
+    '',
+    '집 전세/매매 자금이라면 “버팀목(전세)” 또는 “디딤돌/보금자리(매매)”를 검토하시면 됩니다.',
+    '중기청은 주거자금 용도가 아닙니다.'
+  ].join('\n');
+  return { content, confidence: 'high', expertType: 'banking' };
+}
+
+// 모델하우스 방문/예약 안내
+function handleModelhouseVisit(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!(t.includes('모델하우스') || t.includes('견본주택'))) return null;
+  const content = [
+    '모델하우스(견본주택)는 단지·분양사에 따라 “예약제/자유방문”이 다릅니다.',
+    '- 공식 홈페이지/분양 공고문에서 방문 방식과 운영시간 먼저 확인',
+    '- 예약제인 경우 온라인 예약 후 방문(주말 혼잡 주의)',
+    '- 자유방문이면 신분증 지참, 대기줄 감안',
+    '',
+    '실무 팁:',
+    '- 분양가·중도금 대출조건·발코니 확장비·옵션 비용 미리 체크',
+    '- 청약 자격/가점, 전매 제한, 중도금 이자 부담 여부 필수 확인'
+  ].join('\n');
+  return { content, confidence: 'high', expertType: 'real_estate' };
+}
+
+// 집 먼저 보고 문의? 절차 안내
+function handleProcessOrder(message: string): SimpleResponse | null {
+  const t = message.toLowerCase();
+  if (!(t.includes('먼저') && (t.includes('집') || t.includes('매물')) && (t.includes('문의') || t.includes('알려') || t.includes('해줘')))) return null;
+  const content = [
+    '집을 먼저 보지 않아도 대출/정책자금 상담 가능합니다. 권장 순서는 다음과 같습니다.',
+    '1) 자격/한도 가늠: 기금e든든 모의심사 + 은행 가심사',
+    '2) 예산 확정: 월 상환가능액 기준으로 매물 가격대 설정',
+    '3) 매물 탐색·방문: 중개사/분양사와 일정 조율',
+    '4) 계약 전 조건 검토: 특약(대출불가시 해제), 잔금일정·대출 실행일 맞추기',
+    '5) 계약 후 본심사/실행',
+    '',
+    '즉, “먼저 상담→그다음 매물” 순서로 진행하셔도 됩니다.'
+  ].join('\n');
   return { content, confidence: 'high', expertType: 'banking' };
 }
 
