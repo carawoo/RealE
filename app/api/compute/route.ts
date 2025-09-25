@@ -2,7 +2,7 @@
 // 새로운 전문가 시스템 기반 API
 
 import { NextRequest, NextResponse } from "next/server";
-import { routeUserMessage, postProcessResponse, generateFallbackResponse } from "../../../lib/smart-router";
+import { routeUserMessage, postProcessResponse, generateFallbackResponse } from "../../../lib/simple-router";
 import { 
   Fields, 
   extractFieldsFrom, 
@@ -275,31 +275,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // 대화 맥락 가져오기 (간단한 버전)
-    let conversationHistory = null;
+    // 단순한 전문가 시스템으로 라우팅
+    let simpleResponse = null;
     try {
-      conversationHistory = await fetchConversationProfile(finalConversationId);
-    } catch (error) {
-      console.warn("대화 맥락 가져오기 실패:", error);
-      conversationHistory = null;
-    }
-    
-    // 새로운 전문가 시스템으로 라우팅 (맥락 포함)
-    let smartResponse = null;
-    try {
-      smartResponse = routeUserMessage(message, mergedProfile, conversationHistory);
+      simpleResponse = routeUserMessage(message, mergedProfile);
     } catch (error) {
       console.error("라우터 에러:", error);
-      smartResponse = null;
+      simpleResponse = null;
     }
     
     // 라우팅 실패 시 폴백 처리
-    if (!smartResponse) {
+    if (!simpleResponse) {
       try {
-        smartResponse = generateFallbackResponse(message, mergedProfile, conversationHistory);
+        simpleResponse = generateFallbackResponse(message, mergedProfile);
       } catch (error) {
         console.error("폴백 에러:", error);
-        smartResponse = {
+        simpleResponse = {
           content: "죄송합니다. 현재 시스템에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
           confidence: 'low',
           expertType: 'general'
@@ -309,16 +300,16 @@ export async function POST(request: NextRequest) {
     
     // 응답 후처리
     try {
-      smartResponse = postProcessResponse(smartResponse, message);
+      simpleResponse = postProcessResponse(simpleResponse, message);
     } catch (error) {
       console.error("후처리 에러:", error);
       // 후처리 실패해도 기본 응답은 유지
     }
     
     // Supabase에 저장 (에러가 발생해도 응답은 반환)
-    if (smartResponse.content) {
+    if (simpleResponse.content) {
       try {
-        await saveMessageToSupabase(finalConversationId, "assistant", smartResponse.content, mergedProfile);
+        await saveMessageToSupabase(finalConversationId, "assistant", simpleResponse.content, mergedProfile);
       } catch (error) {
         console.error("Supabase 저장 에러:", error);
         // 저장 실패해도 응답은 반환
@@ -327,12 +318,10 @@ export async function POST(request: NextRequest) {
     
     // 응답 반환 (기존 형식 유지)
     const response = {
-      content: smartResponse.content,
-      cards: smartResponse.cards,
-      checklist: smartResponse.checklist,
-      fields: mergedProfile,
-      suggestions: smartResponse.suggestions,
-      nextSteps: smartResponse.nextSteps
+      content: simpleResponse.content,
+      cards: simpleResponse.cards,
+      checklist: simpleResponse.checklist,
+      fields: mergedProfile
     };
     
     return NextResponse.json(response);
