@@ -7,6 +7,7 @@ import { replyJeonseToMonthly } from './utils';
 import { generateKnowledgeResponse } from './knowledge';
 import { analyzeConversationContext, generateContextualResponse } from './context-memory';
 import { generateEnhancedFallbackResponse } from './enhanced-fallback';
+import { generateNaturalAdvisorResponse } from './natural-advisor';
 import { 
   analyzeLoanEligibility, 
   analyzeIncomeVerification, 
@@ -53,7 +54,19 @@ export function routeUserMessage(
   // 2. 대화 맥락 분석
   const context = analyzeConversationContext(message, profile, previousContext);
   
-  // 3. 전세→월세 환산 (우선 처리)
+  // 3. 자연스러운 전문가 조언 (최우선 처리)
+  const naturalAdvisorResponse = generateNaturalAdvisorResponse(message, profile);
+  if (naturalAdvisorResponse && naturalAdvisorResponse.confidence === 'high') {
+    return {
+      content: naturalAdvisorResponse.content,
+      confidence: naturalAdvisorResponse.confidence,
+      expertType: naturalAdvisorResponse.expertType,
+      fields: profile,
+      context
+    };
+  }
+  
+  // 4. 전세→월세 환산
   const jeonseResponse = replyJeonseToMonthly(message);
   if (jeonseResponse) {
     return {
@@ -64,7 +77,7 @@ export function routeUserMessage(
     };
   }
   
-  // 4. 지식형 질문 (FAQ 등)
+  // 5. 지식형 질문 (FAQ 등)
   const knowledgeResponse = generateKnowledgeResponse(message, profile);
   if (knowledgeResponse) {
     return {
@@ -75,7 +88,7 @@ export function routeUserMessage(
     };
   }
   
-  // 5. 복잡한 시나리오 분석 (우선 처리)
+  // 6. 복잡한 시나리오 분석
   const complexScenarios = [
     analyzeLoanEligibility(message, profile),
     analyzeIncomeVerification(message, profile),
@@ -98,7 +111,7 @@ export function routeUserMessage(
     }
   }
   
-  // 6. 맥락 기반 답변 시도
+  // 7. 맥락 기반 답변 시도
   const contextualResponse = generateContextualResponse(message, profile, context);
   if (contextualResponse) {
     return {
@@ -109,7 +122,7 @@ export function routeUserMessage(
     };
   }
   
-  // 7. 자연스러운 전문가 답변 (메인 로직)
+  // 8. 자연스러운 전문가 답변 (기존 로직)
   const naturalResponse = generateNaturalExpertResponse(message, profile);
   
   return {
