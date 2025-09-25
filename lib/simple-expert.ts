@@ -290,9 +290,10 @@ function handleNumericLoanScenario(message: string): SimpleResponse | null {
   const content = [
     '요약:',
     ...lines.map(l => `- ${l}`),
-    '',
-    '다음 단계:',
-    ...next.map(l => `- ${l}`)
+    // 다음 단계는 사용자가 절차/방법을 물었을 때만 표시
+    ...(t.includes('절차') || t.includes('다음단계') || t.includes('다음 단계') || t.includes('어떻게') || t.includes('방법')
+      ? ['','다음 단계:', ...next.map(l => `- ${l}`)]
+      : [])
   ].join('\n');
 
   return {

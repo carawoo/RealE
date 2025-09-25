@@ -53,6 +53,20 @@ export function routeUserMessage(message: string, profile: Fields, previousMessa
 
   let expertResponse = generateSimpleExpertResponse(enriched, { ...profile, ...slots });
 
+  // 맥락 기반 요약: 직전 사용자 발화와 현재 질문이 동일 도메인일 때 반복 안내 제거
+  if (previousMessages && previousMessages.length) {
+    const lastUser = previousMessages.find(p => p.role === 'user');
+    if (lastUser) {
+      const sameDomain = (lastUser.content.includes('디딤돌') && enriched.includes('디딤돌'))
+        || (lastUser.content.includes('보금자리') && enriched.includes('보금자리'))
+        || (/(매매|전세|LTV|DSR)/.test(lastUser.content) && /(매매|전세|LTV|DSR)/.test(enriched));
+      if (sameDomain && expertResponse.content) {
+        // 중복되는 절차/예시 문구 제거(간결화)
+        expertResponse.content = expertResponse.content.replace(/\n다음 단계:[\s\S]*/,'').trim();
+      }
+    }
+  }
+
   // 부족 슬롯이 있고 응답 내용이 너무 일반적이면, 가정 기반 문구 + 한 줄 안내 추가
   if (missing.length && expertResponse.confidence !== 'high') {
     const tail = oneLineMissingPrompt(missing);
