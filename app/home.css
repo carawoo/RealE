@@ -14,7 +14,7 @@
 html,body{ height:100% }
 body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif }
 
-.home{ min-height:100dvh; display:flex; flex-direction:column }
+.home{display:flex;flex-direction:column;gap:64px;padding:80px 20px 120px;background:linear-gradient(180deg,#0f172a 0%,#0b1220 40%,#10172d 100%);color:#fff;min-height:100vh}
 
 /* nav */
 .nav{
@@ -23,9 +23,6 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   padding:0 20px; border-bottom:1px solid #14142b;
   backdrop-filter:saturate(140%) blur(6px);
 }
-.brand{ display:flex; align-items:center; gap:10px; font-weight:800; color:var(--text-strong) }
-.logo{ font-size:20px }
-.nav-actions{ display:flex; gap:8px }
 
 
 /* how */

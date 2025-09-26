@@ -20,7 +20,6 @@ export async function POST(req: Request) {
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE!;
-    const rolePeek = await whoAmI(url, serviceKey); // ← 지금 역할 확인
 
     const res = await fetch(`${url}/rest/v1/recommendations`, {
       method: "POST",
@@ -30,20 +29,23 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify({ payload_json: msgs }),
+      body: JSON.stringify({
+        payload_json: msgs,
+        payload: msgs,
+      }),
     });
 
     const text = await res.text();
     if (!res.ok) {
       return NextResponse.json(
-        { ok: false, status: res.status, error: text, rolePeek, urlHost: new URL(url).host },
+        { ok: false, status: res.status, error: text, urlHost: new URL(url).host },
         { status: 500 }
       );
     }
 
     const row = JSON.parse(text)[0] ?? {};
     const slug = row.public_id ?? row.id;
-    return NextResponse.json({ ok: true, url: `/r/${slug}`, rolePeek, urlHost: new URL(url).host });
+    return NextResponse.json({ ok: true, url: `/r/${slug}`, urlHost: new URL(url).host });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Server error" }, { status: 500 });
   }

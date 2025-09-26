@@ -1,6 +1,6 @@
 // app/api/log/route.ts
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/server/supabase";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     // await supabaseAdmin.from("conversations").insert({ id: conversation_id }).select("id").single();
 
     // 2) 메시지 저장
-    const { error } = await supabaseAdmin.from("messages")
+    const { error } = await getSupabaseAdmin().from("messages")
       .insert({ conversation_id, role, text, meta });
     if (error) throw error;
 

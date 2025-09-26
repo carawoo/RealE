@@ -6,7 +6,13 @@ import "./share.css";
 
 type Role = "user" | "assistant";
 type Card = { title: string; subtitle?: string; monthly?: string; totalInterest?: string; notes?: string[] };
-type Msg = { role: Role; text?: string; cards?: Card[]; checklist?: string[] };
+type Msg = { role: Role; text?: string; content?: string; cards?: Card[]; checklist?: string[] };
+
+type RecommendationRow = {
+  payload_json?: Msg[];
+  payload?: Msg[];
+  created_at?: string | null;
+};
 
 export const revalidate = 0;
 
@@ -24,36 +30,56 @@ function formatMoneyishText(s?: string): string {
   return out;
 }
 
+function toKoreanDate(value?: string | null) {
+  if (!value) return null;
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default async function SharedPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-  
-  // 디버깅: 함수 진입 확인
+
   console.log("SharedPage called with slug:", slug);
   console.log("Environment check:", {
     NODE_ENV: process.env.NODE_ENV,
     hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasSupabaseAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    hasSupabaseAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
-  
-  // 환경변수 확인 및 기본값 설정
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+
   if (!url || !anon) {
     console.error("Missing Supabase environment variables", { url: !!url, anon: !!anon });
-    // 환경변수 없이도 기본 메시지 표시
     return (
-      <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h1 style={{ fontSize: 20, margin: 10 }}>🔧 환경 설정 문제</h1>
-          <Link href="/" className="btn ghost">홈</Link>
+      <main className="share-wrap">
+        <header className="share-head">
+          <div>
+            <h1>환경 설정 문제</h1>
+            <p>Supabase 환경 변수가 설정되지 않아 공유된 대화를 불러올 수 없습니다.</p>
+          </div>
+          <div className="nav-actions">
+            <Link href="/" className="btn ghost">
+              홈
+            </Link>
+            <Link href="/chat" className="btn primary">
+              지금 상담 시작
+            </Link>
+          </div>
         </header>
-        <div style={{ marginTop: 24 }}>
-          <p>Supabase 환경변수가 설정되지 않아 공유된 대화를 불러올 수 없습니다.</p>
-          <p>Slug: {slug}</p>
-          <p>Environment: {process.env.NODE_ENV}</p>
-          <Link href="/chat" className="btn primary">지금 상담 시작</Link>
-        </div>
+        <p className="meta">Slug: {slug}</p>
+        <p className="meta">Environment: {process.env.NODE_ENV}</p>
       </main>
     );
   }
@@ -68,68 +94,84 @@ export default async function SharedPage({ params }: { params: { slug: string } 
     return notFound();
   }
 
-  const { data, error } = await query.maybeSingle();
+  const { data, error } = await query.maybeSingle<RecommendationRow>();
   if (error) {
     console.error("Supabase query error", { error, slug });
     return notFound();
   }
-  
+
   if (!data) {
     console.error("No data found for slug", { slug });
-    // 데이터를 찾지 못했을 때 친근한 메시지 표시
     return (
-      <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h1 style={{ fontSize: 20, margin: 10 }}>🔍 공유 링크를 찾을 수 없어요</h1>
-          <Link href="/" className="btn ghost">홈</Link>
+      <main className="share-wrap">
+        <header className="share-head">
+          <div>
+            <h1>공유 링크를 찾을 수 없어요</h1>
+            <p>공유된 대화가 만료되었거나 존재하지 않습니다.</p>
+          </div>
+          <div className="nav-actions">
+            <Link href="/" className="btn ghost">
+              홈
+            </Link>
+            <Link href="/chat" className="btn primary">
+              지금 상담 시작
+            </Link>
+          </div>
         </header>
-        <div style={{ marginTop: 24 }}>
-          <p>공유된 대화가 만료되었거나 존재하지 않습니다.</p>
-          <p>Slug: {slug}</p>
-          <p>Database query successful but no data returned</p>
-          <Link href="/chat" className="btn primary">지금 상담 시작</Link>
-        </div>
+        <p className="meta">Slug: {slug}</p>
       </main>
     );
   }
 
-  const payload = (data as any).payload_json ?? (data as any).payload;
+  const payload = data.payload_json ?? data.payload;
   const msgs: Msg[] = Array.isArray(payload) ? payload : [];
-  
-  // 메시지가 비어있을 때 기본 메시지 표시
+
+  const rendered = msgs.map((msg) => {
+    const text = typeof msg.text === "string" && msg.text.trim().length > 0 ? msg.text : msg.content ?? "";
+    return { ...msg, text };
+  });
+
   if (msgs.length === 0) {
     console.warn("Empty messages array for slug", { slug });
   }
 
+  const createdAtText = toKoreanDate(data.created_at);
+
   return (
-    <main style={{ maxWidth: 760, margin: "40px auto", padding: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1 style={{ fontSize: 20, margin: 10 }}>✅ 대화를 공유했어요 (실행 확인)</h1>
-        <Link href="/" className="btn ghost">홈</Link>
+    <div className="share-wrap">
+      <header className="share-head">
+        <div>
+          <h1>대화를 공유했어요</h1>
+          <p>RealE 상담 기록을 확인하고 필요한 사람과 빠르게 공유하세요.</p>
+          {createdAtText && <p className="meta">생성 시각: {createdAtText}</p>}
+        </div>
       </header>
 
-      {msgs.length === 0 ? (
-        <p style={{ marginTop: 24 }}>표시할 메시지가 없어요.</p>
+      {rendered.length === 0 ? (
+        <section className="msg assistant">
+          <div className="who">🤖 RealE</div>
+          <div className="content">표시할 메시지가 없습니다. 새로운 상담을 시작해 보세요.</div>
+        </section>
       ) : (
-        <div style={{ marginTop: 24, display: "grid", gap: 20 }}>
-          {msgs.map((m, i) => (
-            <section key={i} style={{ backdropFilter: "blur(10px) saturate(140%)", border: "1px solid rgb(22, 22, 65)", borderRadius: 16, padding: 20 }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                {m.role === "user" ? "🙋 사용자" : "🤖 RealE"}
-              </div>
-              {m.text && <div style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>}
+        <div className="timeline">
+          {rendered.map((m, i) => (
+            <article key={i} className={`msg ${m.role}`}>
+              <div className="who">{m.role === "user" ? "🙋 사용자" : "🤖 RealE"}</div>
+              {m.text && <div className="content">{m.text}</div>}
 
               {Array.isArray(m.cards) && m.cards.length > 0 && (
-                <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+                <div className="cards">
                   {m.cards.map((c, ci) => (
-                    <div key={ci} style={{ border: "1px solid #ddd", borderRadius: 6, padding: 10 }}>
-                      <div style={{ fontWeight: 600 }}>{c.title}</div>
-                      {c.subtitle && <div>{formatMoneyishText(c.subtitle)}</div>}
-                      {c.monthly && <div style={{ fontSize: 18 }}>{formatMoneyishText(c.monthly)}</div>}
-                      {c.totalInterest && <div>{formatMoneyishText(c.totalInterest)}</div>}
+                    <div key={ci} className="card">
+                      <div className="title">{c.title}</div>
+                      {c.subtitle && <div className="sub">{formatMoneyishText(c.subtitle)}</div>}
+                      {c.monthly && <div className="big">{formatMoneyishText(c.monthly)}</div>}
+                      {c.totalInterest && <div className="sub">{formatMoneyishText(c.totalInterest)}</div>}
                       {Array.isArray(c.notes) && c.notes.length > 0 && (
-                        <ul style={{ marginTop: 6 }}>
-                          {c.notes.map((n, ni) => <li key={ni}>{formatMoneyishText(n)}</li>)}
+                        <ul>
+                          {c.notes.map((n, ni) => (
+                            <li key={ni}>{formatMoneyishText(n)}</li>
+                          ))}
                         </ul>
                       )}
                     </div>
@@ -138,15 +180,21 @@ export default async function SharedPage({ params }: { params: { slug: string } 
               )}
 
               {Array.isArray(m.checklist) && m.checklist.length > 0 && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>체크리스트</div>
-                  <ul>{m.checklist.map((n, ni) => <li key={ni}>{n}</li>)}</ul>
+                <div className="checklist">
+                  <div className="ttl">체크리스트</div>
+                  <ul>
+                    {m.checklist.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
-            </section>
+            </article>
           ))}
         </div>
       )}
-    </main>
+
+      <footer className="footer">RealE 상담 기록 공유 뷰</footer>
+    </div>
   );
 }

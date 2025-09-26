@@ -59,6 +59,9 @@
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
+# 선택: 기본값은 gpt-4o-mini
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ### 설치 및 실행

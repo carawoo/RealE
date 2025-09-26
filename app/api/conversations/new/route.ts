@@ -1,7 +1,7 @@
 // app/api/conversations/new/route.ts
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/server/supabase";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,7 @@ export async function POST() {
     headers().get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "local-dev";
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("conversations")
     .insert({ ip })                // ← 테이블 컬럼명에 맞게 필요시 수정
     .select("id")

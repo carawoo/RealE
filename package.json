@@ -6,20 +6,28 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.35",
+    "@copilotkit/react-core": "^1.10.4",
+    "@copilotkit/react-textarea": "^1.10.4",
+    "@copilotkit/react-ui": "^1.10.4",
     "@supabase/supabase-js": "2.45.0",
-    "openai": "4.58.1",
     "next": "14.2.5",
+    "openai": "4.58.1",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "20.11.30",
+    "@playwright/test": "^1.55.1",
+    "@types/node": "^20.11.30",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": "20.x"

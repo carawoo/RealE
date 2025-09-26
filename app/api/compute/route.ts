@@ -2,36 +2,25 @@
 // 새로운 전문가 시스템 기반 API
 
 import { NextRequest, NextResponse } from "next/server";
-import { routeUserMessage, postProcessResponse, generateFallbackResponse } from "../../../lib/simple-router";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+import { jsonBadRequest, jsonServerError } from "@/server/shared/http";
+import { randomUUID } from "crypto";
+import { runChatAgent } from "../../../server/agents/chat";
 import { 
   Fields, 
   extractFieldsFrom, 
-  mergeFields, 
-  isNumbersOnlyAsk, 
-  replyNumbersOnly
-} from "../../../lib/utils";
-import { 
-  CURRENT_LOAN_POLICY, 
-  checkPolicyDataFreshness
-} from "../../../lib/policy-data";
+  mergeFields
+} from "../../../server/shared/utils";
 type Role = "user" | "assistant";
 type MessageRow = { role: Role; content: string; fields: Fields | null };
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 정책 데이터 신선도 확인
-checkPolicyDataFreshness();
+// LLM provider is handled in server/llm
 
 // ---------- Helpers ----------
-function generateUuidV4(): string {
-  const template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
-  return template.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 // 최근 메시지 내용 가져오기 (맥락용)
 async function fetchRecentMessages(conversationId: string, limit: number = 5): Promise<Array<{ role: Role; content: string }>> {
@@ -175,7 +164,7 @@ async function ensureConversationId(conversationId?: string): Promise<string> {
         console.error('대화 생성 중 오류:', e);
       }
       // 최종 폴백: 로컬에서 UUID 생성 후 upsert 시도
-      const localId = generateUuidV4();
+      const localId = randomUUID();
       try {
         const up = await fetch(`${SUPABASE_URL}/rest/v1/conversations?on_conflict=id`, {
           method: 'POST',
@@ -269,9 +258,7 @@ export async function POST(request: NextRequest) {
   try {
     const { message, conversationId } = await request.json();
     
-    if (!message || typeof message !== "string") {
-      return NextResponse.json({ error: "Invalid message" }, { status: 400 });
-    }
+    if (!message || typeof message !== "string") return jsonBadRequest("Invalid message");
 
     // conversation_id 보장
     const finalConversationId = await ensureConversationId(conversationId);
@@ -279,80 +266,24 @@ export async function POST(request: NextRequest) {
     // 사용자 메시지를 Supabase에 저장
     await saveMessageToSupabase(finalConversationId, "user", message, extractFieldsFrom(message));
 
-    // 대화 프로필 가져오기
+    // 대화 프로필 가져오기 및 필드 병합 (저장용)
     const profile = finalConversationId ? await fetchConversationProfile(finalConversationId) : {};
-    
-    // 새 메시지에서 필드 추출 및 병합
     const newFields = extractFieldsFrom(message);
     const mergedProfile = mergeFields(profile, newFields);
 
-    // 숫자만 요청 처리 (기존 로직 유지)
-    if (isNumbersOnlyAsk(message)) {
-      const numbers = replyNumbersOnly(mergedProfile);
-      const response = {
-        content: numbers,
-        fields: mergedProfile
-      };
-      
-      // assistant 메시지를 Supabase에 저장
-      await saveMessageToSupabase(finalConversationId, "assistant", numbers, mergedProfile);
-      
-      return NextResponse.json(response);
-    }
+    // 최근 10개 메시지로 맥락 구성
+    const recent = finalConversationId ? await fetchRecentMessages(finalConversationId, 10) : [];
 
-    // 최근 3~5개 메시지로 경량 맥락 구성
-    const recent = finalConversationId ? await fetchRecentMessages(finalConversationId, 5) : [];
-
-    // 단순한 전문가 시스템으로 라우팅 (경량 맥락 포함)
-    let simpleResponse = null;
+    const reply = await runChatAgent(message, recent, { profile: mergedProfile });
+ 
+    // 어시스턴트 메시지 저장 (실패해도 무시)
     try {
-      simpleResponse = routeUserMessage(message, mergedProfile, recent);
+      await saveMessageToSupabase(finalConversationId, "assistant", reply, mergedProfile);
     } catch (error) {
-      console.error("라우터 에러:", error);
-      simpleResponse = null;
+      console.error("Supabase 저장 에러:", error);
     }
-    
-    // 라우팅 실패 시 폴백 처리
-    if (!simpleResponse) {
-      try {
-        simpleResponse = generateFallbackResponse(message, mergedProfile);
-      } catch (error) {
-        console.error("폴백 에러:", error);
-        simpleResponse = {
-          content: "죄송합니다. 현재 시스템에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-          confidence: 'low',
-          expertType: 'general'
-        };
-      }
-    }
-    
-    // 응답 후처리
-    try {
-      simpleResponse = postProcessResponse(simpleResponse, message);
-    } catch (error) {
-      console.error("후처리 에러:", error);
-      // 후처리 실패해도 기본 응답은 유지
-    }
-    
-    // Supabase에 저장 (에러가 발생해도 응답은 반환)
-    if (simpleResponse.content) {
-      try {
-        await saveMessageToSupabase(finalConversationId, "assistant", simpleResponse.content, mergedProfile);
-      } catch (error) {
-        console.error("Supabase 저장 에러:", error);
-        // 저장 실패해도 응답은 반환
-      }
-    }
-    
-    // 응답 반환 (기존 형식 유지)
-    const response = {
-      content: simpleResponse.content,
-      cards: simpleResponse.cards,
-      checklist: simpleResponse.checklist,
-      fields: mergedProfile
-    };
-    
-    return NextResponse.json(response);
+ 
+    return NextResponse.json({ content: reply, fields: mergedProfile });
 
   } catch (error) {
     console.error("API Error:", error);
@@ -369,12 +300,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
-      { status: 500 }
-    );
+    return jsonServerError(errorMessage, process.env.NODE_ENV === 'development' ? (error as any)?.message : undefined);
   }
 }
