@@ -43,7 +43,7 @@ export default function GlobalNav() {
         {isMobile ? (
           <>
             <button
-              className="nav-btn ghost nav-menu-toggle"
+              className="nav-menu-toggle"
               type="button"
               aria-expanded={menuOpen}
               aria-label="메뉴"

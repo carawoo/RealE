@@ -280,6 +280,9 @@ body.app-shell {
   width: 44px;
   height: 44px;
   border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-menu-icon {
