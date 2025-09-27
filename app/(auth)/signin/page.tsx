@@ -157,7 +157,7 @@ function SignInContent() {
                 onClick={() => handleOAuth("kakao")}
                 disabled={submitting}
               >
-                <img src="https://www.svgrepo.com/show/448476/kakao-talk.svg" alt="Kakao" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" />
                 Kakao 계정으로 로그인
               </button>
             </div>
