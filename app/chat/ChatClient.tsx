@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { CopilotKit } from "@copilotkit/react-core";
+import { loadStripe } from "@stripe/stripe-js";
 import "./chat.css";
 
 type Role = "user" | "assistant";
@@ -16,7 +17,23 @@ const STORAGE_KEYS = {
   history: "reale:conversationHistory",
   archive: "reale:lastConversationHistory",
   newConversation: "reale:newConversation",
+  proAccess: "reale:proAccess",
 } as const;
+
+const FREE_QUESTION_LIMIT = 5;
+const UPGRADE_PRICE_DISPLAY = "₩9,900";
+const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
+
+let stripePromise: ReturnType<typeof loadStripe> | null = null;
+
+function getStripeClient() {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!publishableKey) return null;
+  if (!stripePromise) {
+    stripePromise = loadStripe(publishableKey);
+  }
+  return stripePromise;
+}
 
 function initialMessages(): Message[] {
   return [{ role: "assistant", content: INITIAL_ASSISTANT_MESSAGE }];
@@ -86,18 +103,38 @@ function generateId() {
 }
 
 export default function ChatClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const freshParam = searchParams.get("fresh");
+  const upgradedParam = searchParams.get("upgraded");
 
   const [messages, setMessages] = useState<Message[]>(() => initialMessages());
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const assistantPointer = useRef<number>(-1);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [proAccess, setProAccess] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const publicKey = process.env.NEXT_PUBLIC_COPILOT_PUBLIC_API_KEY;
   const copilotEnabled = typeof publicKey === "string" && publicKey.trim().length > 0;
   const skipArchiveRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(STORAGE_KEYS.proAccess);
+    if (stored === "1") {
+      setProAccess(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || upgradedParam !== "1") return;
+    window.localStorage.setItem(STORAGE_KEYS.proAccess, "1");
+    setProAccess(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("upgraded");
+    window.history.replaceState({}, "", url.toString());
+  }, [upgradedParam]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -162,6 +199,10 @@ export default function ChatClient() {
       skipArchiveRef.current = false;
     }
   }, [messages]);
+
+  const userQuestionCount = messages.filter((m) => m.role === "user").length;
+  const questionsLeft = proAccess ? null : Math.max(FREE_QUESTION_LIMIT - userQuestionCount, 0);
+  const outOfQuota = !proAccess && userQuestionCount >= FREE_QUESTION_LIMIT;
 
   function ensureConversationId() {
     if (!conversationId) {
@@ -263,6 +304,9 @@ export default function ChatClient() {
   async function send(message: string) {
     const text = message.trim();
     if (!text || loading) return;
+    if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
+      return;
+    }
 
     skipArchiveRef.current = true;
 
@@ -280,6 +324,9 @@ export default function ChatClient() {
   async function onSubmitDraft() {
     const text = draft.trim();
     if (!text) return;
+    if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
+      return;
+    }
     setDraft("");
     await send(text);
   }
@@ -301,6 +348,64 @@ export default function ChatClient() {
     }
   }
 
+  async function startCheckout() {
+    if (checkoutLoading) return;
+    if (!STRIPE_PRICE_ID) {
+      setPaymentError("결제 구성이 완료되지 않았어요. 환경변수를 확인해 주세요.");
+      return;
+    }
+    if (typeof window === "undefined") {
+      setPaymentError("브라우저 환경에서만 결제가 가능합니다.");
+      return;
+    }
+    setCheckoutLoading(true);
+    setPaymentError(null);
+    try {
+      const origin = window.location.origin;
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: STRIPE_PRICE_ID,
+          successUrl: `${origin}/chat?upgraded=1`,
+          cancelUrl: `${origin}/chat`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data) {
+        throw new Error(data?.error || "결제 세션 생성에 실패했어요.");
+      }
+
+      const stripePromiseInstance = getStripeClient();
+      if (stripePromiseInstance) {
+        const stripe = await stripePromiseInstance;
+        if (stripe && data.id) {
+          const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
+          if (error) {
+            throw error;
+          }
+          return;
+        }
+      }
+
+      if (typeof data.url === "string" && data.url.length > 0) {
+        window.location.href = data.url;
+        return;
+      }
+
+      throw new Error("결제 페이지로 이동하지 못했어요.");
+    } catch (error: any) {
+      setPaymentError(error?.message || "결제 준비 중 문제가 발생했어요.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  const textareaPlaceholder = outOfQuota
+    ? "결제를 완료하면 추가 질문을 보낼 수 있어요."
+    : "궁금한 점을 물어보세요!";
+
   const chatShell = (
     <div className="surface chat-surface">
       <header className="chat-surface__header">
@@ -315,6 +420,40 @@ export default function ChatClient() {
             </div>
           ))}
         </div>
+        <div className="chat-usage">
+          <p className="chat-usage__status">
+            {proAccess
+              ? "RealE Plus가 활성화되어 추가 질문 제한 없이 이용할 수 있어요."
+              : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(userQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
+          </p>
+          {!proAccess && !outOfQuota && (
+            <button
+              type="button"
+              className="chat-upgrade-button"
+              onClick={startCheckout}
+              disabled={checkoutLoading}
+            >
+              {checkoutLoading ? "결제 준비 중..." : `${UPGRADE_PRICE_DISPLAY}에 RealE Plus 이용`}
+            </button>
+          )}
+        </div>
+        {outOfQuota && (
+          <div className="chat-paywall">
+            <h2 className="chat-paywall__title">추가 질문은 RealE Plus에서</h2>
+            <p className="chat-paywall__body">
+              무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제를 완료하면 전문 상담을 제한 없이 이어갈 수 있어요.
+            </p>
+            <button
+              type="button"
+              className="chat-upgrade-button"
+              onClick={startCheckout}
+              disabled={checkoutLoading}
+            >
+              {checkoutLoading ? "결제 페이지로 이동 중..." : "결제하고 계속하기"}
+            </button>
+            {paymentError && <p className="chat-paywall__error">{paymentError}</p>}
+          </div>
+        )}
         <div className="chat-compose">
           <textarea
             value={draft}
@@ -325,10 +464,11 @@ export default function ChatClient() {
                 onSubmitDraft();
               }
             }}
-            placeholder="여기에 메시지를 입력하고 Enter로 전송"
+            placeholder={textareaPlaceholder}
             className="chat-textarea"
+            disabled={loading || outOfQuota}
           />
-          <button type="button" className="chat-send" onClick={onSubmitDraft} disabled={loading}>
+          <button type="button" className="chat-send" onClick={onSubmitDraft} disabled={loading || outOfQuota}>
             {loading ? "전송 중..." : "전송"}
           </button>
         </div>

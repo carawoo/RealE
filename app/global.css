@@ -234,9 +234,9 @@ body.app-shell {
 .global-nav {
   position: sticky;
   top: 0;
-  z-index: 20;
+  left: 0;
+  right: 0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 18px 48px;
@@ -244,6 +244,7 @@ body.app-shell {
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
   backdrop-filter: blur(12px);
+  z-index: 20;
 }
 
 .brand {
@@ -299,6 +300,14 @@ body.app-shell {
 
 .nav-btn.primary:hover {
   background: linear-gradient(135deg, #1765cc, #3b78f2);
+}
+
+.nav-btn .nav-label {
+  display: inline-flex;
+  align-items: center;
+}
+.nav-icon {
+  display: none;
 }
 
 .page-container {
@@ -503,6 +512,144 @@ body.app-shell {
   word-break: break-all;
 }
 
+.faq-surface {
+  width: min(100%, 720px);
+  gap: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 28px;
+}
+.faq-hero {
+  text-align: left;
+  gap: 12px;
+}
+.faq-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 18px;
+}
+.faq-item {
+  background: #f8f9fb;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 20px 22px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+}
+.faq-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.faq-item__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2933;
+}
+.faq-item__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a73e8, #4285f4);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+}
+.faq-item__body {
+  margin: 0;
+  color: #4a5568;
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+.faq-footer {
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.app-footer {
+  width: 100%;
+  padding: 32px 24px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 249, 251, 0.9);
+  text-align: center;
+  color: #4a5568;
+  font-size: 14px;
+}
+.app-footer__inner {
+  display: inline-flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.app-footer a {
+  color: #1a73e8;
+  font-weight: 500;
+}
+.app-footer__policy {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.privacy-surface {
+  width: min(100%, 760px);
+  gap: 28px;
+}
+.privacy-header h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.privacy-header p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4a5568;
+}
+.privacy-section {
+  display: grid;
+  gap: 12px;
+}
+.privacy-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2933;
+}
+.privacy-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.privacy-section p {
+  color: #4a5568;
+  line-height: 1.7;
+  font-size: 15px;
+  margin: 0;
+}
+.privacy-updated {
+  text-align: right;
+  font-size: 13px;
+  color: #6b7280;
+}
+.privacy-back {
+  text-align: center;
+}
+.privacy-back a {
+  color: #1a73e8;
+  font-weight: 500;
+}
+
 @media (max-width: 900px) {
   .global-nav {
     padding: 16px 24px;
@@ -530,5 +677,115 @@ body.app-shell {
 
   .chat-bubble {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .global-nav {
+    padding: 14px 20px;
+  }
+  .global-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .nav-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    gap: 6px;
+  }
+  .nav-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+  }
+  .page-container {
+    padding: 72px 16px 96px;
+    gap: 32px;
+  }
+  .surface {
+    border-radius: 20px;
+    padding: 28px 20px;
+  }
+  .faq-list .faq-item {
+    padding: 16px 18px;
+  }
+  .faq-item__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .faq-item__index {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .app-footer {
+    padding: 24px 16px;
+    font-size: 13px;
+  }
+  .app-footer__inner {
+    gap: 12px;
+  }
+  .app-footer__policy {
+    font-size: 12px;
+  }
+  .privacy-surface {
+    padding: 28px 20px;
+    gap: 20px;
+  }
+  .privacy-header h1 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 480px) {
+  .global-nav {
+    padding: 12px 16px;
+  }
+  .brand-logo {
+    height: 36px;
+  }
+  .global-actions {
+    gap: 6px;
+  }
+  .nav-btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  .nav-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .page-container {
+    padding: 64px 14px 80px;
+  }
+  .surface {
+    gap: 20px;
+  }
+  .faq-list {
+    gap: 16px;
+  }
+  .faq-list .faq-item {
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+  .faq-item__header h2 {
+    font-size: 16px;
+  }
+  .faq-item__index {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+  .faq-item__body {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .privacy-surface {
+    gap: 18px;
+  }
+  .privacy-section h2 {
+    font-size: 16px;
   }
 }

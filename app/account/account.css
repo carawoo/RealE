@@ -1,0 +1,2 @@
+.auth-section{display:grid;gap:16px;padding:20px;border:1px solid #e4e7eb;border-radius:16px;background:#f8f9fa;color:#202124}.auth-section+ .auth-section{margin-top:16px}.auth-section h2{font-size:18px;font-weight:600;color:#1f1f1f}.account-danger{border:1px solid #f8d7da;background:#fff5f5;color:#c5221f}
+

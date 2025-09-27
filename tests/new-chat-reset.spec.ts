@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const CHAT_URL = "http://localhost:3000/chat";
+const CHAT_URL = process.env.E2E_BASE_URL ? `${process.env.E2E_BASE_URL}/chat` : "http://localhost:3000/chat";
 
 async function sendMessage(page, text: string) {
   const textarea = page.locator("textarea");

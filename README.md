@@ -34,10 +34,6 @@
 - 각 시나리오별 상세 정보
 - 정책 지원 프로그램 안내
 
-### 3. 신청 링크 이용
-- 바로 연결되는 정책자금 신청 페이지
-- 실시간 정책 정보 반영
-
 ## 🛠 기술 스택
 
 - **Frontend**: Next.js 14, React 18, TypeScript
@@ -62,7 +58,22 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 OPENAI_API_KEY=your_openai_api_key
 # 선택: 기본값은 gpt-4o-mini
 OPENAI_MODEL=gpt-4o-mini
+NEXT_PUBLIC_COPILOT_PUBLIC_API_KEY=your_copilot_public_key
+# Supabase Auth
+SUPABASE_SERVICE_ROLE=your_supabase_service_role_key
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+# OAuth Providers (Supabase Auth 설정과 동일하게)
+SUPABASE_GOOGLE_CLIENT_ID=...
+SUPABASE_GOOGLE_CLIENT_SECRET=...
+SUPABASE_KAKAO_CLIENT_ID=...
+SUPABASE_KAKAO_CLIENT_SECRET=...
+# Stripe Checkout (테스트 모드)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+NEXT_PUBLIC_STRIPE_PRICE_ID=price_xxx
+STRIPE_SECRET_KEY=sk_test_xxx
 ```
+
+> Stripe 테스트 키를 사용하면 `https://real-e.space`에서 결제 플로우를 검증할 수 있습니다. 프로덕션 배포 시에는 실키로 교체하세요.
 
 ### 설치 및 실행
 ```bash
@@ -86,3 +97,22 @@ npm run dev
 ## 📞 문의
 
 프로젝트 관련 문의사항이 있으시면 이슈를 생성해 주세요.
+
+## 🌐 커스텀 도메인 연결
+
+배포를 Vercel에서 진행한다면 구매한 `real-e.space` 도메인을 다음 순서로 연결할 수 있습니다.
+
+1. [Vercel Dashboard](https://vercel.com/)에서 해당 프로젝트를 연 뒤 **Settings → Domains**로 이동합니다.
+2. **Add Domain** 버튼을 눌러 `real-e.space`를 입력하면, 필요한 DNS 레코드 정보가 안내됩니다.
+3. 도메인을 구매한 곳(예: 가비아, Cloudflare 등)의 DNS 설정에 안내된 A 레코드 혹은 CNAME 레코드를 추가합니다. Cloudflare 사용 시 프록시(주황색 구름)를 끄는 것이 좋습니다.
+4. DNS 전파가 끝나면 Vercel 설정 화면에서 “Valid Configuration” 메시지를 확인할 수 있고, HTTPS 인증서도 자동으로 발급됩니다.
+5. `www.real-e.space` 등 서브도메인을 사용한다면 동일하게 추가합니다.
+
+Vercel 대신 다른 인프라를 사용한다면 기본적으로 다음과 같이 설정합니다.
+
+| 레코드 | 값 |
+| --- | --- |
+| A | Vercel에서 제공하는 IPv4 (`76.76.21.21` 등) |
+| CNAME (`www`) | 프로젝트의 `cname.vercel-dns.com` |
+
+DNS 수정 후에도 HTTPS가 적용되지 않으면 Vercel의 Domain Settings에서 다시 검증(Refresh)을 실행하거나, 다른 호스팅을 사용하는 경우 ACME 인증서 설정을 별도로 진행해 주세요.

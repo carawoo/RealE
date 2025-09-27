@@ -25,6 +25,9 @@ export default function Home() {
           <Link className="nav-btn" href="/chat/share">
             최근 상담 공유하기
           </Link>
+          <Link className="nav-btn" href="/signin">
+            로그인
+          </Link>
         </div>
       </div>
     </section>
