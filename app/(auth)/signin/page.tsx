@@ -1,14 +1,14 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { FormEvent, useEffect, useState } from "react";
+import { Suspense, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import "../auth.css";
 
-export default function SignInPage() {
+export const dynamic = "force-dynamic";
+
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { supabase, user, loading } = useAuth();
@@ -159,6 +159,14 @@ export default function SignInPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="auth-shell" /> }>
+      <SignInContent />
+    </Suspense>
   );
 }
 
