@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { getSupabaseAdmin } from "@/server/supabase";
+import { unlinkKakaoUser } from "@/server/providers/kakao";
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,18 +63,7 @@ export async function POST(request: NextRequest) {
 
     if (kakaoTargetId && process.env.KAKAO_ADMIN_KEY) {
       try {
-        const response = await fetch("https://kapi.kakao.com/v1/user/unlink", {
-          method: "POST",
-          headers: {
-            Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}`,
-            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
-          },
-          body: new URLSearchParams({ target_id_type: "user_id", target_id: kakaoTargetId }),
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          console.warn("Failed to unlink Kakao user", response.status, text);
-        }
+        await unlinkKakaoUser({ targetId: kakaoTargetId, adminKey: process.env.KAKAO_ADMIN_KEY });
       } catch (unlinkError) {
         console.warn("Kakao unlink error", unlinkError);
       }
