@@ -17,6 +17,26 @@ const ARCHIVE_KEY = "reale:lastConversationHistory";
 export default function ChatSharePage() {
   const [state, setState] = useState<ShareState>({ status: "idle" });
   const [history, setHistory] = useState<Message[]>(() => []);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async (text: string) => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.warn("copy failed", error);
+    }
+  }, []);
 
   const loadHistory = useCallback(() => {
     if (typeof window === "undefined") return [];
@@ -91,22 +111,39 @@ export default function ChatSharePage() {
       {state.status === "ready" && (
         <div style={{ display: "grid", gap: 8 }}>
           <label style={{ fontSize: 13, color: "#6b7280" }}>공유 링크</label>
-          <input
-            type="text"
-            readOnly
-            value={state.url}
-            onFocus={(event) => event.currentTarget.select()}
-            style={{
-              width: "100%",
-              borderRadius: 12,
-              padding: "12px 14px",
-              border: "1px solid rgba(15, 23, 42, 0.16)",
-              background: "#f8fafc",
-              fontSize: 14,
-              color: "#1f2933"
-            }}
-          />
-          <p style={{ margin: 0, fontSize: 12, color: "#9aa5b1" }}>링크를 길게 눌러 복사한 뒤 공유해 주세요.</p>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              readOnly
+              value={state.url}
+              onFocus={(event) => event.currentTarget.select()}
+              style={{
+                flex: 1,
+                borderRadius: 12,
+                padding: "12px 14px",
+                border: "1px solid rgba(15, 23, 42, 0.16)",
+                background: "#f8fafc",
+                fontSize: 14,
+                color: "#1f2933"
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => handleCopy(state.url)}
+              style={{
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: "linear-gradient(135deg, #1a73e8, #4285f4)",
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              {copied ? "복사됨" : "복사"}
+            </button>
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: "#9aa5b1" }}>버튼을 눌러 링크를 복사한 뒤 공유해 주세요.</p>
         </div>
       )}
 
