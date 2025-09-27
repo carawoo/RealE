@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
 const PROTECTED_PATHS = ["/chat", "/account"];
-const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password", "/forgot-id"];
+const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -38,6 +38,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/account/:path*", "/signin", "/signup", "/forgot-password", "/reset-password", "/forgot-id"],
+  matcher: ["/chat/:path*", "/account/:path*", "/signin", "/signup", "/forgot-password", "/reset-password"],
 };
 

@@ -174,7 +174,6 @@ function SignInContent() {
         </form>
         <div className="auth-link-row">
           <Link href="/forgot-password">비밀번호 찾기</Link>
-          <Link href="/forgot-id">아이디 찾기</Link>
         </div>
         <div className="auth-divider">계정이 없으신가요?</div>
         <Link className="auth-secondary" href="/signup">
