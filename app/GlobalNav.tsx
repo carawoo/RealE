@@ -27,7 +27,11 @@ export default function GlobalNav() {
 
   useEffect(() => {
     const updateMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setMenuOpen(false);
+      }
     };
     updateMobile();
     window.addEventListener("resize", updateMobile);
@@ -39,46 +43,8 @@ export default function GlobalNav() {
       <Link className="brand" href="/">
         <img src="/realE-logo.png" alt="RealE" className="brand-logo" />
       </Link>
-      <nav className="global-actions">
-        {isMobile ? (
-          <>
-            <button
-              className="nav-menu-toggle"
-              type="button"
-              aria-expanded={menuOpen}
-              aria-label="메뉴"
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              <svg className="nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="4" y1="18" x2="20" y2="18" />
-              </svg>
-            </button>
-            <div className={`nav-menu${menuOpen ? " open" : ""}`}>
-              {!onChatRoute && (
-                <Link href="/faq" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
-                  FAQ
-                </Link>
-              )}
-              {user ? (
-                <>
-                  <Link href="/account" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
-                    마이페이지
-                  </Link>
-                  <button type="button" className="nav-menu__item" onClick={handleSignOut}>
-                    로그아웃
-                  </button>
-                </>
-              ) : null}
-              {onChatRoute && (
-                <Link href="/chat/share" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
-                  대화 공유
-                </Link>
-              )}
-            </div>
-          </>
-        ) : (
+      <nav className={`global-actions${isMobile ? " mobile" : ""}`}>
+        {isMobile ? null : (
           <>
             {!onChatRoute && (
               <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
@@ -130,7 +96,45 @@ export default function GlobalNav() {
           </svg>
         </button>
 
-        {/* 로그인 버튼은 모바일/데스크톱 모두 메뉴 안에서만 노출 */}
+        {isMobile ? (
+          <>
+            <button
+              className="nav-menu-toggle"
+              type="button"
+              aria-expanded={menuOpen}
+              aria-label="메뉴"
+              onClick={() => setMenuOpen((prev) => !prev)}
+            >
+              <svg className="nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <div className={`nav-menu${menuOpen ? " open" : ""}`}>
+              {!onChatRoute && (
+                <Link href="/faq" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                  FAQ
+                </Link>
+              )}
+              {user ? (
+                <>
+                  <Link href="/account" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                    마이페이지
+                  </Link>
+                  <button type="button" className="nav-menu__item" onClick={handleSignOut}>
+                    로그아웃
+                  </button>
+                </>
+              ) : null}
+              {onChatRoute && (
+                <Link href="/chat/share" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                  대화 공유
+                </Link>
+              )}
+            </div>
+          </>
+        ) : null}
       </nav>
     </header>
   );
