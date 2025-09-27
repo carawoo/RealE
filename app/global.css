@@ -276,26 +276,29 @@ body.app-shell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 22px;
+  gap: 8px;
+  padding: 12px 26px;
   border-radius: 999px;
   border: 1px solid #bfd3fb;
   background: #e8f0fe;
   color: #1a73e8;
-  font-weight: 500;
-  font-size: 14px;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  min-height: 44px;
 }
 
 .nav-btn:hover {
   background: #dbe7fd;
   border-color: #a9c3fa;
+  transform: translateY(-1px);
 }
 
 .nav-btn.primary {
   border-color: transparent;
   background: linear-gradient(135deg, #1a73e8, #4285f4);
   color: #ffffff;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.25);
 }
 
 .nav-btn.primary:hover {
@@ -441,10 +444,10 @@ body.app-shell {
 .chat-compose {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 26px;
-  padding: 14px 18px;
+  border-radius: 30px;
+  padding: 16px 20px;
   background: #ffffff;
   box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
 }
@@ -454,12 +457,12 @@ body.app-shell {
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.7;
   color: #1f2933;
   resize: none;
-  min-height: 48px;
-  max-height: 180px;
+  min-height: 54px;
+  max-height: 220px;
 }
 
 .chat-textarea:focus {
@@ -471,14 +474,16 @@ body.app-shell {
 }
 
 .chat-send {
-  padding: 12px 20px;
-  border-radius: 24px;
+  padding: 14px 24px;
+  border-radius: 28px;
   border: none;
   background: linear-gradient(135deg, #1a73e8, #4285f4);
   color: #ffffff;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  min-height: 48px;
 }
 
 .chat-send:disabled {
@@ -685,15 +690,16 @@ body.app-shell {
     padding: 14px 20px;
   }
   .global-actions {
-    gap: 8px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: flex-end;
   }
   .nav-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-    border-radius: 14px;
-    gap: 6px;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 22px;
+    gap: 8px;
+    min-height: 46px;
   }
   .nav-icon {
     display: inline-flex;
@@ -747,11 +753,12 @@ body.app-shell {
     height: 36px;
   }
   .global-actions {
-    gap: 6px;
+    gap: 10px;
   }
   .nav-btn {
-    font-size: 11px;
-    padding: 6px 10px;
+    font-size: 13px;
+    padding: 10px 18px;
+    min-height: 44px;
   }
   .nav-icon {
     width: 16px;
