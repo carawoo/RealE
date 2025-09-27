@@ -43,9 +43,15 @@ export default function SignUpPage() {
     setError(null);
     setInfo(null);
     try {
+      const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+      const origin = typeof window !== "undefined" ? window.location.origin : fallbackOrigin;
+      const nextPath = "/signin?status=confirm-success";
+      const emailRedirectTo = origin ? `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}` : undefined;
+      const signUpOptions = emailRedirectTo ? { emailRedirectTo } : undefined;
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: signUpOptions,
       });
       if (signUpError) {
         throw signUpError;

@@ -27,6 +27,9 @@ export default function ForgotPasswordPage() {
     setInfo(null);
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
+      if (!origin) {
+        throw new Error("비밀번호 재설정 URL이 구성되지 않았습니다. NEXT_PUBLIC_SITE_URL을 설정해 주세요.");
+      }
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/reset-password`,
       });

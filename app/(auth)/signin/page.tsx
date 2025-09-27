@@ -29,6 +29,18 @@ function SignInContent() {
     const status = searchParams.get("status");
     if (status === "reset-success") {
       setInfo("비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
+      return;
+    }
+    if (status === "confirm-success") {
+      setInfo("이메일 인증이 완료되었습니다. 새 계정으로 로그인해 주세요.");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      setSubmitting(false);
+      setError(oauthError);
     }
   }, [searchParams]);
 
@@ -69,10 +81,12 @@ function SignInContent() {
     setError(null);
     try {
       const nextPath = searchParams.get("redirect") || "/chat";
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`
-          : undefined;
+      const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+      const origin = typeof window !== "undefined" ? window.location.origin : fallbackOrigin;
+      if (!origin) {
+        throw new Error("리다이렉트 URL을 구성하지 못했습니다. NEXT_PUBLIC_SITE_URL을 확인하세요.");
+      }
+      const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
