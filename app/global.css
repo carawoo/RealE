@@ -272,6 +272,49 @@ body.app-shell {
   align-items: center;
 }
 
+.nav-menu-toggle {
+  position: relative;
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: none;
+  min-width: 180px;
+  padding: 12px 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(16px);
+  z-index: 50;
+}
+
+.nav-menu.open {
+  display: grid;
+}
+
+.nav-menu__item {
+  display: block;
+  padding: 12px 20px;
+  font-size: 15px;
+  color: #1f2933;
+  text-align: left;
+  background: transparent;
+  border: none;
+  width: 100%;
+  font-family: inherit;
+}
+
+.nav-menu__item:hover {
+  background: #f1f5f9;
+}
+
+.nav-menu__item + .nav-menu__item {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .nav-btn {
   display: inline-flex;
   align-items: center;
@@ -286,6 +329,11 @@ body.app-shell {
   font-size: 15px;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
   min-height: 44px;
+}
+
+.nav-btn.ghost {
+  background: #e8f0fe;
+  color: #1a73e8;
 }
 
 .nav-btn:hover {
