@@ -19,10 +19,11 @@ const STORAGE_KEYS = {
   archive: "reale:lastConversationHistory",
   newConversation: "reale:newConversation",
   proAccess: "reale:proAccess",
+  questionCount: "reale:questionCount",
 } as const;
 
 const FREE_QUESTION_LIMIT = 5;
-const UPGRADE_PRICE_DISPLAY = "₩9,900";
+const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -121,6 +122,27 @@ export default function ChatClient() {
   const copilotEnabled = typeof publicKey === "string" && publicKey.trim().length > 0;
   const skipArchiveRef = useRef(false);
   const { user, loading: authLoading } = useAuth();
+  const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const stored = window.localStorage.getItem(STORAGE_KEYS.questionCount);
+    if (stored) {
+      const parsed = Number(stored);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    const storedHistory = window.localStorage.getItem(STORAGE_KEYS.history);
+    if (storedHistory) {
+      try {
+        const parsedHistory = JSON.parse(storedHistory) as Message[];
+        if (Array.isArray(parsedHistory)) {
+          const count = parsedHistory.filter((m) => m.role === "user").length;
+          return Math.min(count, FREE_QUESTION_LIMIT);
+        }
+      } catch (error) {
+        console.warn("Failed to derive question count from history", error);
+      }
+    }
+    return 0;
+  });
 
   const ensureLoggedIn = useCallback(() => {
     if (authLoading) return false;
@@ -210,11 +232,20 @@ export default function ChatClient() {
     if (skipArchiveRef.current) {
       skipArchiveRef.current = false;
     }
-  }, [messages]);
+    if (!proAccess) {
+      const userMessagesCount = messages.filter((m) => m.role === "user").length;
+      if (userMessagesCount > totalQuestionsUsed) {
+        const nextCount = Math.min(userMessagesCount, FREE_QUESTION_LIMIT);
+        setTotalQuestionsUsed(nextCount);
+        window.localStorage.setItem(STORAGE_KEYS.questionCount, String(nextCount));
+      }
+    }
+  }, [messages, proAccess, totalQuestionsUsed]);
 
-  const userQuestionCount = messages.filter((m) => m.role === "user").length;
-  const questionsLeft = proAccess ? null : Math.max(FREE_QUESTION_LIMIT - userQuestionCount, 0);
-  const outOfQuota = !proAccess && userQuestionCount >= FREE_QUESTION_LIMIT;
+  const userMessagesCount = messages.filter((m) => m.role === "user").length;
+  const normalizedQuestionCount = proAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
+  const questionsLeft = proAccess ? null : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
+  const outOfQuota = !proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT;
 
   function ensureConversationId() {
     if (!conversationId) {
@@ -319,7 +350,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
 
@@ -342,7 +373,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
     setDraft("");
@@ -445,7 +476,7 @@ export default function ChatClient() {
           <p className="chat-usage__status">
             {proAccess
               ? "RealE Plus가 활성화되어 추가 질문 제한 없이 이용할 수 있어요."
-              : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(userQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
+              : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
           {!proAccess && !outOfQuota && (
             <button

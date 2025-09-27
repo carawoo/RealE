@@ -59,7 +59,7 @@ export default function AccountPage() {
       setDeleteError("세션이 만료되었습니다. 다시 로그인해 주세요.");
       return;
     }
-    if (!confirm("정말 탈퇴하시겠어요? 탈퇴 시 상담 기록이 삭제된다고 안내됩니다.")) {
+    if (!confirm("정말 탈퇴하시겠어요? 탈퇴 시 상담 기록 및 이용자의 개인정보가 삭제됩니다.")) {
       return;
     }
     setDeleting(true);
