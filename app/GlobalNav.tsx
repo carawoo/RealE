@@ -49,8 +49,7 @@ export default function GlobalNav() {
               aria-label="메뉴"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-              <span className="nav-label">메뉴</span>
-              <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <svg className="nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <line x1="4" y1="6" x2="20" y2="6" />
                 <line x1="4" y1="12" x2="20" y2="12" />
                 <line x1="4" y1="18" x2="20" y2="18" />
@@ -144,18 +143,7 @@ export default function GlobalNav() {
           </svg>
         </button>
 
-        {loading ? null : user ? (
-          !isMobile && null
-        ) : (
-          <Link className="nav-btn ghost" href="/signin" aria-label="로그인">
-            <span className="nav-label">로그인</span>
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" y1="12" x2="3" y2="12" />
-            </svg>
-          </Link>
-        )}
+        {/* 로그인 버튼은 모바일/데스크톱 모두 메뉴 안에서만 노출 */}
       </nav>
     </header>
   );
