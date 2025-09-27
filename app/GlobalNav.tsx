@@ -70,11 +70,7 @@ export default function GlobalNav() {
                     로그아웃
                   </button>
                 </>
-              ) : (
-                <Link href="/signin" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
-                  로그인
-                </Link>
-              )}
+              ) : null}
               {onChatRoute && (
                 <Link href="/chat/share" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
                   대화 공유
@@ -122,16 +118,7 @@ export default function GlobalNav() {
                   </svg>
                 </button>
               </>
-            ) : (
-              <Link className="nav-btn ghost" href="/signin" aria-label="로그인">
-                <span className="nav-label">로그인</span>
-                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-              </Link>
-            )}
+            ) : null}
           </>
         )}
 
