@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CopilotKit } from "@copilotkit/react-core";
 import { loadStripe } from "@stripe/stripe-js";
 import "./chat.css";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 type Role = "user" | "assistant";
 type Message = { role: Role; content: string };
@@ -103,6 +104,7 @@ function generateId() {
 }
 
 export default function ChatClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const freshParam = searchParams.get("fresh");
   const upgradedParam = searchParams.get("upgraded");
@@ -118,6 +120,16 @@ export default function ChatClient() {
   const publicKey = process.env.NEXT_PUBLIC_COPILOT_PUBLIC_API_KEY;
   const copilotEnabled = typeof publicKey === "string" && publicKey.trim().length > 0;
   const skipArchiveRef = useRef(false);
+  const { user, loading: authLoading } = useAuth();
+
+  const ensureLoggedIn = useCallback(() => {
+    if (authLoading) return false;
+    if (!user) {
+      router.push("/signin?redirect=/chat");
+      return false;
+    }
+    return true;
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -304,6 +316,9 @@ export default function ChatClient() {
   async function send(message: string) {
     const text = message.trim();
     if (!text || loading) return;
+    if (!ensureLoggedIn()) {
+      return;
+    }
     if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
@@ -324,6 +339,9 @@ export default function ChatClient() {
   async function onSubmitDraft() {
     const text = draft.trim();
     if (!text) return;
+    if (!ensureLoggedIn()) {
+      return;
+    }
     if (!proAccess && userQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
@@ -350,6 +368,9 @@ export default function ChatClient() {
 
   async function startCheckout() {
     if (checkoutLoading) return;
+    if (!ensureLoggedIn()) {
+      return;
+    }
     if (!STRIPE_PRICE_ID) {
       setPaymentError("결제 구성이 완료되지 않았어요. 환경변수를 확인해 주세요.");
       return;
@@ -458,6 +479,11 @@ export default function ChatClient() {
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onFocus={() => {
+              if (!ensureLoggedIn()) {
+                setDraft("");
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -468,7 +494,12 @@ export default function ChatClient() {
             className="chat-textarea"
             disabled={loading || outOfQuota}
           />
-          <button type="button" className="chat-send" onClick={onSubmitDraft} disabled={loading || outOfQuota}>
+          <button
+            type="button"
+            className="chat-send"
+            onClick={onSubmitDraft}
+            disabled={loading || outOfQuota}
+          >
             {loading ? "전송 중..." : "전송"}
           </button>
         </div>
