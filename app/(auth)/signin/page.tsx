@@ -65,8 +65,17 @@ function SignInContent() {
       const nextPath = searchParams.get("redirect") || "/chat";
       router.replace(nextPath);
     } catch (err: any) {
-      const message = err?.message ?? "로그인에 실패했습니다.";
-      setError(message);
+      const code = err?.status ?? err?.code;
+      if (code === "invalid_credentials" || err?.message === "Invalid login credentials") {
+        setError("이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.");
+      } else if (code === "email_not_confirmed") {
+        setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인하거나 인증 메일을 다시 요청해 주세요.");
+      } else if (code === 429) {
+        setError("로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+      } else {
+        const message = err?.message ?? "로그인에 실패했습니다.";
+        setError(message);
+      }
     } finally {
       setSubmitting(false);
     }
