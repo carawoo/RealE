@@ -135,7 +135,7 @@ export default function AccountPage() {
         <section className="auth-section account-danger">
           <h2 style={{ margin: 0, fontSize: 18, color: "#c5221f" }}>회원탈퇴</h2>
           <p style={{ margin: "6px 0 12px", color: "#5f6368" }}>
-            탈퇴를 진행하면 상담 기록이 모두 삭제된다고 안내되지만, 내부 보관 목적으로 일정 기간 데이터가 유지될 수 있습니다.
+            탈퇴를 진행하면 상담 기록과 이용자의 개인정보가 모두 삭제됩니다.
           </p>
           {deleteError && <p className="auth-error">{deleteError}</p>}
           {deleteDone && <p className="auth-success">탈퇴가 완료되었습니다.</p>}
