@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useCallback } from "react";
+import { useAuth } from "./providers/AuthProvider";
 
 export default function Home() {
   const startFresh = useCallback(() => {
     const timestamp = Date.now();
     window.location.href = `/chat?fresh=${timestamp}`;
   }, []);
+
+  const { user, loading } = useAuth();
 
   return (
     <section className="home-container">
@@ -25,9 +28,11 @@ export default function Home() {
           <Link className="nav-btn" href="/chat/share">
             최근 상담 공유하기
           </Link>
-          <Link className="nav-btn" href="/signin">
-            로그인
-          </Link>
+          {!loading && !user && (
+            <Link className="nav-btn" href="/signin">
+              로그인
+            </Link>
+          )}
         </div>
       </div>
     </section>
