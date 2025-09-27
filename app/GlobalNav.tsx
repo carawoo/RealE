@@ -59,11 +59,8 @@ export default function GlobalNav() {
             <button className="nav-btn primary" type="button" onClick={goFreshChat} aria-label="상담 시작">
               <span className="nav-label">상담 시작</span>
               <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M8 21h8" />
-                <path d="M12 17v4" />
-                <path d="M6 8h6" />
-                <path d="M6 12h4" />
-                <path d="M18 19.5V8a2 2 0 0 0-2-2h-3.5L10 3H6a2 2 0 0 0-2 2v14" />
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
               </svg>
             </button>
           </>
