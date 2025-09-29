@@ -41,6 +41,7 @@ function toKoreanDate(value?: string | null) {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Seoul",
     });
   } catch {
     return null;
