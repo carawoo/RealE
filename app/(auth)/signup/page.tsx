@@ -16,6 +16,35 @@ export default function SignUpPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendProgress, setResendProgress] = useState<string | null>(null);
+
+  async function resendSignupEmail(targetEmail: string) {
+    if (!supabase) return;
+    if (!targetEmail) return;
+    setResending(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const maxAttempts = 5;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        setResendProgress(`확인 메일 재전송 시도 중... (${attempt}/${maxAttempts})`);
+        const { error: resendError } = await supabase.auth.resend({ type: "signup", email: targetEmail });
+        if (!resendError) {
+          setInfo("확인 메일을 재전송했습니다. 메일함(스팸함 포함)을 확인해 주세요.");
+          setResendProgress(null);
+          return;
+        }
+        // 지연 후 재시도 (2,4,8,16s ...)
+        const delayMs = Math.min(16000, 2000 * Math.pow(2, attempt - 1));
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+      setError("확인 메일 재전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setResending(false);
+      setResendProgress(null);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +88,11 @@ export default function SignUpPage() {
       });
       const { error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as { error: any };
       if (signUpError) {
-        throw signUpError;
+        // 일부 환경에서 이메일 발송 단계에서 타임아웃이 날 수 있어 자동 재전송을 시도
+        await resendSignupEmail(email);
+        if (!info) {
+          throw signUpError;
+        }
       }
       setInfo("가입 확인 메일을 전송했습니다. 메일의 링크를 눌러 로그인해 주세요.");
       setEmail("");
@@ -89,6 +122,9 @@ export default function SignUpPage() {
           <p className="auth-info" style={{ color: "#5f6368", marginTop: 6 }}>
             요청을 처리 중입니다. 25초 이상 지연되면 연결 상태를 확인하고 다시 시도해 주세요.
           </p>
+        )}
+        {resendProgress && (
+          <p className="auth-info" style={{ color: "#5f6368", marginTop: 6 }}>{resendProgress}</p>
         )}
         {info && <p className="auth-success">{info}</p>}
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -142,6 +178,16 @@ export default function SignUpPage() {
             </button>
           </div>
         </form>
+        <div className="auth-actions" style={{ marginTop: 8 }}>
+          <button
+            className="auth-secondary"
+            type="button"
+            onClick={() => resendSignupEmail(email)}
+            disabled={resending || !email}
+          >
+            {resending ? "확인 메일 재전송 중..." : "확인 메일 다시 보내기"}
+          </button>
+        </div>
         <div className="auth-divider">이미 계정이 있으신가요?</div>
         <Link className="auth-secondary" href="/signin">
           로그인
