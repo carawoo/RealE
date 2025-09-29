@@ -29,10 +29,9 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        payload_json: msgs,
-        payload: msgs,
-      }),
+      // 일부 환경에서 스키마에 payload 컬럼이 없을 수 있으므로
+      // payload_json만 저장하도록 단순화
+      body: JSON.stringify({ payload_json: msgs }),
     });
 
     const text = await res.text();
