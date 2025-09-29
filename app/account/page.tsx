@@ -20,6 +20,8 @@ export default function AccountPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteDone, setDeleteDone] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,6 +102,34 @@ export default function AccountPage() {
     }
   }
 
+  async function startCheckout() {
+    if (checkoutLoading) return;
+    if (!user) {
+      router.replace("/signin?redirect=/account");
+      return;
+    }
+    setCheckoutLoading(true);
+    setPaymentError(null);
+    try {
+      const res = await fetch("/api/kakaopay/ready", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemName: "RealE Plus", amount: 3900 }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data) throw new Error(data?.error || "결제 준비에 실패했어요.");
+      if (typeof data.url === "string" && data.url.length > 0) {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error("결제 페이지로 이동하지 못했어요.");
+    } catch (err: any) {
+      setPaymentError(err?.message || "결제 준비 중 문제가 발생했어요.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
   if (!user) {
     return null;
   }
@@ -119,9 +149,15 @@ export default function AccountPage() {
               <br />일일 질문 한도 30회이며, 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
             </p>
           ) : (
-            <p style={{ margin: "6px 0 0", color: "#3c4043" }}>
-              RealE 체험(무료 5회 질문) 사용 중입니다. 결제 후 Plus(30일, 일일 30회)로 이용할 수 있어요.
-            </p>
+            <div>
+              <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
+                RealE 체험(무료 5회 질문) 사용 중입니다. 결제 후 Plus(30일, 일일 30회)로 이용할 수 있어요.
+              </p>
+              <button className="auth-primary" type="button" onClick={startCheckout} disabled={checkoutLoading}>
+                {checkoutLoading ? "결제 준비 중..." : "3,900원에 RealE Plus 시작"}
+              </button>
+              {paymentError && <p className="auth-error" style={{ marginTop: 8 }}>{paymentError}</p>}
+            </div>
           )}
         </section>
         <section className="auth-section">
