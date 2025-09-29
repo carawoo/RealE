@@ -253,9 +253,12 @@ export default function ChatClient() {
   }, [messages, proAccess, totalQuestionsUsed]);
 
   const userMessagesCount = messages.filter((m) => m.role === "user").length;
-  const normalizedQuestionCount = proAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
-  const questionsLeft = proAccess ? null : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
-  const outOfQuota = !proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT;
+  // 개발 환경에서는 쿼터 제한을 해제해 로컬 테스트가 막히지 않도록 함
+  const quotaDisabledInDev = process.env.NODE_ENV !== "production";
+  const effectiveProAccess = proAccess || quotaDisabledInDev;
+  const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
+  const questionsLeft = effectiveProAccess ? null : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
+  const outOfQuota = !effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT;
 
   function ensureConversationId() {
     if (!conversationId) {
@@ -360,7 +363,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
 
@@ -383,7 +386,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!proAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
       return;
     }
     setDraft("");
