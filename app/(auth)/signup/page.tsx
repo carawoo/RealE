@@ -45,13 +45,19 @@ export default function SignUpPage() {
     try {
       const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL;
       const origin = typeof window !== "undefined" ? window.location.origin : fallbackOrigin;
-      const { error: signUpError } = await supabase.auth.signUp({
+      // 안전장치: 네트워크 지연/행 상태 방지 (최대 25초)
+      const timeoutMs = 25000;
+      const timeoutPromise = new Promise<{ error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error("요청이 지연되고 있어요. 잠시 후 다시 시도해 주세요.")), timeoutMs)
+      );
+      const signUpPromise = supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: origin ? `${origin}/api/auth/callback?next=${encodeURIComponent("/signin")}` : undefined,
         },
       });
+      const { error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as { error: any };
       if (signUpError) {
         throw signUpError;
       }
@@ -79,6 +85,11 @@ export default function SignUpPage() {
           <p>이메일과 비밀번호를 입력해 RealE 계정을 생성하세요.</p>
         </div>
         {error && <p className="auth-error">{error}</p>}
+        {!error && submitting && (
+          <p className="auth-info" style={{ color: "#5f6368", marginTop: 6 }}>
+            요청을 처리 중입니다. 25초 이상 지연되면 연결 상태를 확인하고 다시 시도해 주세요.
+          </p>
+        )}
         {info && <p className="auth-success">{info}</p>}
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-field">
