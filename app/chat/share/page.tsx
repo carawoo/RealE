@@ -83,7 +83,9 @@ export default function ChatSharePage() {
         });
         const data = await res.json();
         if (!res.ok || !data?.url) {
-          throw new Error(data?.error || "공유 링크 생성에 실패했습니다.");
+          // 내부 에러는 콘솔로만 남기고, 화면에는 일반 문구만 노출
+          console.warn("share api error", data);
+          throw new Error("share_api_failed");
         }
         const absoluteUrl = new URL(data.url, window.location.origin).toString();
         if (!cancelled) {
@@ -91,7 +93,7 @@ export default function ChatSharePage() {
         }
       } catch (error: any) {
         if (!cancelled) {
-          setState({ status: "error", message: error?.message || "예상치 못한 오류가 발생했습니다." });
+          setState({ status: "error", message: "공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." });
         }
       }
     })();
