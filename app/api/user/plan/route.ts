@@ -16,9 +16,13 @@ export async function POST(req: NextRequest) {
     let until: string | null = null;
 
     if (userId) {
-      let byId = await admin.from("user_plan").select("plan, pro_until").eq("user_id", userId).maybeSingle();
+      let byId = await admin
+        .from("user_plan")
+        .select("plan, plan_label, pro_until")
+        .eq("user_id", userId)
+        .maybeSingle();
       if (byId.data) {
-        plan = !!byId.data.plan;
+        plan = byId.data.plan ?? (byId.data.plan_label ? String(byId.data.plan_label).toLowerCase() === "plus" : null);
         until = byId.data.pro_until ?? null;
       }
     }
@@ -26,11 +30,11 @@ export async function POST(req: NextRequest) {
     if (plan === null && email) {
       const byEmail = await admin
         .from("user_stats_kst")
-        .select("plan, pro_until")
+        .select("plan, plan_label, pro_until")
         .eq("email", email)
         .maybeSingle();
       if (byEmail.data) {
-        plan = !!byEmail.data.plan;
+        plan = byEmail.data.plan ?? (byEmail.data.plan_label ? String(byEmail.data.plan_label).toLowerCase() === "plus" : null);
         until = byEmail.data.pro_until ?? null;
       }
     }

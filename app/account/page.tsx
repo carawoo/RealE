@@ -103,13 +103,14 @@ export default function AccountPage() {
           });
           const data = await res.json();
           if (res.ok && data) {
+            const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
             const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
-            if (data?.plan) {
+            if (inferredPlan) {
               window.localStorage.setItem("reale:proAccess", "1");
               if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
               setProActive(true);
               setProUntil(untilMs);
-            } else if (data?.plan === false) {
+            } else {
               window.localStorage.setItem("reale:proAccess", "0");
               window.localStorage.removeItem("reale:proAccessUntil");
               setProActive(false);

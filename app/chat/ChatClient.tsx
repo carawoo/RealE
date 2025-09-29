@@ -209,14 +209,15 @@ export default function ChatClient() {
           });
           const data = await res.json();
           if (res.ok && data) {
+            const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
             const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
-            if (data?.plan) {
+            if (inferredPlan) {
               if (typeof window !== "undefined") {
                 window.localStorage.setItem(STORAGE_KEYS.proAccess, "1");
                 if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
               }
               setProAccess(true);
-            } else if (data?.plan === false) {
+            } else {
               if (typeof window !== "undefined") {
                 window.localStorage.setItem(STORAGE_KEYS.proAccess, "0");
                 window.localStorage.removeItem("reale:proAccessUntil");
