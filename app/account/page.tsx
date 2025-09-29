@@ -10,6 +10,8 @@ import "./account.css";
 export default function AccountPage() {
   const router = useRouter();
   const { user, supabase, loading, signOut, session } = useAuth();
+  const [proActive, setProActive] = useState(false);
+  const [proUntil, setProUntil] = useState<number | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -24,6 +26,19 @@ export default function AccountPage() {
       router.replace("/signin?redirect=/account");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const pa = window.localStorage.getItem("reale:proAccess");
+      const untilRaw = window.localStorage.getItem("reale:proAccessUntil");
+      if (pa === "1") setProActive(true);
+      if (untilRaw) {
+        const v = Number(untilRaw);
+        if (Number.isFinite(v)) setProUntil(v);
+      }
+    } catch {}
+  }, []);
 
   async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,6 +111,19 @@ export default function AccountPage() {
           <h1>계정 설정</h1>
           <p>RealE 계정을 관리하고 비밀번호를 변경할 수 있습니다.</p>
         </div>
+        <section className="auth-section">
+          <h2 style={{ margin: 0, fontSize: 18 }}>이용 상태</h2>
+          {proActive ? (
+            <p style={{ margin: "6px 0 0", color: "#056449", fontWeight: 600 }}>
+              RealE Plus 이용 중 — {proUntil ? `만료 예정: ${new Date(proUntil).toLocaleDateString("ko-KR")}` : "만료일 정보 없음"}
+              <br />일일 질문 한도 30회이며, 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
+            </p>
+          ) : (
+            <p style={{ margin: "6px 0 0", color: "#3c4043" }}>
+              RealE 체험(무료 5회 질문) 사용 중입니다. 결제 후 Plus(30일, 일일 30회)로 이용할 수 있어요.
+            </p>
+          )}
+        </section>
         <section className="auth-section">
           <h2 style={{ margin: 0, fontSize: 18 }}>기본 정보</h2>
           <p style={{ margin: "4px 0 0", color: "#3c4043" }}>이메일: {user.email}</p>
