@@ -31,6 +31,12 @@ export async function POST(req: Request) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE!;
 
+    // 고정 슬러그/UUID 생성(테이블 제약 대응: slug NOT NULL 등)
+    const uuid = (globalThis as any)?.crypto?.randomUUID
+      ? (globalThis as any).crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const slug = uuid;
+
     const res = await fetch(`${url}/rest/v1/recommendations`, {
       method: "POST",
       headers: {
@@ -39,8 +45,15 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      // user_id가 있도록 시도하되, 컬럼이 nullable이면 생략되어도 저장됩니다.
-      body: JSON.stringify({ payload_json: msgs, user_id: userId, is_public: true }),
+      // 일부 스키마에서 slug/public_id NOT NULL, id 수동 지정이 필요할 수 있어 같이 전달
+      body: JSON.stringify({
+        id: uuid,
+        slug,
+        public_id: uuid,
+        payload_json: msgs,
+        user_id: userId,
+        is_public: true,
+      }),
     });
 
     const text = await res.text();
@@ -52,8 +65,8 @@ export async function POST(req: Request) {
     }
 
     const row = JSON.parse(text)[0] ?? {};
-    const slug = row.public_id ?? row.id;
-    return NextResponse.json({ ok: true, url: `/r/${slug}`, urlHost: new URL(url).host });
+    const outSlug = row.public_id ?? row.id ?? slug;
+    return NextResponse.json({ ok: true, url: `/r/${outSlug}`, urlHost: new URL(url).host });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Server error" }, { status: 500 });
   }
