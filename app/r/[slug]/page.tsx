@@ -86,9 +86,15 @@ export default async function SharedPage({ params }: { params: { slug: string } 
 
   const supabase = createClient(url, anon);
 
-  const base = supabase.from("recommendations").select("payload_json, payload, created_at").limit(1);
+  // payload 컬럼이 없을 수 있으므로 payload_json만 조회
+  const base = supabase.from("recommendations").select("payload_json, created_at, slug").limit(1);
 
-  const query = isUuid(slug) ? base.eq("public_id", slug) : /^\d+$/.test(slug) ? base.eq("id", Number(slug)) : null;
+  // 공유 링크는 UUID 슬러그를 사용합니다. 이전 스키마의 public_id가 아닌 slug/id로 조회.
+  const query = isUuid(slug)
+    ? base.eq("slug", slug)
+    : /^\d+$/.test(slug)
+    ? base.eq("id", Number(slug))
+    : null;
   if (!query) {
     console.error("Invalid slug format", { slug });
     return notFound();
