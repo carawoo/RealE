@@ -122,27 +122,9 @@ export default function ChatClient() {
   const copilotEnabled = typeof publicKey === "string" && publicKey.trim().length > 0;
   const skipArchiveRef = useRef(false);
   const { user, loading: authLoading } = useAuth();
-  const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    const stored = window.localStorage.getItem(STORAGE_KEYS.questionCount);
-    if (stored) {
-      const parsed = Number(stored);
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
-    const storedHistory = window.localStorage.getItem(STORAGE_KEYS.history);
-    if (storedHistory) {
-      try {
-        const parsedHistory = JSON.parse(storedHistory) as Message[];
-        if (Array.isArray(parsedHistory)) {
-          const count = parsedHistory.filter((m) => m.role === "user").length;
-          return Math.min(count, FREE_QUESTION_LIMIT);
-        }
-      } catch (error) {
-        console.warn("Failed to derive question count from history", error);
-      }
-    }
-    return 0;
-  });
+  // 초기 렌더에서 서버/클라이언트 HTML 일치 보장을 위해 0으로 시작
+  const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   const ensureLoggedIn = useCallback(() => {
     if (authLoading) return false;
@@ -228,6 +210,34 @@ export default function ChatClient() {
   }, [freshParam]);
 
   useEffect(() => {
+    // 마운트 후 로컬스토리지에서 질문 사용량을 동기화
+    if (!mounted) {
+      try {
+        if (typeof window !== "undefined") {
+          const stored = window.localStorage.getItem(STORAGE_KEYS.questionCount);
+          if (stored) {
+            const parsed = Number(stored);
+            if (Number.isFinite(parsed)) {
+              setTotalQuestionsUsed(parsed);
+            }
+          } else {
+            const storedHistory = window.localStorage.getItem(STORAGE_KEYS.history);
+            if (storedHistory) {
+              const parsedHistory = JSON.parse(storedHistory) as Message[];
+              if (Array.isArray(parsedHistory)) {
+                const count = parsedHistory.filter((m) => m.role === "user").length;
+                setTotalQuestionsUsed(Math.min(count, FREE_QUESTION_LIMIT));
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to derive question count from history", error);
+      } finally {
+        setMounted(true);
+      }
+    }
+
     storeHistory(messages, { skipArchive: skipArchiveRef.current });
     if (skipArchiveRef.current) {
       skipArchiveRef.current = false;
