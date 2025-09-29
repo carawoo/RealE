@@ -25,6 +25,8 @@ const STORAGE_KEYS = {
 const FREE_QUESTION_LIMIT = 5;
 const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
+const PRO_DAILY_LIMIT = 30; // RealE Plus 일일 질문 제한
+const PRO_DURATION_DAYS = 30; // 구독 기간(일)
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
 
@@ -145,7 +147,10 @@ export default function ChatClient() {
 
   useEffect(() => {
     if (typeof window === "undefined" || upgradedParam !== "1") return;
+    const now = Date.now();
+    const until = now + PRO_DURATION_DAYS * 24 * 60 * 60 * 1000;
     window.localStorage.setItem(STORAGE_KEYS.proAccess, "1");
+    window.localStorage.setItem("reale:proAccessUntil", String(until));
     setProAccess(true);
     const url = new URL(window.location.href);
     url.searchParams.delete("upgraded");
@@ -255,10 +260,37 @@ export default function ChatClient() {
   const userMessagesCount = messages.filter((m) => m.role === "user").length;
   // 개발 환경에서는 쿼터 제한을 해제해 로컬 테스트가 막히지 않도록 함
   const quotaDisabledInDev = process.env.NODE_ENV !== "production";
-  const effectiveProAccess = proAccess || quotaDisabledInDev;
+
+  // Pro 만료 확인
+  const proUntilRaw = typeof window !== "undefined" ? window.localStorage.getItem("reale:proAccessUntil") : null;
+  const proValid = (() => {
+    if (quotaDisabledInDev) return true;
+    if (!proAccess) return false;
+    if (!proUntilRaw) return true;
+    const until = Number(proUntilRaw);
+    if (!Number.isFinite(until)) return true;
+    return Date.now() < until;
+  })();
+
+  // 일일 사용량(프로 전용)
+  const todayKey = typeof window !== "undefined" ? new Date().toISOString().slice(0, 10) : "";
+  const dailyUsed = (() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = window.localStorage.getItem(`reale:daily:${todayKey}`);
+      const v = Number(raw);
+      return Number.isFinite(v) ? v : 0;
+    } catch { return 0; }
+  })();
+
+  const effectiveProAccess = proValid || quotaDisabledInDev;
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
-  const questionsLeft = effectiveProAccess ? null : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
-  const outOfQuota = !effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT;
+  const questionsLeft = effectiveProAccess
+    ? Math.max(PRO_DAILY_LIMIT - dailyUsed, 0)
+    : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
+  const outOfQuota = effectiveProAccess
+    ? dailyUsed >= PRO_DAILY_LIMIT
+    : normalizedQuestionCount >= FREE_QUESTION_LIMIT;
 
   function ensureConversationId() {
     if (!conversationId) {
@@ -378,6 +410,14 @@ export default function ChatClient() {
     });
 
     await streamAssistant(text, updatedHistory);
+
+    // Pro 일일 카운트 증가
+    if (effectiveProAccess && typeof window !== "undefined") {
+      try {
+        const next = dailyUsed + 1;
+        window.localStorage.setItem(`reale:daily:${todayKey}`, String(next));
+      } catch {}
+    }
   }
 
   async function onSubmitDraft() {
@@ -466,8 +506,8 @@ export default function ChatClient() {
         </div>
         <div className="chat-usage">
           <p className="chat-usage__status">
-            {proAccess
-              ? "RealE Plus가 활성화되어 추가 질문 제한 없이 이용할 수 있어요."
+            {effectiveProAccess
+              ? `RealE Plus 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${PRO_DAILY_LIMIT}회, 구독기간 ${PRO_DURATION_DAYS}일)`
               : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
           {!proAccess && !outOfQuota && (
@@ -483,10 +523,18 @@ export default function ChatClient() {
         </div>
         {outOfQuota && (
           <div className="chat-paywall">
-            <h2 className="chat-paywall__title">추가 질문은 RealE Plus에서</h2>
-            <p className="chat-paywall__body">
-              무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제를 완료하면 전문 상담을 제한 없이 이어갈 수 있어요.
-            </p>
+            <h2 className="chat-paywall__title">추가 질문 안내</h2>
+            {effectiveProAccess ? (
+              <>
+                <p className="chat-paywall__body">
+                  오늘의 일일 한도({PRO_DAILY_LIMIT}회)를 모두 사용했어요. 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
+                </p>
+              </>
+            ) : (
+              <p className="chat-paywall__body">
+                무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus {PRO_DURATION_DAYS}일 이용(일일 {PRO_DAILY_LIMIT}회)할 수 있어요.
+              </p>
+            )}
             <button
               type="button"
               className="chat-upgrade-button"
