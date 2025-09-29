@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta name="google-site-verification" content="cb8qA1RP9cgTXwwuluhUoaeIl8qrFrsiDKSicrR2BWY" />
+        <meta name="google-site-verification" content="y6oCIZ8CC_KX6RY3XZW3wn07-lhvnsYCrbLwAayqBuI" />
         {process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
           <script async src="https://js.stripe.com/v3" />
         )}
