@@ -127,6 +127,7 @@ export default function ChatClient() {
   // 초기 렌더에서 서버/클라이언트 HTML 일치 보장을 위해 0으로 시작
   const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [dailyUsed, setDailyUsed] = useState(0);
 
   const makeMessage = useCallback((role: Role, content: string): Message => ({ role, content }), []);
 
@@ -384,16 +385,16 @@ export default function ChatClient() {
     return Date.now() < until;
   })();
 
-  // 일일 사용량(프로 전용)
+  // 일일 사용량(프로 전용) – 서버/클라이언트 초기 HTML 불일치 방지 위해 마운트 후 동기화
   const todayKey = typeof window !== "undefined" ? new Date().toISOString().slice(0, 10) : "";
-  const dailyUsed = (() => {
-    if (typeof window === "undefined") return 0;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(`reale:daily:${todayKey}`);
       const v = Number(raw);
-      return Number.isFinite(v) ? v : 0;
-    } catch { return 0; }
-  })();
+      setDailyUsed(Number.isFinite(v) ? v : 0);
+    } catch { setDailyUsed(0); }
+  }, [todayKey]);
 
   const effectiveProAccess = proValid || quotaDisabledInDev;
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
