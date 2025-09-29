@@ -47,25 +47,14 @@ export default function GlobalNav() {
         {isMobile ? null : (
           <>
             {!onChatRoute && (
-              <>
-                <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
-                  <span className="nav-label">FAQ</span>
-                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
-                    <circle cx="12" cy="17" r="0.5" />
-                  </svg>
-                </Link>
-                <Link className="nav-btn ghost" href="/checkout" aria-label="결제 테스트">
-                  <span className="nav-label">결제 테스트</span>
-                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                    <line x1="8.5" y1="15" x2="11" y2="15" />
-                    <line x1="12.5" y1="15" x2="17" y2="15" />
-                  </svg>
-                </Link>
-              </>
+              <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
+                <span className="nav-label">FAQ</span>
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
+                  <circle cx="12" cy="17" r="0.5" />
+                </svg>
+              </Link>
             )}
             {onChatRoute && (
               <Link className="nav-btn ghost" href="/chat/share" aria-label="대화 공유">

@@ -1,46 +1,4 @@
-"use client";
-
-import { useState } from "react";
-
-const TEST_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_TEST_PRICE_ID || "price_test123";
-
 export default function CheckoutPage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const startCheckout = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/checkout/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: TEST_PRICE_ID,
-          successUrl: `${window.location.origin}/checkout/success`,
-          cancelUrl: `${window.location.origin}/checkout?cancelled=1`
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "세션 생성에 실패했습니다");
-      }
-
-      const payload = await response.json();
-      if (payload?.url) {
-        window.location.href = payload.url as string;
-      } else {
-        throw new Error("결제 페이지 URL이 반환되지 않았습니다");
-      }
-    } catch (err: any) {
-      console.error("Checkout error", err);
-      setError(err.message || "결제 세션 생성에 실패했습니다");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <section className="checkout-surface">
       <header className="checkout-headline">
@@ -60,19 +18,10 @@ export default function CheckoutPage() {
           <li>프리미엄 정책 요약 제공</li>
         </ul>
         <div className="checkout-buttons">
-          <button
-            type="button"
-            className="nav-btn primary"
-            onClick={startCheckout}
-            disabled={loading}
-          >
-            {loading ? "결제 세션 생성 중..." : "Stripe Checkout 열기"}
-          </button>
           <a className="nav-btn" href="https://docs.stripe.com/testing" target="_blank" rel="noreferrer">
             Stripe 테스트카드 가이드
           </a>
         </div>
-        {error ? <p className="checkout-error">{error}</p> : null}
       </article>
 
       <section className="checkout-guide">
