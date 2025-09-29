@@ -402,10 +402,6 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!STRIPE_PRICE_ID) {
-      setPaymentError("결제 구성이 완료되지 않았어요. 환경변수를 확인해 주세요.");
-      return;
-    }
     if (typeof window === "undefined") {
       setPaymentError("브라우저 환경에서만 결제가 가능합니다.");
       return;
@@ -413,32 +409,15 @@ export default function ChatClient() {
     setCheckoutLoading(true);
     setPaymentError(null);
     try {
-      const origin = window.location.origin;
-      const res = await fetch("/api/checkout/session", {
+      const res = await fetch("/api/kakaopay/ready", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: STRIPE_PRICE_ID,
-          successUrl: `${origin}/chat?upgraded=1`,
-          cancelUrl: `${origin}/chat`,
-        }),
+        body: JSON.stringify({ itemName: "RealE Plus", amount: 3900 }),
       });
 
       const data = await res.json();
       if (!res.ok || !data) {
         throw new Error(data?.error || "결제 세션 생성에 실패했어요.");
-      }
-
-      const stripePromiseInstance = getStripeClient();
-      if (stripePromiseInstance) {
-        const stripe = await stripePromiseInstance;
-        if (stripe && data.id) {
-          const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
-          if (error) {
-            throw error;
-          }
-          return;
-        }
       }
 
       if (typeof data.url === "string" && data.url.length > 0) {
