@@ -48,6 +48,18 @@ export async function POST(req: Request) {
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const slug = uuid;
 
+    // 제목 컬럼 NOT NULL 대응: 첫 메시지에서 간단히 제목 생성
+    const firstContent = (() => {
+      try {
+        for (const m of msgs as any[]) {
+          const text = typeof m?.text === "string" ? m.text : m?.content;
+          if (typeof text === "string" && text.trim()) return text.trim();
+        }
+      } catch {}
+      return "";
+    })();
+    const title = firstContent ? firstContent.slice(0, 40) : "RealE 상담 기록";
+
     const res = await fetch(`${url}/rest/v1/recommendations`, {
       method: "POST",
       headers: {
@@ -63,6 +75,7 @@ export async function POST(req: Request) {
         payload_json: msgs,
         user_id: userId,
         is_public: true,
+        title,
       }),
     });
 
