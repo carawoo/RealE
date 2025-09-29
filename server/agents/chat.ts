@@ -56,7 +56,26 @@ export async function runChatAgent(
         compact.push(l);
       }
     }
-    return compact.join("\n\n").trim();
+    // 문단 내부도 문장 단위로 줄바꿈(한국어 어미 중심 단순 규칙)
+    const sentenceSplit = (p: string) =>
+      p
+        .replace(/\s+/g, " ")
+        .replace(/(다\.|요\.|니다\.|임\.|음\.|!|\?)\s*/g, "$1\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+    const formatted: string[] = [];
+    compact.forEach((p, idx) => {
+      if (idx === 0 && /^\[.+\]$/.test(p)) {
+        formatted.push(p);
+      } else if (p === "") {
+        formatted.push("");
+      } else {
+        formatted.push(sentenceSplit(p));
+      }
+    });
+
+    return formatted.join("\n\n").trim();
   }
   // MOCK 모드: 키가 없거나 MOCK_AI=1이면 간단한 규칙 기반 답변을 반환해 개발/데모 가능
   const mockMode = !process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1";
