@@ -1,5 +1,7 @@
 // app/api/share/route.ts
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 export const runtime = "nodejs";
 
 async function whoAmI(url: string, key: string) {
@@ -18,6 +20,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "대화 내용이 비어 있습니다." }, { status: 400 });
     }
 
+    // 현재 로그인한 사용자 ID를 얻어 저장(없으면 익명 공유)
+    let userId: string | null = null;
+    try {
+      const supabase = createRouteHandlerClient({ cookies });
+      const { data } = await supabase.auth.getSession();
+      userId = data.session?.user?.id ?? null;
+    } catch {}
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE!;
 
@@ -29,9 +39,8 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      // 일부 환경에서 스키마에 payload 컬럼이 없을 수 있으므로
-      // payload_json만 저장하도록 단순화
-      body: JSON.stringify({ payload_json: msgs }),
+      // user_id가 있도록 시도하되, 컬럼이 nullable이면 생략되어도 저장됩니다.
+      body: JSON.stringify({ payload_json: msgs, user_id: userId, is_public: true }),
     });
 
     const text = await res.text();
