@@ -123,10 +123,12 @@ export default function ChatClient() {
   const publicKey = process.env.NEXT_PUBLIC_COPILOT_PUBLIC_API_KEY;
   const copilotEnabled = typeof publicKey === "string" && publicKey.trim().length > 0;
   const skipArchiveRef = useRef(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, supabase } = useAuth();
   // 초기 렌더에서 서버/클라이언트 HTML 일치 보장을 위해 0으로 시작
   const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(0);
   const [mounted, setMounted] = useState(false);
+
+  const makeMessage = useCallback((role: Role, content: string): Message => ({ role, content }), []);
 
   const ensureLoggedIn = useCallback(() => {
     if (authLoading) return false;
@@ -144,6 +146,65 @@ export default function ChatClient() {
       setProAccess(true);
     }
   }, []);
+
+  // 서버 DB의 플랜 상태를 동기화(관리자 대시보드 변경 반영)
+  useEffect(() => {
+    async function syncPlanFromDB() {
+      if (!supabase || !user) return;
+      try {
+        let plan: boolean | null = null;
+        let until: string | null = null;
+
+        const byId = await supabase
+          .from("user_plan_readonly")
+          .select("plan, pro_until")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (byId.data) {
+          plan = !!byId.data.plan;
+          until = byId.data.pro_until ?? null;
+        }
+
+        if (plan === null) {
+          const byEmail = await supabase
+            .from("user_stats_kst")
+            .select("plan, pro_until")
+            .eq("email", user.email ?? "")
+            .maybeSingle();
+          if (byEmail.data) {
+            plan = !!byEmail.data.plan;
+            until = byEmail.data.pro_until ?? null;
+          }
+        }
+
+        if (plan !== null) {
+          const untilMs = until ? new Date(until).getTime() : null;
+          if (plan) {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(STORAGE_KEYS.proAccess, "1");
+              if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
+            }
+            setProAccess(true);
+          } else {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(STORAGE_KEYS.proAccess, "0");
+              window.localStorage.removeItem("reale:proAccessUntil");
+            }
+            setProAccess(false);
+          }
+        }
+      } catch {
+        // 무시
+      }
+    }
+
+    syncPlanFromDB();
+    function onFocus() { syncPlanFromDB(); }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
+  }, [supabase, user]);
 
   useEffect(() => {
     if (typeof window === "undefined" || upgradedParam !== "1") return;
@@ -401,10 +462,10 @@ export default function ChatClient() {
 
     skipArchiveRef.current = true;
 
-    const updatedHistory = [...messages, { role: "user", content: text }];
+    const updatedHistory: Message[] = [...messages, makeMessage("user", text)];
 
     setMessages((prev) => {
-      const next = [...prev, { role: "user", content: text }, { role: "assistant", content: "" }];
+      const next: Message[] = [...prev, makeMessage("user", text), makeMessage("assistant", "")];
       assistantPointer.current = next.length - 1;
       return next;
     });
