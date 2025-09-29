@@ -155,11 +155,19 @@ export default function ChatClient() {
         let plan: boolean | null = null;
         let until: string | null = null;
 
-        const byId = await supabase
+        // 1) 우선 user_plan_readonly 조회, 없으면 user_plan으로 폴백
+        let byId: any = await supabase
           .from("user_plan_readonly")
           .select("plan, pro_until")
           .eq("user_id", user.id)
           .maybeSingle();
+        if (byId.error && (byId.error.code === "42P01" || byId.error.code === "42809")) {
+          byId = await supabase
+            .from("user_plan")
+            .select("plan, pro_until")
+            .eq("user_id", user.id)
+            .maybeSingle();
+        }
         if (byId.data) {
           plan = !!byId.data.plan;
           until = byId.data.pro_until ?? null;
