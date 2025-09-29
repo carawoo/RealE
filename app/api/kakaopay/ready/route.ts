@@ -11,12 +11,18 @@ function randomId(): string {
 export async function POST(req: NextRequest) {
   const adminKey = process.env.KAKAOPAY_ADMIN_KEY || "";
   const cid = process.env.KAKAOPAY_CID || ""; // 테스트: TC0ONETIME
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "";
-  if (!adminKey || !cid || !site) {
-    return NextResponse.json(
-      { ok: false, error: "KakaoPay env missing (KAKAOPAY_ADMIN_KEY, KAKAOPAY_CID, NEXT_PUBLIC_SITE_URL)" },
-      { status: 500 }
-    );
+  const siteEnv = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const origin = siteEnv || req.nextUrl.origin;
+  const mock = process.env.KAKAOPAY_MOCK === "1" || process.env.NODE_ENV !== "production";
+  if ((!adminKey || !cid || !siteEnv) && mock) {
+    const { itemName, amount } = await req.json();
+    const uuid = randomId();
+    const approveUrl = `${origin}/api/kakaopay/approve?pg_token=MOCK&mock=1&oid=${encodeURIComponent(uuid)}`;
+    return NextResponse.json({ ok: true, url: approveUrl, mock: true });
+  }
+  if (!adminKey || !cid || !siteEnv) {
+    // 심사/제휴 전: 내부 안내 페이지로 이동시켜 임시 결제안내 노출
+    return NextResponse.json({ ok: true, url: "/checkout/info" });
   }
 
   try {
@@ -27,9 +33,9 @@ export async function POST(req: NextRequest) {
     const orderId = randomId();
     const userId = "guest"; // 선택: 필요 시 세션에서 사용자 ID를 읽어 대입
 
-    const approvalUrl = `${site}/api/kakaopay/approve`;
-    const cancelUrl = `${site}/chat`;
-    const failUrl = `${site}/chat`;
+    const approvalUrl = `${siteEnv}/api/kakaopay/approve`;
+    const cancelUrl = `${siteEnv}/chat`;
+    const failUrl = `${siteEnv}/chat`;
 
     const body = new URLSearchParams({
       cid,
