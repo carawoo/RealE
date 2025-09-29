@@ -200,6 +200,30 @@ export default function ChatClient() {
             }
             setProAccess(false);
           }
+        } else {
+          // 최종 폴백: 서버 API를 통해 서비스 롤로 조회(RLS 우회)
+          const res = await fetch("/api/user/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          const data = await res.json();
+          if (res.ok && data) {
+            const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
+            if (data?.plan) {
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(STORAGE_KEYS.proAccess, "1");
+                if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
+              }
+              setProAccess(true);
+            } else if (data?.plan === false) {
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(STORAGE_KEYS.proAccess, "0");
+                window.localStorage.removeItem("reale:proAccessUntil");
+              }
+              setProAccess(false);
+            }
+          }
         }
       } catch {
         // 무시

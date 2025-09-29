@@ -94,6 +94,28 @@ export default function AccountPage() {
             setProActive(false);
             setProUntil(null);
           }
+        } else {
+          // 서버 API(서비스 롤) 폴백
+          const res = await fetch("/api/user/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          const data = await res.json();
+          if (res.ok && data) {
+            const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
+            if (data?.plan) {
+              window.localStorage.setItem("reale:proAccess", "1");
+              if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
+              setProActive(true);
+              setProUntil(untilMs);
+            } else if (data?.plan === false) {
+              window.localStorage.setItem("reale:proAccess", "0");
+              window.localStorage.removeItem("reale:proAccessUntil");
+              setProActive(false);
+              setProUntil(null);
+            }
+          }
         }
       } catch (e) {
         // 무시: 권한/테이블 부재 등은 UI에 영향을 주지 않음
