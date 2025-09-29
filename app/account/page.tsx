@@ -42,6 +42,68 @@ export default function AccountPage() {
     } catch {}
   }, []);
 
+  useEffect(() => {
+    // 서버 DB의 플랜을 읽어 로컬 상태/스토리지에 동기화
+    async function syncPlanFromDB() {
+      if (!supabase || !user) return;
+      try {
+        // 1) 우선 user_plan_readonly를 user_id로 조회
+        let plan: boolean | null = null;
+        let until: string | null = null;
+
+        const byId = await supabase
+          .from("user_plan_readonly")
+          .select("plan, pro_until")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (byId.data) {
+          plan = !!byId.data.plan;
+          until = byId.data.pro_until ?? null;
+        }
+
+        // 2) 보조: user_stats_kst에서 이메일 기준 조회(존재할 때)
+        if (plan === null) {
+          const byEmail = await supabase
+            .from("user_stats_kst")
+            .select("plan, pro_until")
+            .eq("email", user.email ?? "")
+            .maybeSingle();
+          if (byEmail.data) {
+            plan = !!byEmail.data.plan;
+            until = byEmail.data.pro_until ?? null;
+          }
+        }
+
+        if (plan !== null) {
+          const untilMs = until ? new Date(until).getTime() : null;
+          if (plan) {
+            window.localStorage.setItem("reale:proAccess", "1");
+            if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
+            setProActive(true);
+            setProUntil(untilMs);
+          } else {
+            window.localStorage.setItem("reale:proAccess", "0");
+            window.localStorage.removeItem("reale:proAccessUntil");
+            setProActive(false);
+            setProUntil(null);
+          }
+        }
+      } catch (e) {
+        // 무시: 권한/테이블 부재 등은 UI에 영향을 주지 않음
+      }
+    }
+
+    syncPlanFromDB();
+    // 탭 활성화 시 재동기화
+    function onFocus() {
+      syncPlanFromDB();
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
+    }
+  }, [supabase, user]);
+
   async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) return;
