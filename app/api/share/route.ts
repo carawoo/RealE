@@ -45,11 +45,10 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      // 일부 스키마에서 slug/public_id NOT NULL, id 수동 지정이 필요할 수 있어 같이 전달
+      // 일부 스키마에서 slug NOT NULL, id 수동 지정이 필요할 수 있어 같이 전달
       body: JSON.stringify({
         id: uuid,
         slug,
-        public_id: uuid,
         payload_json: msgs,
         user_id: userId,
         is_public: true,
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const row = JSON.parse(text)[0] ?? {};
-    const outSlug = row.public_id ?? row.id ?? slug;
+    const outSlug = row.slug ?? row.id ?? slug;
     return NextResponse.json({ ok: true, url: `/r/${outSlug}`, urlHost: new URL(url).host });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Server error" }, { status: 500 });
