@@ -39,13 +39,26 @@ function SignInContent() {
   useEffect(() => {
     const oauthError = searchParams.get("error");
     const status = searchParams.get("status");
-    if (oauthError) {
-      // 이메일 확인(verify) 후 리다이렉트 과정에서 OAuth가 아님에도
-      // Supabase가 error=OAuth code missing 쿼리를 붙이는 경우가 있어 무시 처리
-      if (oauthError === "OAuth code missing" && status === "confirm-success") return;
+    if (!oauthError) return;
+    // 일부 브라우저/리다이렉션에서 이메일 인증 완료 뒤에도
+    // error=OAuth code missing 이 붙는 사례가 있어 안전하게 무시한다.
+    if (oauthError === "OAuth code missing") {
+      try {
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("error");
+          window.history.replaceState(null, "", url.toString());
+        }
+      } catch {}
       setSubmitting(false);
-      setError(oauthError);
+      return;
     }
+    if (status === "confirm-success") {
+      setSubmitting(false);
+      return;
+    }
+    setSubmitting(false);
+    setError(oauthError);
   }, [searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
