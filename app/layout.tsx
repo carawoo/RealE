@@ -31,6 +31,9 @@ export default function RootLayout({
                 개인정보 처리방침
               </a>
             </div>
+            <div className="business-meta">
+              대표자 김재환 · 사업자등록번호 854-52-00876
+            </div>
           </footer>
         </AuthProvider>
       </body>

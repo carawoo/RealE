@@ -659,6 +659,11 @@ body.app-shell {
   flex-wrap: wrap;
   justify-content: center;
 }
+.business-meta {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #9aa3b5;
+}
 .app-footer a {
   color: #1a73e8;
   font-weight: 500;
@@ -791,11 +796,11 @@ body.app-shell {
     font-size: 14px;
   }
   .app-footer {
-    padding: 24px 16px;
+    padding: 28px 18px;
     font-size: 13px;
   }
   .app-footer__inner {
-    gap: 12px;
+    gap: 18px;
   }
   .app-footer__policy {
     font-size: 12px;
