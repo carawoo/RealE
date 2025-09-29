@@ -28,8 +28,19 @@ export async function POST(req: Request) {
       userId = data.session?.user?.id ?? null;
     } catch {}
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE!;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE || "";
+
+    if (!url || !serviceKey) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "SUPABASE_SERVICE_ROLE (and NEXT_PUBLIC_SUPABASE_URL) env is missing. Set it in .env(.local) and restart the dev server.",
+        },
+        { status: 500 }
+      );
+    }
 
     // 고정 슬러그/UUID 생성(테이블 제약 대응: slug NOT NULL 등)
     const uuid = (globalThis as any)?.crypto?.randomUUID
