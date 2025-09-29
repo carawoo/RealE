@@ -96,10 +96,12 @@ function SignInContent() {
         throw new Error("리다이렉트 URL을 구성하지 못했습니다. NEXT_PUBLIC_SITE_URL을 확인하세요.");
       }
       const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const scopes = provider === "kakao" ? "account_email" : undefined;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
+          scopes,
         },
       });
       if (oauthError) {
