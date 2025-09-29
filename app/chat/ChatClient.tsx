@@ -155,22 +155,40 @@ export default function ChatClient() {
         let plan: boolean | null = null;
         let until: string | null = null;
 
+        // 우선 서버 API(서비스 롤) 시도: 프로덕션 신뢰도 향상
+        try {
+          const res = await fetch("/api/user/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (typeof data?.plan === "boolean" || data?.pro_until) {
+              plan = typeof data.plan === "boolean" ? data.plan : null;
+              until = data?.pro_until ?? null;
+            }
+          }
+        } catch {}
+
         // 1) 우선 user_plan_readonly 조회, 없으면 user_plan으로 폴백
-        let byId: any = await supabase
+        if (plan === null) {
+          let byId: any = await supabase
           .from("user_plan_readonly")
           .select("plan, pro_until")
           .eq("user_id", user.id)
           .maybeSingle();
-        if (byId.error && (byId.error.code === "42P01" || byId.error.code === "42809")) {
-          byId = await supabase
+          if (byId.error && (byId.error.code === "42P01" || byId.error.code === "42809")) {
+            byId = await supabase
             .from("user_plan")
             .select("plan, pro_until")
             .eq("user_id", user.id)
             .maybeSingle();
-        }
-        if (byId.data) {
-          plan = !!byId.data.plan;
-          until = byId.data.pro_until ?? null;
+          }
+          if (byId.data) {
+            plan = !!byId.data.plan;
+            until = byId.data.pro_until ?? null;
+          }
         }
 
         if (plan === null) {

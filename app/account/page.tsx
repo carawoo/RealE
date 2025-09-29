@@ -51,6 +51,22 @@ export default function AccountPage() {
         let plan: boolean | null = null;
         let until: string | null = null;
 
+        // 서버 API(서비스 롤) 먼저 시도 — 프로덕션 안정성
+        try {
+          const res = await fetch("/api/user/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (typeof data?.plan === "boolean" || data?.pro_until) {
+              plan = typeof data.plan === "boolean" ? data.plan : null;
+              until = data?.pro_until ?? null;
+            }
+          }
+        } catch {}
+
         let byId = await supabase
           .from("user_plan_readonly")
           .select("plan, pro_until")
