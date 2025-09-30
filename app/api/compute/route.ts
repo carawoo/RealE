@@ -12,6 +12,7 @@ import {
   extractFieldsFrom, 
   mergeFields
 } from "../../../server/shared/utils";
+import { getSupabaseAdmin } from "@/server/supabase";
 type Role = "user" | "assistant";
 type MessageRow = { role: Role; content: string; fields: Fields | null };
 
@@ -24,29 +25,27 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // 최근 메시지 내용 가져오기 (맥락용) - conversations 테이블 사용
 async function fetchRecentMessages(conversationId: string, limit: number = 5): Promise<Array<{ role: Role; content: string }>> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !conversationId) return [];
-  const url =
-    `${SUPABASE_URL}/rest/v1/conversations` +
-    `?select=*` +
-    `&id=eq.${conversationId}` +
-    `&order=created_at.desc` +
-    `&limit=${limit}`;
+  if (!conversationId) return [];
+  
   try {
-    const res = await fetch(url, {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const rows = await res.json();
-    // conversations 테이블에서 메시지 데이터 추출 (임시)
-    return Array.isArray(rows) ? rows.map((r: any) => ({ 
-      role: r.response_type as Role || 'user', 
+    const { data, error } = await getSupabaseAdmin()
+      .from("conversations")
+      .select("message")
+      .eq("id", conversationId)
+      .order("kst_timestamp", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("메시지 조회 실패:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data.map((r: any) => ({ 
+      role: 'user' as Role, // conversations 테이블에는 role 정보가 없으므로 기본값 사용
       content: String(r.message || '') 
     })) : [];
-  } catch {
+  } catch (err) {
+    console.error("메시지 조회 중 오류:", err);
     return [];
   }
 }
@@ -54,88 +53,69 @@ async function fetchRecentMessages(conversationId: string, limit: number = 5): P
 
 // ---------- Supabase ----------
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return {};
-  const url =
-    `${SUPABASE_URL}/rest/v1/conversations` +
-    `?select=*` +
-    `&id=eq.${conversationId}` +
-    `&order=created_at.asc`;
-
+  if (!conversationId) return {};
+  
   try {
-    const res = await fetch(url, {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      cache: "no-store",
-    });
-    if (!res.ok) return {};
-    const rows: any[] = await res.json();
+    const { data, error } = await getSupabaseAdmin()
+      .from("conversations")
+      .select("fields, message")
+      .eq("id", conversationId)
+      .order("kst_timestamp", { ascending: true });
+
+    if (error) {
+      console.error("프로필 조회 실패:", error);
+      return {};
+    }
+
     let acc: Fields = {};
-    for (const r of rows) {
+    for (const r of data || []) {
       if (r?.fields) acc = mergeFields(acc, r.fields);
-      if (r.response_type === "user") acc = mergeFields(acc, extractFieldsFrom(r.message || ''));
+      if (r.message) acc = mergeFields(acc, extractFieldsFrom(r.message));
     }
     return acc;
-  } catch {
+  } catch (err) {
+    console.error("프로필 조회 중 오류:", err);
     return {};
   }
 }
 
-// Supabase에 메시지 저장 - conversations 테이블 사용
+// Supabase에 메시지 저장 - conversations 테이블 사용 (관리자 권한)
 async function saveMessageToSupabase(
   conversationId: string, 
   role: Role, 
   content: string, 
   fields: Fields | null = null
 ): Promise<boolean> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !conversationId) {
-    console.warn("Supabase 저장 실패: 환경변수 또는 conversationId 누락");
+  if (!conversationId) {
+    console.warn("Supabase 저장 실패: conversationId 누락");
     return false;
   }
 
-  const attempt = async () => {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
+  try {
+    console.log(`🔄 Supabase 저장 시도: ${role} 메시지, conversationId: ${conversationId}`);
+    
+    const { data, error } = await getSupabaseAdmin()
+      .from("conversations")
+      .insert({
         id: conversationId,
-        response_type: role,
         message: content,
-        fields: fields,
         account_id: 'api_user',
         kst_timestamp: new Date().toISOString(),
         timestamp: new Date().toISOString()
       })
-    });
-    if (!response.ok) {
-      let detail = '';
-      try { detail = await response.text(); } catch {}
-      throw new Error(`${response.status} ${response.statusText} ${detail}`);
-    }
-  };
+      .select();
 
-  let tries = 0;
-  const maxTries = 3;
-  while (tries < maxTries) {
-    try {
-      await attempt();
-      console.log(`✅ Supabase 저장 성공: ${role} 메시지`);
-      return true;
-    } catch (err) {
-      tries += 1;
-      console.error(`Supabase 저장 실패 (시도 ${tries}/${maxTries}):`, err instanceof Error ? err.message : err);
-      if (tries >= maxTries) return false;
-      // backoff
-      await new Promise(res => setTimeout(res, 150 * tries));
+    if (error) {
+      console.error(`❌ Supabase 저장 실패:`, error);
+      return false;
     }
+
+    console.log(`✅ Supabase 저장 성공: ${role} 메시지`, data);
+    return true;
+  } catch (err) {
+    console.error(`❌ Supabase 저장 실패:`, err instanceof Error ? err.message : err);
+    return false;
   }
-  return false;
 }
 
 // 대화 시작 시 conversation_id 생성 (없는 경우)
