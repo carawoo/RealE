@@ -44,10 +44,73 @@ export default function ProductPage() {
 
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "1fr 1fr", 
+            gridTemplateColumns: "1fr 1fr 1fr", 
             gap: "20px", 
             marginBottom: "40px" 
           }}>
+            {/* 무료 플랜 */}
+            <div className="product-card" style={{ 
+              border: "1px solid #e0e0e0", 
+              borderRadius: "12px", 
+              padding: "30px", 
+              backgroundColor: "#f8f9fa",
+              textAlign: "center",
+              position: "relative"
+            }}>
+              <h3 style={{ color: "#6b7280", marginBottom: "20px" }}>무료 체험</h3>
+              <div style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px", color: "#10b981" }}>
+                무료
+              </div>
+              
+              <div style={{ marginBottom: "30px" }}>
+                <ul style={{ listStyle: "none", padding: 0, textAlign: "left" }}>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    일일 5회 질문
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    기본 부동산 상담
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    정책 프로그램 안내
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    프리랜서 소득 증명 상담
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    금융기관 상담 연결
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    대화 공유 및 저장
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <button 
+                  className="btn"
+                  style={{ 
+                    display: "inline-block", 
+                    padding: "15px 30px", 
+                    fontSize: "16px",
+                    backgroundColor: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    width: "100%"
+                  }}
+                  disabled
+                >
+                  현재 이용 중
+                </button>
+              </div>
+            </div>
             {/* RealE Plus 플랜 */}
             <div className="product-card" style={{ 
               border: "2px solid #2563eb", 
@@ -114,7 +177,12 @@ export default function ProductPage() {
                     display: "inline-block", 
                     padding: "15px 30px", 
                     fontSize: "16px",
-                    textDecoration: "none"
+                    textDecoration: "none",
+                    backgroundColor: "#2563eb",
+                    color: "white",
+                    borderRadius: "8px",
+                    width: "100%",
+                    textAlign: "center"
                   }}
                 >
                   RealE Plus 구독하기
@@ -191,7 +259,9 @@ export default function ProductPage() {
                     textDecoration: "none",
                     backgroundColor: "#059669",
                     color: "white",
-                    borderRadius: "8px"
+                    borderRadius: "8px",
+                    width: "100%",
+                    textAlign: "center"
                   }}
                 >
                   RealE Pro 구독하기
@@ -264,6 +334,18 @@ export default function ProductPage() {
         </div>
 
       </div>
+      
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .product-card {
+            margin-bottom: 20px;
+          }
+          
+          .product-card > div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }
