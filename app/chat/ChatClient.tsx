@@ -423,6 +423,13 @@ export default function ChatClient() {
   const questionsLeft = effectiveProAccess
     ? Math.max(dailyLimit - dailyUsed, 0)
     : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
+  
+  // 디버깅을 위한 콘솔 로그
+  console.log('Debug - FREE_QUESTION_LIMIT:', FREE_QUESTION_LIMIT);
+  console.log('Debug - effectiveProAccess:', effectiveProAccess);
+  console.log('Debug - normalizedQuestionCount:', normalizedQuestionCount);
+  console.log('Debug - questionsLeft:', questionsLeft);
+  console.log('Debug - user:', !!user);
   const outOfQuota = effectiveProAccess
     ? dailyUsed >= dailyLimit
     : normalizedQuestionCount >= FREE_QUESTION_LIMIT;
