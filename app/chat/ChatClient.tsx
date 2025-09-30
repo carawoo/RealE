@@ -31,7 +31,8 @@ function getUserStorageKey(baseKey: string, userId?: string | null): string {
 const FREE_QUESTION_LIMIT = 5;
 const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
-const PRO_DAILY_LIMIT = 30; // RealE Plus 일일 질문 제한
+const PLUS_DAILY_LIMIT = 30; // RealE Plus 일일 질문 제한
+const PRO_DAILY_LIMIT = 50; // RealE Pro 일일 질문 제한
 const PRO_DURATION_DAYS = 30; // 구독 기간(일)
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
@@ -412,12 +413,18 @@ export default function ChatClient() {
   }, [user?.id, mounted]);
 
   const effectiveProAccess = proValid || quotaDisabledInDev;
+  
+  // Pro 플랜 감지 (URL 파라미터나 사용자 플랜 정보 확인)
+  const isProPlan = searchParams.get('plan') === 'pro' || (user && user.user_metadata?.plan === 'pro');
+  const dailyLimit = isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT;
+  const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
+  
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
   const questionsLeft = effectiveProAccess
-    ? Math.max(PRO_DAILY_LIMIT - dailyUsed, 0)
+    ? Math.max(dailyLimit - dailyUsed, 0)
     : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
   const outOfQuota = effectiveProAccess
-    ? dailyUsed >= PRO_DAILY_LIMIT
+    ? dailyUsed >= dailyLimit
     : normalizedQuestionCount >= FREE_QUESTION_LIMIT;
 
   function ensureConversationId() {
@@ -638,7 +645,7 @@ export default function ChatClient() {
             {!user
               ? `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`
               : effectiveProAccess
-              ? `RealE Plus 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${PRO_DAILY_LIMIT}회, 구독기간 ${PRO_DURATION_DAYS}일)`
+              ? `${planName} 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${dailyLimit}회, 구독기간 ${PRO_DURATION_DAYS}일)`
               : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
           {!proAccess && !outOfQuota && (
@@ -658,12 +665,12 @@ export default function ChatClient() {
             {effectiveProAccess ? (
               <>
                 <p className="chat-paywall__body">
-                  오늘의 일일 한도({PRO_DAILY_LIMIT}회)를 모두 사용했어요. 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
+                  오늘의 일일 한도({dailyLimit}회)를 모두 사용했어요. 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
                 </p>
               </>
             ) : (
               <p className="chat-paywall__body">
-                무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus {PRO_DURATION_DAYS}일 이용(일일 {PRO_DAILY_LIMIT}회)할 수 있어요.
+                무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus {PRO_DURATION_DAYS}일 이용(일일 {PLUS_DAILY_LIMIT}회)할 수 있어요.
               </p>
             )}
             <button
