@@ -267,6 +267,16 @@ export default function AccountPage() {
               {paymentError && <p className="auth-error" style={{ marginTop: 8 }}>{paymentError}</p>}
             </div>
           )}
+          {proActive && (
+            <div style={{ marginTop: 12 }}>
+              <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
+                더 높은 한도가 필요하시면 Pro로 업그레이드할 수 있어요.
+              </p>
+              <Link className="auth-primary" href="/checkout?plan=pro" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 8 }}>
+                5,000원에 RealE Pro 업그레이드
+              </Link>
+            </div>
+          )}
         </section>
         <section className="auth-section">
           <h2 style={{ margin: 0, fontSize: 18 }}>기본 정보</h2>
