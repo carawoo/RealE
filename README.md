@@ -71,6 +71,8 @@ SUPABASE_KAKAO_CLIENT_SECRET=...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 NEXT_PUBLIC_STRIPE_PRICE_ID=price_xxx
 STRIPE_SECRET_KEY=sk_test_xxx
+# Brave Search API (웹 검색용)
+BRAVE_API_KEY=your_brave_api_key
 ```
 
 > Stripe 테스트 키를 사용하면 `https://real-e.space`에서 결제 플로우를 검증할 수 있습니다. 프로덕션 배포 시에는 실키로 교체하세요.

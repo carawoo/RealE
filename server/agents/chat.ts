@@ -7,6 +7,78 @@ const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 웹 검색 함수
+async function searchWeb(query: string): Promise<string> {
+  try {
+    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`, {
+      headers: {
+        'X-Subscription-Token': process.env.BRAVE_API_KEY || '',
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.warn('Brave API not available, skipping web search');
+      return '';
+    }
+    
+    const data = await response.json();
+    const results = data.web?.results || [];
+    
+    let searchResults = '최신 정보 및 경험담:\n';
+    results.forEach((result: any, index: number) => {
+      searchResults += `${index + 1}. ${result.title}\n`;
+      searchResults += `   ${result.description}\n`;
+      searchResults += `   링크: ${result.url}\n\n`;
+    });
+    
+    return searchResults;
+  } catch (error) {
+    console.warn('Web search failed:', error);
+    return '';
+  }
+}
+
+// 검색 쿼리 생성
+function generateSearchQueries(message: string, userProfile: Partial<UserProfile>): string[] {
+  const queries: string[] = [];
+  
+  // 프리랜서 소득 증명 관련
+  if (userProfile.employmentType === 'freelancer') {
+    queries.push('프리랜서 소득증명 경험담 2024');
+    queries.push('프리랜서 대출 승인 후기');
+    queries.push('사업자등록 없이 대출 받은 경험');
+  }
+  
+  // 정책 대출 관련
+  if (message.includes('디딤돌') || message.includes('보금자리')) {
+    queries.push('디딤돌대출 신청 후기 2024');
+    queries.push('보금자리론 승인 경험담');
+  }
+  
+  if (message.includes('신생아') || userProfile.isNewborn) {
+    queries.push('신생아 특례대출 신청 후기');
+  }
+  
+  if (message.includes('다자녀') || userProfile.isMultiChild) {
+    queries.push('다자녀 특례대출 경험담');
+  }
+  
+  // 매매계약 관련
+  if (message.includes('매매계약') || message.includes('계약금')) {
+    queries.push('매매계약 대출 실패 대처법');
+    queries.push('계약금 환불 받은 경험');
+  }
+  
+  // 일반적인 부동산 대출 관련
+  if (message.includes('대출') || message.includes('주택')) {
+    queries.push('부동산 대출 승인 팁 2024');
+    queries.push('대출 거절 후 재신청 성공 사례');
+  }
+  
+  return queries.slice(0, 2); // 최대 2개 쿼리만 실행
+}
+
 // 사용자 메시지에서 프로필 정보 추출
 function extractUserProfile(message: string, history: Array<{ role: 'user' | 'assistant'; content: string }>): Partial<UserProfile> {
   const fullText = message + " " + history.map(h => h.content).join(" ");
@@ -111,6 +183,9 @@ export async function runChatAgent(
 금융기관 상담 연결
 주택도시기금(1588-8111), 국민은행(1588-9999), 신한은행(1599-8000), 우리은행(1588-2000) 등 구체적인 연락처를 제공합니다.
 
+실제 경험담 활용
+웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 포함하여 더욱 실용적이고 현실적인 조언을 제공합니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
+
 답변 원칙
 정확성: 최신 정책과 규제를 정확히 반영합니다.
 구체성: 추상적 조언보다는 구체적인 수치, 계산, 실행 방법을 제시합니다.
@@ -208,11 +283,26 @@ export async function runChatAgent(
     // 금융기관 상담 정보 생성
     const financialAdvice = generateFinancialAdvice();
     
+    // 웹 검색 실행
+    const searchQueries = generateSearchQueries(message, userProfile);
+    let webSearchResults = '';
+    
+    if (searchQueries.length > 0) {
+      try {
+        const searchPromises = searchQueries.map(query => searchWeb(query));
+        const searchResults = await Promise.all(searchPromises);
+        webSearchResults = searchResults.filter(result => result.length > 0).join('\n\n');
+      } catch (error) {
+        console.warn('Web search failed:', error);
+      }
+    }
+    
     // 컨텍스트 정보를 시스템 프롬프트에 추가
     const enhancedSystemPrompt = systemPrompt + 
       (policyRecommendations ? `\n\n${policyRecommendations}` : "") +
       (freelancerAdvice ? `\n\n${freelancerAdvice}` : "") +
-      (financialAdvice ? `\n\n${financialAdvice}` : "");
+      (financialAdvice ? `\n\n${financialAdvice}` : "") +
+      (webSearchResults ? `\n\n${webSearchResults}` : "");
 
     const completion = await openaiClient.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
