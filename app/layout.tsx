@@ -2,9 +2,11 @@ import "./global.css";
 import GlobalNav from "./GlobalNav";
 import AuthProvider from "./providers/AuthProvider";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.real-e.space";
+
 export const metadata = {
-  title: "RealE",
-  description: "MVP",
+  title: "RealE - 부동산 대출 AI 비서",
+  description: "부동산·금융·인테리어 전문가가 실시간으로 답변합니다. 대출 시나리오 비교, 정책 매칭, 프리랜서 소득증명 상담까지.",
   icons: {
     icon: [
       { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
@@ -16,6 +18,29 @@ export const metadata = {
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
     ]
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "RealE",
+    title: "RealE - 부동산 대출 AI 비서",
+    description:
+      "부동산·금융·인테리어 전문가가 실시간으로 답변합니다. 대출 시나리오 비교, 정책 매칭, 프리랜서 소득증명 상담까지.",
+    images: [
+      {
+        url: `${SITE_URL}/realE-logo.png`,
+        width: 512,
+        height: 512,
+        alt: "RealE"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RealE - 부동산 대출 AI 비서",
+    description:
+      "부동산·금융·인테리어 전문가가 실시간으로 답변합니다. 대출 시나리오 비교, 정책 매칭, 프리랜서 소득증명 상담까지.",
+    images: [`${SITE_URL}/realE-logo.png`]
   }
 };
 
