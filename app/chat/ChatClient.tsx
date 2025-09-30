@@ -456,56 +456,54 @@ export default function ChatClient() {
     });
   }
 
-  // 스트리밍 중 문단(\n\n)이나 일정 길이에서 자연 분할하여 여러 말풍선으로 보여주기
+  // 스트리밍 중: 말풍선 하나가 200자를 넘으면 다음 말풍선으로 자동 분리
   function appendChunk(chunk: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
     pendingRef.current += chunk;
 
-    // 1) 문단 경계(\n\n) 우선 분리
-    while (pendingRef.current.includes("\n\n") && splitCountRef.current < 3) {
-      const cut = pendingRef.current.indexOf("\n\n");
-      const segment = pendingRef.current.slice(0, cut);
-      pendingRef.current = pendingRef.current.slice(cut + 2);
-      setMessages((prev) => {
-        if (!prev[index]) return prev;
-        const next = [...prev];
-        const current = next[index];
-        next[index] = { ...current, content: (current.content ?? "") + segment };
-        // 새 말풍선 시작
-        splitCountRef.current += 1;
-        (next as any).push(makeMessage("assistant", ""));
-        assistantPointer.current = next.length - 1;
-        return next;
-      });
-    }
-
-    // 2) 너무 길어지면 문장 경계에서 한 번 더 분리
-    if (pendingRef.current.length > 280 && splitCountRef.current < 3) {
-      const match = pendingRef.current.match(/^(.*?[\.\!\?])\s+(.*)$/s);
-      if (match && match[1] && match[2]) {
-        const head = match[1];
-        const tail = match[2];
-        setMessages((prev) => {
-          if (!prev[index]) return prev;
-          const next = [...prev];
-          const current = next[index];
-          next[index] = { ...current, content: (current.content ?? "") + head };
-          splitCountRef.current += 1;
-          (next as any).push(makeMessage("assistant", ""));
-          assistantPointer.current = next.length - 1;
-          return next;
-        });
-        pendingRef.current = tail;
-      }
-    }
-
-    // 3) 남은 버퍼는 현재 말풍선에만 렌더링(새 말풍선은 만들지 않음)
     setMessages((prev) => {
-      if (!prev[assistantPointer.current]) return prev;
+      if (!prev[index]) return prev;
       const next = [...prev];
-      const i = assistantPointer.current;
-      next[i] = { ...next[i], content: pendingRef.current };
+      let i = index;
+      const MAX = 200;
+
+      // 현재 말풍선의 누적 텍스트
+      let currentText = (next[i].content ?? "") + pendingRef.current;
+      pendingRef.current = "";
+
+      // 헬퍼: 경계에 맞춰 잘라내기(문장부호/공백 우선, 없으면 하드컷)
+      function cutAtBoundary(text: string, max: number): [string, string] {
+        if (text.length <= max) return [text, ""];
+        const slice = text.slice(0, max);
+        // 문장부호 + 공백
+        const punct = slice.search(/[\.!?](?=\s|$)(?!.*[\.!?](?=\s|$))/);
+        if (punct !== -1 && punct >= max - 40) {
+          const pos = punct + 1; // 부호까지 포함
+          return [text.slice(0, pos), text.slice(pos).trimStart()];
+        }
+        // 공백 경계
+        const ws = slice.lastIndexOf(" ");
+        if (ws >= max - 40) {
+          return [text.slice(0, ws), text.slice(ws).trimStart()];
+        }
+        // 하드 컷
+        return [slice, text.slice(max)];
+      }
+
+      // 루프: 200자 단위로 잘라서 말풍선 생성
+      while (currentText.length > MAX) {
+        const [head, tail] = cutAtBoundary(currentText, MAX);
+        next[i] = { ...next[i], content: head };
+        // 새 말풍선 시작
+        (next as any).push(makeMessage("assistant", ""));
+        i = next.length - 1;
+        assistantPointer.current = i;
+        currentText = tail;
+      }
+
+      // 남은 텍스트를 현재 말풍선에 반영
+      next[i] = { ...next[i], content: currentText };
       return next;
     });
   }
