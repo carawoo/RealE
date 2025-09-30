@@ -26,37 +26,12 @@ export async function POST(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const isUuid = (v?: string) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-      let convId: string | null = null;
-      if (isUuid(conversationId)) {
-        convId = conversationId as string;
-        // 보장용 upsert (없으면 생성)
-        await admin.from('conversations').upsert({ id: convId }, { onConflict: 'id' });
-      } else {
-        // UUID가 아니면 스키마에 맞는 최소 컬럼으로 헤더 생성 후 그 id 사용
-        const now = new Date().toISOString();
-        const created = await admin
-          .from('conversations')
-          .insert({
-            response_type: 'user',
-            account_id_text: 'unknown_user',
-            kst_timestamp: now,
-            timestamp: now,
-            message: '[init]'
-          })
-          .select('id')
-          .single();
-        if (!created.error && created.data?.id) convId = String(created.data.id);
-      }
+      // 대시보드 의존성 제거: 헤더(conversations)에 쓰지 않고 messages만 기록
+      const convId: string | null = isUuid(conversationId) ? (conversationId as string) : null;
 
       // 메시지 적재 (convId가 없으면 NULL 허용 스키마가 아닌 경우는 skip)
-      if (convId) {
-        await admin.from("messages").insert({ conversation_id: convId, role: "user", content: message });
-        await admin.from("messages").insert({ conversation_id: convId, role: "assistant", content: reply });
-      } else {
-        // convId 생성 실패 시라도 로그는 남긴다(대화 연결 없이)
-        await admin.from("messages").insert({ conversation_id: null as any, role: "user", content: message }).throwOnError();
-        await admin.from("messages").insert({ conversation_id: null as any, role: "assistant", content: reply }).throwOnError();
-      }
+      await admin.from("messages").insert({ conversation_id: convId as any, role: "user", content: message }).throwOnError();
+      await admin.from("messages").insert({ conversation_id: convId as any, role: "assistant", content: reply }).throwOnError();
     } catch (e) {
       console.warn('[copilot] supabase logging skipped:', e);
     }
