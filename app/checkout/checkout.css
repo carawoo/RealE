@@ -1,6 +1,6 @@
 .checkout-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8fafc;
   padding: 20px;
 }
 
@@ -10,31 +10,24 @@
 }
 
 .back-button {
-  color: white;
+  color: #3b82f6;
   text-decoration: none;
   font-size: 14px;
   margin-bottom: 20px;
   display: inline-block;
-  opacity: 0.9;
-  transition: all 0.3s ease;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  opacity: 0.8;
+  transition: opacity 0.2s;
 }
 
 .back-button:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateX(-2px);
 }
 
 .checkout-header h1 {
-  color: white;
-  font-size: 32px;
-  font-weight: 700;
+  color: #1f2937;
+  font-size: 28px;
+  font-weight: 600;
   margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .checkout-content {
@@ -47,12 +40,11 @@
 
 .product-summary {
   background: white;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   height: fit-content;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e5e7eb;
 }
 
 .product-summary h2 {
@@ -102,11 +94,10 @@
 
 .payment-form {
   background: white;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
 }
 
 .payment-form h2 {
@@ -135,21 +126,19 @@
 
 .form-group input {
   width: 100%;
-  padding: 16px 20px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s;
   box-sizing: border-box;
-  background: #f8fafc;
+  background: white;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px #3b82f6;
 }
 
 .agreement-section {
@@ -179,39 +168,32 @@
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   margin-right: 12px;
   cursor: pointer;
-  accent-color: #667eea;
-  border-radius: 4px;
+  accent-color: #3b82f6;
 }
 
 .payment-button {
   width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #3b82f6;
   color: white;
   border: none;
-  padding: 20px 32px;
-  border-radius: 16px;
-  font-size: 18px;
-  font-weight: 700;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  transition: background-color 0.2s;
 }
 
 .payment-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+  background: #2563eb;
 }
 
 .payment-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  background: #1d4ed8;
 }
 
 .payment-methods {
