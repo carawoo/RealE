@@ -4,7 +4,19 @@ import AuthProvider from "./providers/AuthProvider";
 
 export const metadata = {
   title: "RealE",
-  description: "MVP"
+  description: "MVP",
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ]
+  }
 };
 
 export default function RootLayout({
@@ -16,6 +28,7 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <meta name="google-site-verification" content="y6oCIZ8CC_KX6RY3XZW3wn07-lhvnsYCrbLwAayqBuI" />
+        <meta name="naver-site-verification" content="c39fcbee55418ddb546b452d9ea47e98f1b1ca17" />
         {process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
           <script async src="https://js.stripe.com/v3" />
         )}
