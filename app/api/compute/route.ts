@@ -22,13 +22,13 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ---------- Helpers ----------
 
-// 최근 메시지 내용 가져오기 (맥락용)
+// 최근 메시지 내용 가져오기 (맥락용) - conversations 테이블 사용
 async function fetchRecentMessages(conversationId: string, limit: number = 5): Promise<Array<{ role: Role; content: string }>> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !conversationId) return [];
   const url =
-    `${SUPABASE_URL}/rest/v1/messages` +
-    `?select=role,content,created_at` +
-    `&conversation_id=eq.${conversationId}` +
+    `${SUPABASE_URL}/rest/v1/conversations` +
+    `?select=*` +
+    `&id=eq.${conversationId}` +
     `&order=created_at.desc` +
     `&limit=${limit}`;
   try {
@@ -41,7 +41,11 @@ async function fetchRecentMessages(conversationId: string, limit: number = 5): P
     });
     if (!res.ok) return [];
     const rows = await res.json();
-    return Array.isArray(rows) ? rows.map((r: any) => ({ role: r.role as Role, content: String(r.content || '') })) : [];
+    // conversations 테이블에서 메시지 데이터 추출 (임시)
+    return Array.isArray(rows) ? rows.map((r: any) => ({ 
+      role: r.response_type as Role || 'user', 
+      content: String(r.message || '') 
+    })) : [];
   } catch {
     return [];
   }
@@ -52,9 +56,9 @@ async function fetchRecentMessages(conversationId: string, limit: number = 5): P
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return {};
   const url =
-    `${SUPABASE_URL}/rest/v1/messages` +
-    `?select=fields,role,content,created_at` +
-    `&conversation_id=eq.${conversationId}` +
+    `${SUPABASE_URL}/rest/v1/conversations` +
+    `?select=*` +
+    `&id=eq.${conversationId}` +
     `&order=created_at.asc`;
 
   try {
@@ -66,11 +70,11 @@ async function fetchConversationProfile(conversationId: string): Promise<Fields>
       cache: "no-store",
     });
     if (!res.ok) return {};
-    const rows: MessageRow[] = await res.json();
+    const rows: any[] = await res.json();
     let acc: Fields = {};
     for (const r of rows) {
       if (r?.fields) acc = mergeFields(acc, r.fields);
-      if (r.role === "user") acc = mergeFields(acc, extractFieldsFrom(r.content));
+      if (r.response_type === "user") acc = mergeFields(acc, extractFieldsFrom(r.message || ''));
     }
     return acc;
   } catch {
@@ -78,7 +82,7 @@ async function fetchConversationProfile(conversationId: string): Promise<Fields>
   }
 }
 
-// Supabase에 메시지 저장
+// Supabase에 메시지 저장 - conversations 테이블 사용
 async function saveMessageToSupabase(
   conversationId: string, 
   role: Role, 
@@ -91,7 +95,7 @@ async function saveMessageToSupabase(
   }
 
   const attempt = async () => {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,10 +104,13 @@ async function saveMessageToSupabase(
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        conversation_id: conversationId,
-        role: role,
-        content: content,
-        fields: fields
+        id: conversationId,
+        response_type: role,
+        message: content,
+        fields: fields,
+        account_id: 'api_user',
+        kst_timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
     });
     if (!response.ok) {
