@@ -178,9 +178,18 @@ function getPredefinedCaseStudies(query: string): string {
    - 다른 은행 시도로 성공`;
 }
 
-// 검색 쿼리 생성 - 더 다양한 실제 사례 검색
+// 검색 쿼리 생성 - 항상 실제 사례 검색
 function generateSearchQueries(message: string, userProfile: Partial<UserProfile>): string[] {
   const queries: string[] = [];
+  
+  // 모든 질문에 대해 실제 사례 검색 (더 적극적으로)
+  const hasQuestionKeywords = /고민|질문|궁금|어떻게|방법|조언|도움|상담|경험|후기|성공|실패|어려움|문제/.test(message);
+  
+  if (hasQuestionKeywords) {
+    // 기본적인 실제 사례 검색
+    queries.push('부동산 대출 실제 경험담');
+    queries.push('대출 승인 성공 사례');
+  }
   
   // 프리랜서 소득 증명 관련
   if (userProfile.employmentType === 'freelancer') {
@@ -233,6 +242,18 @@ function generateSearchQueries(message: string, userProfile: Partial<UserProfile
   if (message.includes('신용등급') || message.includes('신용') || message.includes('등급')) {
     queries.push('대출');
     queries.push('신용등급 낮아도 대출 승인');
+  }
+  
+  // 금리 관련 질문
+  if (message.includes('금리') || message.includes('이자')) {
+    queries.push('대출');
+    queries.push('대출 금리 협상 성공 사례');
+  }
+  
+  // LTV, DSR 관련 질문
+  if (message.includes('LTV') || message.includes('DSR') || message.includes('한도')) {
+    queries.push('대출');
+    queries.push('대출 한도 확보 성공 사례');
   }
   
   // 중복 제거 후 최대 3개 쿼리 반환
@@ -364,7 +385,13 @@ export async function runChatAgent(
 주택도시기금(1588-8111), 국민은행(1588-9999), 신한은행(1599-8000), 우리은행(1588-2000) 등 구체적인 연락처를 제공합니다.
 
 실제 경험담 활용
-웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 자연스럽게 포함합니다. "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 실제 사례를 언급하며 구체적인 내용을 정리해서 알려줍니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
+사용자가 고민이나 질문을 할 때는 항상 실제 사례를 함께 이야기해주세요. 웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 자연스럽게 포함합니다. "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 실제 사례를 언급하며 구체적인 내용을 정리해서 알려줍니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
+
+답변 스타일:
+- 이론적인 설명보다는 실제 사례 중심으로 답변
+- "실제로 A씨는 이렇게 해서 성공했어요" 같은 구체적인 사례 제시
+- 사용자의 상황과 유사한 사례를 찾아서 공감대 형성
+- 실패 사례도 함께 언급하여 주의사항 안내
 
 관련 링크 제공
 정책 프로그램이나 금융기관 관련 정보를 제공할 때는 반드시 클릭 가능한 링크를 함께 제공합니다. "자세한 정보는 여기서 확인하실 수 있어요: [링크]" 또는 "신청하시려면 이 링크를 클릭해주세요: [링크]" 등의 형태로 자연스럽게 링크를 언급합니다.
