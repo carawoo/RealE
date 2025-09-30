@@ -178,7 +178,7 @@ export default function CheckoutPage() {
           </div>
 
           <button type="submit" className="payment-button">
-            정기결제 요청
+            결제 요청
           </button>
         </form>
       </div>
