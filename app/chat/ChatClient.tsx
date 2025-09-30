@@ -456,54 +456,56 @@ export default function ChatClient() {
     });
   }
 
-  // 스트리밍 중: 말풍선 하나가 200자를 넘으면 다음 말풍선으로 자동 분리
+  // 스트리밍 중: 500자 제한이지만 문장 경계(…다./…요./…니다. 등)에서만 다음 말풍선으로 넘김
   function appendChunk(chunk: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
     pendingRef.current += chunk;
-
     setMessages((prev) => {
       if (!prev[index]) return prev;
       const next = [...prev];
       let i = index;
-      const MAX = 200;
+      const MAX = 500;
 
       // 현재 말풍선의 누적 텍스트
-      let currentText = (next[i].content ?? "") + pendingRef.current;
-      pendingRef.current = "";
+      let curr = next[i].content ?? "";
 
-      // 헬퍼: 경계에 맞춰 잘라내기(문장부호/공백 우선, 없으면 하드컷)
-      function cutAtBoundary(text: string, max: number): [string, string] {
-        if (text.length <= max) return [text, ""];
-        const slice = text.slice(0, max);
-        // 문장부호 + 공백
-        const punct = slice.search(/[\.!?](?=\s|$)(?!.*[\.!?](?=\s|$))/);
-        if (punct !== -1 && punct >= max - 40) {
-          const pos = punct + 1; // 부호까지 포함
-          return [text.slice(0, pos), text.slice(pos).trimStart()];
+      // 문장 패턴 확장: 다./요./니다./예요./에요./습니다./죠. 및 ? ! 로 끝나는 문장
+      const re = /(.*?(?:다\.|요\.|니다\.|예요\.|에요\.|습니다\.|죠\.|\?|!)(?=\s|$))/gs;
+      const buffer = pendingRef.current;
+      let lastIdx = 0;
+      let m: RegExpExecArray | null;
+
+      // 헬퍼: 문장을 현재/새 말풍선에 배치
+      function place(sentence: string) {
+        // 현재 말풍선에 더하면 500 초과? -> 새 말풍선으로 넘김
+        if (curr.length > 0 && curr.length + sentence.length > MAX) {
+          // 현재 말풍선 고정 후 새 말풍선 시작
+          next[i] = { ...next[i], content: curr };
+          (next as any).push(makeMessage("assistant", ""));
+          i = next.length - 1;
+          assistantPointer.current = i;
+          curr = "";
         }
-        // 공백 경계
-        const ws = slice.lastIndexOf(" ");
-        if (ws >= max - 40) {
-          return [text.slice(0, ws), text.slice(ws).trimStart()];
-        }
-        // 하드 컷
-        return [slice, text.slice(max)];
+        // 문장이 자체로 500자를 넘더라도 그대로 한 말풍선에 실음(요구사항: 500 넘으면 그 문장은 다음 채팅)
+        curr += sentence;
       }
 
-      // 루프: 200자 단위로 잘라서 말풍선 생성
-      while (currentText.length > MAX) {
-        const [head, tail] = cutAtBoundary(currentText, MAX);
-        next[i] = { ...next[i], content: head };
-        // 새 말풍선 시작
-        (next as any).push(makeMessage("assistant", ""));
-        i = next.length - 1;
-        assistantPointer.current = i;
-        currentText = tail;
+      // 버퍼 내 완결된 문장들을 처리
+      while ((m = re.exec(buffer)) !== null) {
+        const sentence = m[1];
+        const seg = buffer.slice(lastIdx, m.index) + sentence; // '다.' 전의 누적 포함
+        // seg는 사실상 sentence 자체이지만 안정성 위해 lastIdx 고려
+        place(seg);
+        lastIdx = m.index + sentence.length;
       }
 
-      // 남은 텍스트를 현재 말풍선에 반영
-      next[i] = { ...next[i], content: currentText };
+      // 미완의 꼬리 부분은 다음 청크에서 이어붙이도록 유지
+      const tail = buffer.slice(lastIdx);
+      pendingRef.current = tail;
+
+      // 화면에 현재 누적 반영
+      next[i] = { ...next[i], content: curr };
       return next;
     });
   }
@@ -511,12 +513,49 @@ export default function ChatClient() {
   function finalizeAssistant(content: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
+    const MAX = 500;
+    const text = (pendingRef.current || content) || "";
     setMessages((prev) => {
       if (!prev[index]) return prev;
       const next = [...prev];
-      // 남아 있는 버퍼와 함께 마무리
-      const finalText = pendingRef.current || content;
-      next[index] = { ...next[index], content: finalText };
+      let i = index;
+
+      // 남은 텍스트를 확장된 문장 단위로 분배
+      let curr = next[i].content ?? "";
+      const re = /(.*?(?:다\.|요\.|니다\.|예요\.|에요\.|습니다\.|죠\.|\?|!)(?=\s|$))/gs;
+      let last = 0;
+      let m: RegExpExecArray | null;
+      function pushSentence(s: string) {
+        if (curr.length > 0 && curr.length + s.length > MAX) {
+          next[i] = { ...next[i], content: curr };
+          (next as any).push(makeMessage("assistant", ""));
+          i = next.length - 1;
+          curr = "";
+        }
+        curr += s;
+      }
+
+      while ((m = re.exec(text)) !== null) {
+        const s = m[1];
+        const seg = text.slice(last, m.index) + s;
+        pushSentence(seg);
+        last = m.index + s.length;
+      }
+      // 마지막 꼬리(문장 미완성분)는 남아 있으면 그대로 붙임
+      const tail = text.slice(last);
+      if (tail) {
+        // tail이 500을 넘으면 새 말풍선으로 이동
+        if (curr.length > 0 && curr.length + tail.length > MAX) {
+          next[i] = { ...next[i], content: curr };
+          (next as any).push(makeMessage("assistant", tail));
+        } else {
+          curr += tail;
+          next[i] = { ...next[i], content: curr };
+        }
+      } else {
+        next[i] = { ...next[i], content: curr };
+      }
+      assistantPointer.current = -1;
       return next;
     });
     assistantPointer.current = -1;
