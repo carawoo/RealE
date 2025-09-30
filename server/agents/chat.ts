@@ -48,6 +48,12 @@ function generateSearchQueries(message: string, userProfile: Partial<UserProfile
     queries.push('프리랜서 소득증명 경험담 2024');
     queries.push('프리랜서 대출 승인 후기');
     queries.push('사업자등록 없이 대출 받은 경험');
+    
+    // 출산으로 인한 소득 공백이 있는 경우
+    if (userProfile.hasChildren) {
+      queries.push('출산 후 프리랜서 소득증명 방법');
+      queries.push('육아휴직 후 대출 신청 경험');
+    }
   }
   
   // 정책 대출 관련
@@ -97,7 +103,7 @@ function extractUserProfile(message: string, history: Array<{ role: 'user' | 'as
   
   // 자녀 관련 정보
   profile.hasChildren = /자녀|아이|아기|신생아|출산/.test(fullText);
-  profile.isNewborn = /2022년|2023년|2024년|2025년.*출생|신생아/.test(fullText);
+  profile.isNewborn = /2022년|2023년|2024년|2025년.*출생|신생아|최근.*출산|올해.*출산/.test(fullText);
   profile.isMultiChild = /자녀\s*2명|자녀\s*3명|다자녀/.test(fullText);
   profile.childrenCount = profile.isMultiChild ? 2 : (profile.hasChildren ? 1 : 0);
   
@@ -186,6 +192,9 @@ export async function runChatAgent(
 실제 경험담 활용
 웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 포함하여 더욱 실용적이고 현실적인 조언을 제공합니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
 
+사용자 상황 정확히 파악
+사용자가 제공한 구체적인 상황(출산, 계약 기간, 소득 공백 등)을 정확히 파악하고, 이에 맞는 맞춤형 조언을 제공합니다. 사용자의 실제 상황을 무시하고 일반적인 답변을 하지 않습니다.
+
 답변 원칙
 정확성: 최신 정책과 규제를 정확히 반영합니다.
 구체성: 추상적 조언보다는 구체적인 수치, 계산, 실행 방법을 제시합니다.
@@ -273,6 +282,7 @@ export async function runChatAgent(
   try {
     // 사용자 프로필 추출
     const userProfile = extractUserProfile(message, history);
+    console.log('Extracted user profile:', userProfile);
     
     // 정책 프로그램 추천 생성
     const policyRecommendations = generatePolicyRecommendations(userProfile);
