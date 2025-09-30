@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import "./checkout.css";
 
 export default function CheckoutPage() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get('plan');
+  
+  const isPro = plan === 'pro';
   const [formData, setFormData] = useState({
     cardNumber: "",
     expiryDate: "",
@@ -59,26 +64,26 @@ export default function CheckoutPage() {
 
   return (
     <div className="checkout-container">
-      <div className="checkout-header">
-        <Link href="/product" className="back-button">
-          ← 상품 페이지로 돌아가기
-        </Link>
-        <h1>RealE Plus 구독 결제</h1>
-      </div>
+        <div className="checkout-header">
+          <Link href="/product" className="back-button">
+            ← 상품 페이지로 돌아가기
+          </Link>
+          <h1>{isPro ? 'RealE Pro 구독 결제' : 'RealE Plus 구독 결제'}</h1>
+        </div>
 
       <div className="checkout-content">
         <div className="product-summary">
           <h2>주문 상품</h2>
           <div className="product-item">
             <div className="product-info">
-              <h3>RealE Plus 월간 구독</h3>
-              <p>일일 30회 무제한 질문 • 정부 지원 대출 프로그램 자동 매칭 • 프리랜서 소득 증명 상담</p>
+              <h3>{isPro ? 'RealE Pro 월간 구독' : 'RealE Plus 월간 구독'}</h3>
+              <p>{isPro ? '일일 50회 무제한 질문 • 정부 지원 대출 프로그램 자동 매칭 • 프리랜서 소득 증명 상담' : '일일 30회 무제한 질문 • 정부 지원 대출 프로그램 자동 매칭 • 프리랜서 소득 증명 상담'}</p>
             </div>
-            <div className="product-price">3,900원</div>
+            <div className="product-price">{isPro ? '5,000원' : '3,900원'}</div>
           </div>
           <div className="total-price">
             <span>총 결제금액</span>
-            <span>3,900원</span>
+            <span>{isPro ? '5,000원' : '3,900원'}</span>
           </div>
         </div>
 
