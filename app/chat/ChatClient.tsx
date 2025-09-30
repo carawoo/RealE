@@ -123,6 +123,8 @@ export default function ChatClient() {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const assistantPointer = useRef<number>(-1);
+  // 한 답변을 여러 말풍선으로 자연스럽게 분할하기 위한 카운터
+  const splitCountRef = useRef<number>(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [proAccess, setProAccess] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -448,16 +450,63 @@ export default function ChatClient() {
     return conversationId;
   }
 
+  // 새 어시스턴트 말풍선 생성
+  function pushNewAssistantBubble(): void {
+    setMessages((prev) => {
+      const next = [...prev, makeMessage("assistant", "")];
+      assistantPointer.current = next.length - 1;
+      return next;
+    });
+  }
+
+  // 스트리밍 중 문단(\n\n)이나 일정 길이에서 자연 분할하여 여러 말풍선으로 보여주기
   function appendChunk(chunk: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
     setMessages((prev) => {
       if (!prev[index]) return prev;
       const next = [...prev];
-      next[index] = {
-        ...next[index],
-        content: (next[index].content ?? "") + chunk,
-      };
+      const currentContent = (next[index].content ?? "") + chunk;
+
+      // 1) 문단 구분(\n\n) 기준으로 분할
+      const paragraphs = currentContent.split(/\n\n+/);
+      if (paragraphs.length > 1 && splitCountRef.current < 3) {
+        // 첫 문단은 현재 말풍선에, 이후 문단은 새 말풍선으로
+        next[index] = { ...next[index], content: paragraphs[0] };
+        let remaining = paragraphs.slice(1);
+        for (const p of remaining) {
+          if (p.length === 0) continue;
+          if (splitCountRef.current >= 3) {
+            // 더 이상 분할하지 않고 남은 내용을 현재 말풍선에 이어 붙임
+            const lastIdx = assistantPointer.current;
+            next[lastIdx] = { ...next[lastIdx], content: next[lastIdx].content + "\n\n" + p };
+            continue;
+          }
+          splitCountRef.current += 1;
+          // 새 말풍선에 문단 시작
+          // setMessages를 중첩 호출하지 않기 위해 next에 직접 푸시 불가 -> 임시로 플래그 후반 처리
+          // 여기서는 즉시 배열에 푸시한 것으로 처리
+          const newBubble = makeMessage("assistant", p);
+          (next as any).push(newBubble);
+          assistantPointer.current = next.length - 1;
+        }
+        return next;
+      }
+
+      // 2) 너무 길어지면(자연스러운 호흡) 문장 경계에서 한 번 분리
+      if (currentContent.length > 240 && splitCountRef.current < 3) {
+        const m = currentContent.match(/^(.*?[\.\!\?])\s+(.*)$/s);
+        if (m && m[1] && m[2]) {
+          next[index] = { ...next[index], content: m[1] };
+          splitCountRef.current += 1;
+          (next as any).push(makeMessage("assistant", m[2]));
+          assistantPointer.current = next.length - 1;
+          return next;
+        }
+      }
+
+      // 기본: 현재 말풍선에 이어 붙임
+      next[index] = { ...next[index], content: currentContent };
       return next;
     });
   }
@@ -550,6 +599,7 @@ export default function ChatClient() {
     setMessages((prev) => {
       const next: Message[] = [...prev, makeMessage("user", text), makeMessage("assistant", "")];
       assistantPointer.current = next.length - 1;
+      splitCountRef.current = 0; // 답변마다 분할 카운트 리셋
       return next;
     });
 
@@ -561,6 +611,8 @@ export default function ChatClient() {
         const next = dailyUsed + 1;
         const userDailyKey = getUserStorageKey(`reale:daily:${todayKey}`, user.id);
         window.localStorage.setItem(userDailyKey, String(next));
+        // 즉시 화면 반영
+        setDailyUsed(next);
       } catch {}
     }
   }
