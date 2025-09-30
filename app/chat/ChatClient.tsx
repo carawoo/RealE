@@ -415,8 +415,8 @@ export default function ChatClient() {
   const effectiveProAccess = proValid || quotaDisabledInDev;
   
   // Pro 플랜 감지 (URL 파라미터나 사용자 플랜 정보 확인)
-  const isProPlan = searchParams.get('plan') === 'pro' || (user && user.user_metadata?.plan === 'pro');
-  const dailyLimit = isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT;
+  const isProPlan = effectiveProAccess && (searchParams.get('plan') === 'pro' || (user && user.user_metadata?.plan === 'pro'));
+  const dailyLimit = effectiveProAccess ? (isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT) : FREE_QUESTION_LIMIT;
   const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
   
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
