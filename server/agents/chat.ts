@@ -1,10 +1,90 @@
 // server/agents/chat.ts
 // Direct Mastra usage for chat.
 import OpenAI from "openai";
+import { POLICY_PROGRAMS, FREELANCER_INCOME_PROOF, FINANCIAL_INSTITUTIONS, findMatchingPrograms, UserProfile } from "../domain/policy/data";
 
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// 사용자 메시지에서 프로필 정보 추출
+function extractUserProfile(message: string, history: Array<{ role: 'user' | 'assistant'; content: string }>): Partial<UserProfile> {
+  const fullText = message + " " + history.map(h => h.content).join(" ");
+  const profile: Partial<UserProfile> = {};
+  
+  // 소득 추출
+  const incomeMatch = fullText.match(/(\d+)만원|(\d+)억원|월소득\s*(\d+)|연소득\s*(\d+)/);
+  if (incomeMatch) {
+    const amount = parseInt(incomeMatch[1] || incomeMatch[2] || incomeMatch[3] || incomeMatch[4]);
+    if (incomeMatch[1] || incomeMatch[3]) {
+      profile.income = amount * 10000 * 12; // 월소득을 연소득으로 변환
+    } else {
+      profile.income = amount * 100000000; // 억원
+    }
+  }
+  
+  // 자녀 관련 정보
+  profile.hasChildren = /자녀|아이|아기|신생아|출산/.test(fullText);
+  profile.isNewborn = /2022년|2023년|2024년|2025년.*출생|신생아/.test(fullText);
+  profile.isMultiChild = /자녀\s*2명|자녀\s*3명|다자녀/.test(fullText);
+  profile.childrenCount = profile.isMultiChild ? 2 : (profile.hasChildren ? 1 : 0);
+  
+  // 무주택자 여부
+  profile.isFirstTime = /무주택|생애최초|처음.*집|첫.*집/.test(fullText);
+  
+  // 프리랜서 여부
+  profile.employmentType = /프리랜서|자영업|사업자/.test(fullText) ? 'freelancer' : 'employee';
+  
+  return profile;
+}
+
+// 정책 프로그램 추천 생성
+function generatePolicyRecommendations(profile: Partial<UserProfile>): string {
+  if (!profile.income) return "";
+  
+  const fullProfile: UserProfile = {
+    age: 30,
+    income: profile.income,
+    isFirstTime: profile.isFirstTime || false,
+    hasChildren: profile.hasChildren || false,
+    childrenCount: profile.childrenCount || 0,
+    isNewborn: profile.isNewborn || false,
+    isMultiChild: profile.isMultiChild || false,
+    propertyPrice: 0,
+    downPayment: 0,
+    employmentType: profile.employmentType || 'employee',
+    creditScore: 5 // 기본값
+  };
+  
+  const matchingPrograms = findMatchingPrograms(fullProfile);
+  
+  if (matchingPrograms.length === 0) return "";
+  
+  let result = "정책 프로그램 추천:\n";
+  matchingPrograms.forEach(program => {
+    result += `${program.name}: 최대 ${Math.floor(program.maxAmount / 100000000)}억원, 금리 ${program.interestRate}%, 신청링크 ${program.applicationLink}\n`;
+  });
+  
+  return result;
+}
+
+// 프리랜서 소득 증명 방법 추천
+function generateFreelancerAdvice(): string {
+  let result = "프리랜서 소득 증명 방법:\n";
+  FREELANCER_INCOME_PROOF.forEach(method => {
+    result += `${method.method}: ${method.description} (난이도: ${method.difficulty})\n`;
+  });
+  return result;
+}
+
+// 금융기관 상담 정보
+function generateFinancialAdvice(): string {
+  let result = "금융기관 상담 연락처:\n";
+  FINANCIAL_INSTITUTIONS.forEach(inst => {
+    result += `${inst.name}: ${inst.phone} (${inst.specialties.join(', ')})\n`;
+  });
+  return result;
+}
 
 export async function runChatAgent(
   message: string,
@@ -17,6 +97,19 @@ export async function runChatAgent(
 은행원 겸 대출 전문가: 최신 정부 정책, 규제, 은행권 상품 구조를 정확히 파악하고 사용자 상황에 맞는 대출 전략을 제시합니다.
 부동산 전문가: 지역별 시세, 매수·매도 시나리오, 투자·실거주 전략을 실제 사례와 함께 설명합니다.
 인테리어 컨설턴트: 거주자의 라이프스타일과 예산을 고려한 실용적인 인테리어/리모델링 조언을 제공합니다.
+
+정책 프로그램 활용
+사용자 상황을 분석하여 적합한 정책 프로그램을 추천합니다:
+- 디딤돌대출: 무주택자, 연소득 7천만원 이하, 신용등급 6등급 이하
+- 보금자리론: 생애최초 주택구입자, 연소득 9천만원 이하, 신용등급 7등급 이하  
+- 신생아 특례대출: 2022년 이후 출생 자녀 가정, 연소득 1억 2천만원 이하
+- 다자녀 특례대출: 자녀 2명 이상 가정, 연소득 1억원 이하
+
+프리랜서 소득 증명
+계약서 및 세금계산서, 사업자등록증, 은행 거래내역, 카드 매출내역 등을 활용한 구체적인 증명 방법을 제시합니다.
+
+금융기관 상담 연결
+주택도시기금(1588-8111), 국민은행(1588-9999), 신한은행(1599-8000), 우리은행(1588-2000) 등 구체적인 연락처를 제공합니다.
 
 답변 원칙
 정확성: 최신 정책과 규제를 정확히 반영합니다.
@@ -103,10 +196,28 @@ export async function runChatAgent(
   }
 
   try {
+    // 사용자 프로필 추출
+    const userProfile = extractUserProfile(message, history);
+    
+    // 정책 프로그램 추천 생성
+    const policyRecommendations = generatePolicyRecommendations(userProfile);
+    
+    // 프리랜서 조언 생성
+    const freelancerAdvice = userProfile.employmentType === 'freelancer' ? generateFreelancerAdvice() : "";
+    
+    // 금융기관 상담 정보 생성
+    const financialAdvice = generateFinancialAdvice();
+    
+    // 컨텍스트 정보를 시스템 프롬프트에 추가
+    const enhancedSystemPrompt = systemPrompt + 
+      (policyRecommendations ? `\n\n${policyRecommendations}` : "") +
+      (freelancerAdvice ? `\n\n${freelancerAdvice}` : "") +
+      (financialAdvice ? `\n\n${financialAdvice}` : "");
+
     const completion = await openaiClient.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: enhancedSystemPrompt },
         ...history,
         { role: "user", content: message },
       ],
