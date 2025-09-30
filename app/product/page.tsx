@@ -16,30 +16,6 @@ export default function ProductPage() {
         </header>
 
         <div className="product-details" style={{ marginTop: "40px" }}>
-          <div style={{ 
-            backgroundColor: "#dc2626", 
-            color: "white", 
-            padding: "8px 16px", 
-            borderRadius: "6px", 
-            marginBottom: "20px",
-            display: "inline-block",
-            fontSize: "14px",
-            fontWeight: "600"
-          }}>
-            단건(회원제) 결제
-          </div>
-          
-          <p style={{ 
-            color: "#6b7280", 
-            marginBottom: "40px", 
-            fontSize: "14px",
-            backgroundColor: "#fef2f2",
-            padding: "12px 16px",
-            borderRadius: "6px",
-            border: "1px solid #fecaca"
-          }}>
-            판매상품에 대한 설명 기재 (ex. 소프트웨어 구독 상품서비스 제공)
-          </p>
 
 
           <div style={{ 
