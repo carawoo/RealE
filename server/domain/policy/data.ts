@@ -9,6 +9,8 @@ export interface PolicyProgram {
   conditions: string[];
   requiredDocuments: string[];
   applicationLink: string;
+  detailLink: string;
+  eligibilityCheckLink: string;
   eligibilityCheck: (userProfile: UserProfile) => boolean;
   priority: number; // 우선순위 (낮을수록 우선)
 }
@@ -50,6 +52,8 @@ export const POLICY_PROGRAMS: PolicyProgram[] = [
       '부동산등기부등본'
     ],
     applicationLink: 'https://www.koomco.or.kr/loan/didimdol',
+    detailLink: 'https://www.koomco.or.kr/loan/didimdol',
+    eligibilityCheckLink: 'https://www.koomco.or.kr/loan/didimdol/eligibility',
     eligibilityCheck: (profile) => {
       return profile.income <= 70000000 && // 연소득 7천만원 이하
              profile.creditScore <= 6 && // 신용등급 6등급 이하
@@ -80,6 +84,8 @@ export const POLICY_PROGRAMS: PolicyProgram[] = [
       '생애최초 주택구입 확인서'
     ],
     applicationLink: 'https://www.koomco.or.kr/loan/bogeumjari',
+    detailLink: 'https://www.koomco.or.kr/loan/bogeumjari',
+    eligibilityCheckLink: 'https://www.koomco.or.kr/loan/bogeumjari/eligibility',
     eligibilityCheck: (profile) => {
       return profile.income <= 90000000 && // 연소득 9천만원 이하
              profile.creditScore <= 7 && // 신용등급 7등급 이하
@@ -110,6 +116,8 @@ export const POLICY_PROGRAMS: PolicyProgram[] = [
       '출생증명서'
     ],
     applicationLink: 'https://www.koomco.or.kr/loan/newborn',
+    detailLink: 'https://www.koomco.or.kr/loan/newborn',
+    eligibilityCheckLink: 'https://www.koomco.or.kr/loan/newborn/eligibility',
     eligibilityCheck: (profile) => {
       return profile.income <= 120000000 && // 연소득 1억 2천만원 이하
              profile.creditScore <= 8 && // 신용등급 8등급 이하
@@ -140,6 +148,8 @@ export const POLICY_PROGRAMS: PolicyProgram[] = [
       '자녀 출생증명서'
     ],
     applicationLink: 'https://www.koomco.or.kr/loan/multichild',
+    detailLink: 'https://www.koomco.or.kr/loan/multichild',
+    eligibilityCheckLink: 'https://www.koomco.or.kr/loan/multichild/eligibility',
     eligibilityCheck: (profile) => {
       return profile.income <= 100000000 && // 연소득 1억원 이하
              profile.creditScore <= 8 && // 신용등급 8등급 이하
@@ -190,24 +200,28 @@ export const FINANCIAL_INSTITUTIONS = [
     name: '주택도시기금',
     phone: '1588-8111',
     website: 'https://www.koomco.or.kr',
+    loanPage: 'https://www.koomco.or.kr/loan',
     specialties: ['정책자금', '디딤돌대출', '보금자리론']
   },
   {
     name: '국민은행',
     phone: '1588-9999',
     website: 'https://www.kbstar.com',
+    loanPage: 'https://www.kbstar.com/loan',
     specialties: ['주택담보대출', '신용대출', '정책자금']
   },
   {
     name: '신한은행',
     phone: '1599-8000',
     website: 'https://www.shinhan.com',
+    loanPage: 'https://www.shinhan.com/loan',
     specialties: ['주택담보대출', '신용대출', '정책자금']
   },
   {
     name: '우리은행',
     phone: '1588-2000',
     website: 'https://www.wooribank.com',
+    loanPage: 'https://www.wooribank.com/loan',
     specialties: ['주택담보대출', '신용대출', '정책자금']
   }
 ];

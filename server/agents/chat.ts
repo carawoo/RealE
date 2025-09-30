@@ -140,7 +140,10 @@ function generatePolicyRecommendations(profile: Partial<UserProfile>): string {
   
   let result = "정책 프로그램 추천:\n";
   matchingPrograms.forEach(program => {
-    result += `${program.name}: 최대 ${Math.floor(program.maxAmount / 100000000)}억원, 금리 ${program.interestRate}%, 신청링크 ${program.applicationLink}\n`;
+    result += `${program.name}: 최대 ${Math.floor(program.maxAmount / 100000000)}억원, 금리 ${program.interestRate}%\n`;
+    result += `- 자세한 정보: ${program.detailLink}\n`;
+    result += `- 자격 확인: ${program.eligibilityCheckLink}\n`;
+    result += `- 신청하기: ${program.applicationLink}\n\n`;
   });
   
   return result;
@@ -159,7 +162,10 @@ function generateFreelancerAdvice(): string {
 function generateFinancialAdvice(): string {
   let result = "금융기관 상담 연락처:\n";
   FINANCIAL_INSTITUTIONS.forEach(inst => {
-    result += `${inst.name}: ${inst.phone} (${inst.specialties.join(', ')})\n`;
+    result += `${inst.name}: ${inst.phone}\n`;
+    result += `- 홈페이지: ${inst.website}\n`;
+    result += `- 대출 상품: ${inst.loanPage}\n`;
+    result += `- 전문 분야: ${inst.specialties.join(', ')}\n\n`;
   });
   return result;
 }
@@ -191,6 +197,9 @@ export async function runChatAgent(
 
 실제 경험담 활용
 웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 자연스럽게 포함합니다. "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 실제 사례를 언급하며 구체적인 내용을 정리해서 알려줍니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
+
+관련 링크 제공
+정책 프로그램이나 금융기관 관련 정보를 제공할 때는 반드시 클릭 가능한 링크를 함께 제공합니다. "자세한 정보는 여기서 확인하실 수 있어요: [링크]" 또는 "신청하시려면 이 링크를 클릭해주세요: [링크]" 등의 형태로 자연스럽게 링크를 언급합니다.
 
 사용자 상황 정확히 파악
 사용자가 제공한 구체적인 상황(출산, 계약 기간, 소득 공백 등)을 정확히 파악하고, 이에 맞는 맞춤형 조언을 제공합니다. 사용자의 실제 상황을 무시하고 일반적인 답변을 하지 않습니다.
