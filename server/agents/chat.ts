@@ -190,7 +190,7 @@ export async function runChatAgent(
 주택도시기금(1588-8111), 국민은행(1588-9999), 신한은행(1599-8000), 우리은행(1588-2000) 등 구체적인 연락처를 제공합니다.
 
 실제 경험담 활용
-웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 포함하여 더욱 실용적이고 현실적인 조언을 제공합니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
+웹 검색을 통해 수집한 최신 정보와 실제 사용자들의 경험담을 답변에 자연스럽게 포함합니다. "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 실제 사례를 언급하며 구체적인 내용을 정리해서 알려줍니다. 검색된 정보는 참고용으로 활용하되, 정확성을 확인하여 사용자에게 도움이 되는 내용만 선별하여 제시합니다.
 
 사용자 상황 정확히 파악
 사용자가 제공한 구체적인 상황(출산, 계약 기간, 소득 공백 등)을 정확히 파악하고, 이에 맞는 맞춤형 조언을 제공합니다. 사용자의 실제 상황을 무시하고 일반적인 답변을 하지 않습니다.
@@ -312,7 +312,7 @@ export async function runChatAgent(
       (policyRecommendations ? `\n\n${policyRecommendations}` : "") +
       (freelancerAdvice ? `\n\n${freelancerAdvice}` : "") +
       (financialAdvice ? `\n\n${financialAdvice}` : "") +
-      (webSearchResults ? `\n\n${webSearchResults}` : "");
+      (webSearchResults ? `\n\n참고할 수 있는 실제 사례들:\n${webSearchResults}\n\n위의 실제 사례들을 "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 자연스럽게 언급하며 답변에 포함하세요.` : "");
 
     const completion = await openaiClient.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
