@@ -54,6 +54,10 @@ export default function RootLayout({
       <head>
         <meta name="google-site-verification" content="y6oCIZ8CC_KX6RY3XZW3wn07-lhvnsYCrbLwAayqBuI" />
         <meta name="naver-site-verification" content="c39fcbee55418ddb546b452d9ea47e98f1b1ca17" />
+        {/* Fallback favicon links for browsers that don't read metadata.icons */}
+        <link rel="icon" href="/realE-logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/realE-logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/realE-logo.png" />
         {process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
           <script async src="https://js.stripe.com/v3" />
         )}
