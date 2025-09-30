@@ -420,20 +420,6 @@ export default function ProductPage() {
             </p>
           </div>
 
-          <div style={{ 
-            backgroundColor: "#fef3c7", 
-            padding: "20px", 
-            borderRadius: "8px", 
-            border: "1px solid #f59e0b",
-            marginBottom: "30px"
-          }}>
-            <h3 style={{ color: "#92400e", marginBottom: "15px" }}>주의사항</h3>
-            <ul style={{ margin: 0, paddingLeft: "20px", color: "#92400e" }}>
-              <li>구독 해지는 마이페이지에서 언제든지 가능합니다</li>
-              <li>결제일 기준 7일 이내 무조건 환불 가능합니다</li>
-              <li>서비스 이용 중 문제가 있으시면 고객센터로 문의해주세요</li>
-            </ul>
-          </div>
         </div>
 
       </div>
