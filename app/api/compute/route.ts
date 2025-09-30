@@ -89,7 +89,9 @@ async function saveMessageToSupabase(
   try {
     console.log(`🔄 Supabase 저장 시도: ${role} 메시지`);
     const now = new Date().toISOString();
+    const rowId = randomUUID();
     const row: Record<string, any> = {
+      id: rowId,
       message: content,
       response_type: role,
       account_id_text: "unknown_user",
