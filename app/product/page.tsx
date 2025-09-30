@@ -20,7 +20,7 @@ export default function ProductPage() {
 
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "1fr 1fr 1fr", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
             gap: "20px", 
             marginBottom: "40px" 
           }}>
@@ -265,17 +265,6 @@ export default function ProductPage() {
 
       </div>
       
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .product-card {
-            margin-bottom: 20px;
-          }
-          
-          .product-card > div[style*="grid-template-columns"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </main>
   );
 }
