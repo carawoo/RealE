@@ -16,6 +16,151 @@ export default function ProductPage() {
         </header>
 
         <div className="product-details" style={{ marginTop: "40px" }}>
+          <h2 style={{ textAlign: "center", marginBottom: "40px", fontSize: "28px" }}>구독권 비교</h2>
+          
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "1fr 1fr", 
+            gap: "20px", 
+            marginBottom: "40px" 
+          }}>
+            {/* 무료 플랜 */}
+            <div className="product-card" style={{ 
+              border: "1px solid #e0e0e0", 
+              borderRadius: "12px", 
+              padding: "30px", 
+              backgroundColor: "#f8f9fa",
+              textAlign: "center"
+            }}>
+              <h3 style={{ color: "#6b7280", marginBottom: "20px" }}>무료</h3>
+              <div style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px", color: "#10b981" }}>
+                무료
+              </div>
+              
+              <div style={{ marginBottom: "30px" }}>
+                <ul style={{ listStyle: "none", padding: 0, textAlign: "left" }}>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    일일 5회 질문
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    기본 부동산 상담
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    정책 프로그램 안내
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    프리랜서 소득 증명 상담
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    금융기관 상담 연결
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#ef4444", marginRight: "8px" }}>✗</span>
+                    대화 공유 및 저장
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <button 
+                  className="btn"
+                  style={{ 
+                    display: "inline-block", 
+                    padding: "15px 30px", 
+                    fontSize: "16px",
+                    backgroundColor: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer"
+                  }}
+                  disabled
+                >
+                  현재 이용 중
+                </button>
+              </div>
+            </div>
+
+            {/* RealE Plus 플랜 */}
+            <div className="product-card" style={{ 
+              border: "2px solid #2563eb", 
+              borderRadius: "12px", 
+              padding: "30px", 
+              backgroundColor: "#f0f9ff",
+              textAlign: "center",
+              position: "relative"
+            }}>
+              <div style={{
+                position: "absolute",
+                top: "-10px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                backgroundColor: "#2563eb",
+                color: "white",
+                padding: "5px 15px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: "bold"
+              }}>
+                추천
+              </div>
+              
+              <h3 style={{ color: "#2563eb", marginBottom: "20px" }}>RealE Plus</h3>
+              <div style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>
+                월 3,900원
+              </div>
+              
+              <div style={{ marginBottom: "30px" }}>
+                <ul style={{ listStyle: "none", padding: 0, textAlign: "left" }}>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    일일 30회 무제한 질문
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    정부 지원 대출 프로그램 자동 매칭
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    프리랜서 소득 증명 방법 상담
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    금융기관 상담 연결 서비스
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    실제 사용자 경험담 기반 조언
+                  </li>
+                  <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
+                    대화 공유 및 저장 기능
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <Link 
+                  href="/checkout/info" 
+                  className="btn primary"
+                  style={{ 
+                    display: "inline-block", 
+                    padding: "15px 30px", 
+                    fontSize: "16px",
+                    textDecoration: "none"
+                  }}
+                >
+                  RealE Plus 구독하기
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <div className="product-card" style={{ 
             border: "1px solid #e0e0e0", 
             borderRadius: "12px", 
@@ -23,40 +168,8 @@ export default function ProductPage() {
             marginBottom: "30px",
             backgroundColor: "#f9f9f9"
           }}>
-            <h2 style={{ color: "#2563eb", marginBottom: "20px" }}>RealE Plus</h2>
-            <div style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>
-              월 3,900원
-            </div>
+            <h2 style={{ color: "#2563eb", marginBottom: "20px" }}>RealE Plus 상세 정보</h2>
             
-            <div style={{ marginBottom: "30px" }}>
-              <h3 style={{ marginBottom: "15px" }}>포함된 서비스</h3>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  일일 30회 무제한 질문
-                </li>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  정부 지원 대출 프로그램 자동 매칭
-                </li>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  프리랜서 소득 증명 방법 상담
-                </li>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  금융기관 상담 연결 서비스
-                </li>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  실제 사용자 경험담 기반 조언
-                </li>
-                <li style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
-                  <span style={{ color: "#10b981", marginRight: "8px" }}>✓</span>
-                  대화 공유 및 저장 기능
-                </li>
-              </ul>
-            </div>
 
             <div style={{ marginBottom: "30px" }}>
               <h3 style={{ marginBottom: "15px" }}>상품 상세 정보</h3>
