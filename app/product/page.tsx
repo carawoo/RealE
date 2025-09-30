@@ -377,7 +377,7 @@ export default function ProductPage() {
 
             <div style={{ textAlign: "center" }}>
               <Link 
-                href="/checkout/info" 
+                href="/checkout" 
                 className="btn primary"
                 style={{ 
                   display: "inline-block", 

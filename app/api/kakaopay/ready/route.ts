@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
   if (!adminKey || !cid || !siteEnv) {
     // 심사/제휴 전: 내부 안내 페이지로 이동시켜 임시 결제안내 노출
-    return NextResponse.json({ ok: true, url: "/checkout/info" });
+    return NextResponse.json({ ok: true, url: "/checkout" });
   }
 
   try {

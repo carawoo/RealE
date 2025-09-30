@@ -33,7 +33,7 @@
 
 ### 3.2 결제 페이지 경로
 - **상품 상세 페이지**: https://www.real-e.space/product
-- **결제 정보 페이지**: https://www.real-e.space/checkout/info
+- **결제 정보 페이지**: https://www.real-e.space/checkout
 - **결제 성공 페이지**: https://www.real-e.space/checkout/success
 
 ### 3.3 API 엔드포인트
