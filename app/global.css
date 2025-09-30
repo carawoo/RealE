@@ -758,6 +758,19 @@ body.app-shell {
   color: #6b7280;
 }
 
+/* Product plans grid */
+.product-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .privacy-surface {
   width: min(100%, 760px);
   gap: 28px;
