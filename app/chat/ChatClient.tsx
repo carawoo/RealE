@@ -635,7 +635,9 @@ export default function ChatClient() {
         </div>
         <div className="chat-usage">
           <p className="chat-usage__status">
-            {effectiveProAccess
+            {!user
+              ? `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`
+              : effectiveProAccess
               ? `RealE Plus 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${PRO_DAILY_LIMIT}회, 구독기간 ${PRO_DURATION_DAYS}일)`
               : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
