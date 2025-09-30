@@ -32,8 +32,19 @@ export async function POST(request: NextRequest) {
         // 보장용 upsert (없으면 생성)
         await admin.from('conversations').upsert({ id: convId }, { onConflict: 'id' });
       } else {
-        // UUID가 아니면 헤더 생성 후 그 id 사용
-        const created = await admin.from('conversations').insert({}).select('id').single();
+        // UUID가 아니면 스키마에 맞는 최소 컬럼으로 헤더 생성 후 그 id 사용
+        const now = new Date().toISOString();
+        const created = await admin
+          .from('conversations')
+          .insert({
+            response_type: 'user',
+            account_id_text: 'unknown_user',
+            kst_timestamp: now,
+            timestamp: now,
+            message: '[init]'
+          })
+          .select('id')
+          .single();
         if (!created.error && created.data?.id) convId = String(created.data.id);
       }
 
