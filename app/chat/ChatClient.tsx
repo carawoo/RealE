@@ -419,6 +419,15 @@ export default function ChatClient() {
   const dailyLimit = effectiveProAccess ? (isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT) : FREE_QUESTION_LIMIT;
   const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
   
+  // 개발 환경에서 Pro 플랜 테스트를 위한 디버깅
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Debug - effectiveProAccess:', effectiveProAccess);
+    console.log('Debug - searchParams plan:', searchParams.get('plan'));
+    console.log('Debug - isProPlan:', isProPlan);
+    console.log('Debug - dailyLimit:', dailyLimit);
+    console.log('Debug - planName:', planName);
+  }
+  
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
   const questionsLeft = effectiveProAccess
     ? Math.max(dailyLimit - dailyUsed, 0)
