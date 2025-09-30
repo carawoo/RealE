@@ -47,22 +47,14 @@ export default function GlobalNav() {
         {isMobile ? null : (
           <>
             {!onChatRoute && (
-              <>
-                <Link className="nav-btn ghost" href="/product" aria-label="RealE Plus">
-                  <span className="nav-label">RealE Plus</span>
-                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </Link>
-                <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
-                  <span className="nav-label">FAQ</span>
-                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
-                    <circle cx="12" cy="17" r="0.5" />
-                  </svg>
-                </Link>
-              </>
+              <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
+                <span className="nav-label">FAQ</span>
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
+                  <circle cx="12" cy="17" r="0.5" />
+                </svg>
+              </Link>
             )}
             {onChatRoute && (
               <Link className="nav-btn ghost" href="/chat/share" aria-label="대화 공유">

@@ -66,7 +66,6 @@ export default function ProductPage() {
                 <p><strong>결제 방식:</strong> 카카오페이, 신용카드</p>
                 <p><strong>구독 기간:</strong> 30일 (자동 갱신)</p>
                 <p><strong>해지:</strong> 언제든지 해지 가능</p>
-                <p><strong>환불:</strong> 7일 이내 무조건 환불</p>
               </div>
             </div>
 
@@ -126,18 +125,6 @@ export default function ProductPage() {
           </div>
         </div>
 
-        <footer style={{ 
-          marginTop: "60px", 
-          paddingTop: "20px", 
-          borderTop: "1px solid #e0e0e0",
-          textAlign: "center",
-          color: "#666"
-        }}>
-          <p>© 2025 RealE. All rights reserved.</p>
-          <p>사업자등록번호: 123-45-67890 | 대표: 김리얼</p>
-          <p>경기도 안산시 단원구 광덕2로 17, 1316동 304호(초지동, 그린빌주공13단지아파트)</p>
-          <p>고객센터: 1588-0000 | 이메일: support@real-e.space</p>
-        </footer>
       </div>
     </main>
   );
