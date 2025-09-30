@@ -181,19 +181,6 @@ export default function CheckoutPage() {
             정기결제 요청
           </button>
         </form>
-
-        <div className="payment-methods">
-          <h3>다른 결제 방법</h3>
-          <div className="alternative-payment">
-            <div className="kakaopay-option">
-              <div className="kakaopay-logo">💳</div>
-              <div>
-                <h4>카카오페이</h4>
-                <p>QR코드 스캔으로 간편 결제</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

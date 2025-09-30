@@ -1,6 +1,6 @@
 .checkout-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8fafc;
   padding: 20px;
 }
 
@@ -10,7 +10,7 @@
 }
 
 .back-button {
-  color: white;
+  color: #3b82f6;
   text-decoration: none;
   font-size: 14px;
   margin-bottom: 20px;
@@ -24,18 +24,18 @@
 }
 
 .checkout-header h1 {
-  color: white;
+  color: #1f2937;
   font-size: 28px;
   font-weight: 600;
   margin: 0;
 }
 
 .checkout-content {
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .product-summary {
@@ -245,16 +245,15 @@
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
-  .checkout-content {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
   .form-row {
     grid-template-columns: 1fr;
   }
   
   .checkout-container {
     padding: 16px;
+  }
+  
+  .checkout-content {
+    max-width: 100%;
   }
 }
