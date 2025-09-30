@@ -123,8 +123,9 @@ export default function ChatClient() {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const assistantPointer = useRef<number>(-1);
-  // 한 답변을 여러 말풍선으로 자연스럽게 분할하기 위한 카운터
+  // 한 답변을 여러 말풍선으로 자연스럽게 분할하기 위한 카운터/버퍼
   const splitCountRef = useRef<number>(0);
+  const pendingRef = useRef<string>("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [proAccess, setProAccess] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -459,50 +460,52 @@ export default function ChatClient() {
   function appendChunk(chunk: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
-    setMessages((prev) => {
-      if (!prev[index]) return prev;
-      const next = [...prev];
-      const currentContent = (next[index].content ?? "") + chunk;
+    pendingRef.current += chunk;
 
-      // 1) 문단 구분(\n\n) 기준으로 분할
-      const paragraphs = currentContent.split(/\n\n+/);
-      if (paragraphs.length > 1 && splitCountRef.current < 3) {
-        // 첫 문단은 현재 말풍선에, 이후 문단은 새 말풍선으로
-        next[index] = { ...next[index], content: paragraphs[0] };
-        let remaining = paragraphs.slice(1);
-        for (const p of remaining) {
-          if (p.length === 0) continue;
-          if (splitCountRef.current >= 3) {
-            // 더 이상 분할하지 않고 남은 내용을 현재 말풍선에 이어 붙임
-            const lastIdx = assistantPointer.current;
-            next[lastIdx] = { ...next[lastIdx], content: next[lastIdx].content + "\n\n" + p };
-            continue;
-          }
-          splitCountRef.current += 1;
-          // 새 말풍선에 문단 시작
-          // setMessages를 중첩 호출하지 않기 위해 next에 직접 푸시 불가 -> 임시로 플래그 후반 처리
-          // 여기서는 즉시 배열에 푸시한 것으로 처리
-          const newBubble = makeMessage("assistant", p);
-          (next as any).push(newBubble);
-          assistantPointer.current = next.length - 1;
-        }
+    // 1) 문단 경계(\n\n) 우선 분리
+    while (pendingRef.current.includes("\n\n") && splitCountRef.current < 3) {
+      const cut = pendingRef.current.indexOf("\n\n");
+      const segment = pendingRef.current.slice(0, cut);
+      pendingRef.current = pendingRef.current.slice(cut + 2);
+      setMessages((prev) => {
+        if (!prev[index]) return prev;
+        const next = [...prev];
+        const current = next[index];
+        next[index] = { ...current, content: (current.content ?? "") + segment };
+        // 새 말풍선 시작
+        splitCountRef.current += 1;
+        (next as any).push(makeMessage("assistant", ""));
+        assistantPointer.current = next.length - 1;
         return next;
-      }
+      });
+    }
 
-      // 2) 너무 길어지면(자연스러운 호흡) 문장 경계에서 한 번 분리
-      if (currentContent.length > 240 && splitCountRef.current < 3) {
-        const m = currentContent.match(/^(.*?[\.\!\?])\s+(.*)$/s);
-        if (m && m[1] && m[2]) {
-          next[index] = { ...next[index], content: m[1] };
+    // 2) 너무 길어지면 문장 경계에서 한 번 더 분리
+    if (pendingRef.current.length > 280 && splitCountRef.current < 3) {
+      const match = pendingRef.current.match(/^(.*?[\.\!\?])\s+(.*)$/s);
+      if (match && match[1] && match[2]) {
+        const head = match[1];
+        const tail = match[2];
+        setMessages((prev) => {
+          if (!prev[index]) return prev;
+          const next = [...prev];
+          const current = next[index];
+          next[index] = { ...current, content: (current.content ?? "") + head };
           splitCountRef.current += 1;
-          (next as any).push(makeMessage("assistant", m[2]));
+          (next as any).push(makeMessage("assistant", ""));
           assistantPointer.current = next.length - 1;
           return next;
-        }
+        });
+        pendingRef.current = tail;
       }
+    }
 
-      // 기본: 현재 말풍선에 이어 붙임
-      next[index] = { ...next[index], content: currentContent };
+    // 3) 남은 버퍼는 현재 말풍선에만 렌더링(새 말풍선은 만들지 않음)
+    setMessages((prev) => {
+      if (!prev[assistantPointer.current]) return prev;
+      const next = [...prev];
+      const i = assistantPointer.current;
+      next[i] = { ...next[i], content: pendingRef.current };
       return next;
     });
   }
@@ -513,10 +516,14 @@ export default function ChatClient() {
     setMessages((prev) => {
       if (!prev[index]) return prev;
       const next = [...prev];
-      next[index] = { ...next[index], content };
+      // 남아 있는 버퍼와 함께 마무리
+      const finalText = pendingRef.current || content;
+      next[index] = { ...next[index], content: finalText };
       return next;
     });
     assistantPointer.current = -1;
+    pendingRef.current = "";
+    splitCountRef.current = 0;
   }
 
   async function streamAssistant(message: string, historyForApi: Message[]) {
@@ -596,6 +603,7 @@ export default function ChatClient() {
       const next: Message[] = [...prev, makeMessage("user", text), makeMessage("assistant", "")];
       assistantPointer.current = next.length - 1;
       splitCountRef.current = 0; // 답변마다 분할 카운트 리셋
+      pendingRef.current = "";
       return next;
     });
 
