@@ -7,9 +7,32 @@ const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 웹 검색 함수 - Brave API와 대체 방법 모두 지원
+// 웹 검색 함수 - 여러 API 지원
 async function searchWeb(query: string): Promise<string> {
-  // 1. Brave API 시도 (API 키가 있는 경우)
+  // 1. SerpAPI 시도 (Google 검색)
+  if (process.env.SERP_API_KEY) {
+    try {
+      const response = await fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${process.env.SERP_API_KEY}&num=5`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const results = data.organic_results || [];
+        
+        let searchResults = '최신 정보 및 경험담:\n';
+        results.forEach((result: any, index: number) => {
+          searchResults += `${index + 1}. ${result.title}\n`;
+          searchResults += `   ${result.snippet || result.description || ''}\n`;
+          searchResults += `   링크: ${result.link}\n\n`;
+        });
+        
+        return searchResults;
+      }
+    } catch (error) {
+      console.warn('SerpAPI failed:', error);
+    }
+  }
+  
+  // 2. Brave API 시도 (API 키가 있는 경우)
   if (process.env.BRAVE_API_KEY) {
     try {
       const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`, {
@@ -37,7 +60,27 @@ async function searchWeb(query: string): Promise<string> {
     }
   }
   
-  // 2. 대체 방법: 사전 정의된 실제 사례 데이터 사용
+  // 3. DuckDuckGo API 시도 (무료)
+  try {
+    const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      const results = data.Results || [];
+      
+      let searchResults = '최신 정보 및 경험담:\n';
+      results.slice(0, 5).forEach((result: any, index: number) => {
+        searchResults += `${index + 1}. ${result.Text}\n`;
+        searchResults += `   링크: ${result.FirstURL}\n\n`;
+      });
+      
+      if (searchResults.length > 50) return searchResults;
+    }
+  } catch (error) {
+    console.warn('DuckDuckGo API failed:', error);
+  }
+  
+  // 4. 대체 방법: 사전 정의된 실제 사례 데이터 사용
   return getPredefinedCaseStudies(query);
 }
 
