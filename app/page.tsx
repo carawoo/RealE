@@ -27,7 +27,7 @@ export default function Home() {
             상담 시작하기
           </button>
           <Link className="nav-btn" href="/product">
-            RealE Plus 구독하기
+            요금제 살펴보기
           </Link>
           <Link className="nav-btn" href="/chat/share">
             최근 상담 공유하기

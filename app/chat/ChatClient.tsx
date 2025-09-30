@@ -430,6 +430,8 @@ export default function ChatClient() {
   console.log('Debug - normalizedQuestionCount:', normalizedQuestionCount);
   console.log('Debug - questionsLeft:', questionsLeft);
   console.log('Debug - user:', !!user);
+  console.log('Debug - totalQuestionsUsed:', totalQuestionsUsed);
+  console.log('Debug - userMessagesCount:', userMessagesCount);
   const outOfQuota = effectiveProAccess
     ? dailyUsed >= dailyLimit
     : normalizedQuestionCount >= FREE_QUESTION_LIMIT;
