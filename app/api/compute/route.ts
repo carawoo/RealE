@@ -86,23 +86,23 @@ async function saveMessageToSupabase(
   content: string, 
   fields: Fields | null = null
 ): Promise<boolean> {
-  if (!conversationId) {
-    console.warn("Supabase 저장 실패: conversationId 누락");
-    return false;
-  }
-
   try {
-    console.log(`🔄 Supabase 저장 시도: ${role} 메시지, conversationId: ${conversationId}`);
-    
+    console.log(`🔄 Supabase 저장 시도: ${role} 메시지`);
+    const now = new Date().toISOString();
+    const row: Record<string, any> = {
+      message: content,
+      response_type: role,
+      account_id_text: "unknown_user",
+      kst_timestamp: now,
+      timestamp: now,
+    };
+    if (fields && Object.keys(fields).length > 0) {
+      row.fields = fields;
+    }
+
     const { data, error } = await getSupabaseAdmin()
       .from("conversations")
-      .insert({
-        id: conversationId,
-        message: content,
-        account_id: 'api_user',
-        kst_timestamp: new Date().toISOString(),
-        timestamp: new Date().toISOString()
-      })
+      .insert(row)
       .select();
 
     if (error) {
