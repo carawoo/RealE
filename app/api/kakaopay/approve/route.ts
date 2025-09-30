@@ -6,10 +6,8 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const adminKey = process.env.KAKAOPAY_ADMIN_KEY || "";
   const cid = process.env.KAKAOPAY_CID || "";
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "";
-  if (!adminKey || !cid || !site) {
-    return NextResponse.redirect(`${site || "/"}/chat?upgraded=0`);
-  }
+  const siteEnv = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin || "";
+  const mock = process.env.KAKAOPAY_MOCK === "1" || process.env.NODE_ENV !== "production";
 
   const search = req.nextUrl.searchParams;
   const pgToken = search.get("pg_token");
@@ -18,8 +16,11 @@ export async function GET(req: NextRequest) {
   const partnerOrderId = cookieStore.get("kp_oid")?.value || "";
   const partnerUserId = "guest";
 
-  if (!pgToken || !tid) {
-    return NextResponse.redirect(`${site}/chat?upgraded=0`);
+  if (mock) {
+    return NextResponse.redirect(`${siteEnv}/chat?upgraded=1`);
+  }
+  if (!adminKey || !cid || !siteEnv || !pgToken || !tid) {
+    return NextResponse.redirect(`${siteEnv}/chat?upgraded=0`);
   }
 
   const body = new URLSearchParams({
@@ -41,11 +42,11 @@ export async function GET(req: NextRequest) {
   });
 
   if (!r.ok) {
-    return NextResponse.redirect(`${site}/chat?upgraded=0`);
+    return NextResponse.redirect(`${siteEnv}/chat?upgraded=0`);
   }
 
   // 성공: 클라이언트에서 localStorage proAccess=1로 처리하도록 업그레이드 플래그
-  return NextResponse.redirect(`${site}/chat?upgraded=1`);
+  return NextResponse.redirect(`${siteEnv}/chat?upgraded=1`);
 }
 
 

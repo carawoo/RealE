@@ -18,8 +18,8 @@ export default function CheckoutSuccessPage() {
           <a className="nav-btn primary" href="/chat">
             상담 서비스 이동
           </a>
-          <a className="nav-btn" href="/checkout">
-            결제 페이지로 돌아가기
+          <a className="nav-btn" href="/chat">
+            상담으로 돌아가기
           </a>
         </div>
       </section>
