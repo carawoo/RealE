@@ -110,8 +110,22 @@ function extractUserProfile(message: string, history: Array<{ role: 'user' | 'as
   // 무주택자 여부
   profile.isFirstTime = /무주택|생애최초|처음.*집|첫.*집/.test(fullText);
   
-  // 프리랜서 여부
-  profile.employmentType = /프리랜서|자영업|사업자/.test(fullText) ? 'freelancer' : 'employee';
+  // 프리랜서 여부 - 더 정확한 판단을 위해 여러 패턴 확인
+  const freelancerPatterns = [
+    /프리랜서|프리랜스|프리랜싱/i,
+    /자영업|자영업자/i,
+    /사업자|사업자등록/i,
+    /개인사업자|개인사업/i,
+    /소상공인|소상공/i,
+    /계약직|계약업무/i,
+    /프로젝트.*업무|프로젝트.*일/i,
+    /세금계산서.*발행|세금계산서.*작성/i,
+    /사업소득|사업소득신고/i,
+    /부가가치세.*신고|부가세.*신고/i
+  ];
+  
+  const isFreelancer = freelancerPatterns.some(pattern => pattern.test(fullText));
+  profile.employmentType = isFreelancer ? 'freelancer' : 'employee';
   
   return profile;
 }
@@ -304,8 +318,10 @@ export async function runChatAgent(
     // 정책 프로그램 추천 생성
     const policyRecommendations = generatePolicyRecommendations(userProfile);
     
-    // 프리랜서 조언 생성
-    const freelancerAdvice = userProfile.employmentType === 'freelancer' ? generateFreelancerAdvice() : "";
+    // 프리랜서 조언 생성 - 프리랜서가 명확히 확인된 경우에만
+    const freelancerAdvice = (userProfile.employmentType === 'freelancer' && 
+                             (message.includes('프리랜서') || message.includes('자영업') || message.includes('사업자') || 
+                              message.includes('소득증명') || message.includes('계약서'))) ? generateFreelancerAdvice() : "";
     
     // 금융기관 상담 정보 생성
     const financialAdvice = generateFinancialAdvice();
