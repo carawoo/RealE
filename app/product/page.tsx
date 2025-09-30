@@ -270,52 +270,6 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <div className="product-card" style={{ 
-            border: "1px solid #e0e0e0", 
-            borderRadius: "12px", 
-            padding: "30px", 
-            marginBottom: "30px",
-            backgroundColor: "#f9f9f9"
-          }}>
-            <h2 style={{ color: "#2563eb", marginBottom: "20px" }}>RealE Plus 상세 정보</h2>
-            
-
-            <div style={{ marginBottom: "30px" }}>
-              <h3 style={{ marginBottom: "15px" }}>상품 상세 정보</h3>
-              <div style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0" }}>
-                <p><strong>상품명:</strong> RealE Plus 월간 구독</p>
-                <p><strong>가격:</strong> 3,900원 (월간)</p>
-                <p><strong>결제 방식:</strong> 카카오페이, 신용카드</p>
-                <p><strong>구독 기간:</strong> 30일 (자동 갱신)</p>
-                <p><strong>해지:</strong> 언제든지 해지 가능</p>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "30px" }}>
-              <h3 style={{ marginBottom: "15px" }}>이용 방법</h3>
-              <ol style={{ paddingLeft: "20px" }}>
-                <li style={{ marginBottom: "10px" }}>RealE Plus 구독하기 버튼 클릭</li>
-                <li style={{ marginBottom: "10px" }}>카카오페이 또는 신용카드로 결제</li>
-                <li style={{ marginBottom: "10px" }}>즉시 무제한 상담 서비스 이용 가능</li>
-                <li style={{ marginBottom: "10px" }}>매월 자동 갱신 (해지 시까지)</li>
-              </ol>
-            </div>
-
-            <div style={{ textAlign: "center" }}>
-              <Link 
-                href="/checkout" 
-                className="btn primary"
-                style={{ 
-                  display: "inline-block", 
-                  padding: "15px 30px", 
-                  fontSize: "18px",
-                  textDecoration: "none"
-                }}
-              >
-                RealE Plus 구독하기
-              </Link>
-            </div>
-          </div>
 
           <div style={{ 
             backgroundColor: "#f0f9ff", 
