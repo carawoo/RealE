@@ -81,6 +81,19 @@ export async function POST(req: Request) {
 
     const text = await res.text();
     if (!res.ok) {
+      console.error("Supabase API error:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: text,
+        requestBody: {
+          id: uuid,
+          slug,
+          payload_json: msgs,
+          user_id: userId,
+          is_public: true,
+          title,
+        }
+      });
       return NextResponse.json(
         { ok: false, status: res.status, error: text, urlHost: new URL(url).host },
         { status: 500 }

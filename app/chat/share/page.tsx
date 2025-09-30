@@ -84,7 +84,11 @@ export default function ChatSharePage() {
         const data = await res.json();
         if (!res.ok || !data?.url) {
           // 내부 에러는 콘솔로만 남기고, 화면에는 일반 문구만 노출
-          console.warn("share api error", data);
+          console.error("share api error", {
+            status: res.status,
+            data,
+            response: await res.text()
+          });
           throw new Error("share_api_failed");
         }
         const absoluteUrl = new URL(data.url, window.location.origin).toString();
