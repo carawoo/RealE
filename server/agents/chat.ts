@@ -18,11 +18,11 @@ async function searchWeb(query: string): Promise<string> {
         const data = await response.json();
         const results = data.organic_results || [];
         
-        let searchResults = '최신 정보 및 경험담:\n';
+        let searchResults = '웹에서 찾은 실제 사례들:\n';
         results.forEach((result: any, index: number) => {
           searchResults += `${index + 1}. ${result.title}\n`;
-          searchResults += `   ${result.snippet || result.description || ''}\n`;
-          searchResults += `   링크: ${result.link}\n\n`;
+          searchResults += `   내용: ${result.snippet || result.description || ''}\n`;
+          searchResults += `   출처: ${result.link}\n\n`;
         });
         
         return searchResults;
@@ -46,11 +46,11 @@ async function searchWeb(query: string): Promise<string> {
         const data = await response.json();
         const results = data.web?.results || [];
         
-        let searchResults = '최신 정보 및 경험담:\n';
+        let searchResults = '웹에서 찾은 실제 사례들:\n';
         results.forEach((result: any, index: number) => {
           searchResults += `${index + 1}. ${result.title}\n`;
-          searchResults += `   ${result.description}\n`;
-          searchResults += `   링크: ${result.url}\n\n`;
+          searchResults += `   내용: ${result.description}\n`;
+          searchResults += `   출처: ${result.url}\n\n`;
         });
         
         return searchResults;
@@ -68,10 +68,10 @@ async function searchWeb(query: string): Promise<string> {
       const data = await response.json();
       const results = data.Results || [];
       
-      let searchResults = '최신 정보 및 경험담:\n';
+      let searchResults = '웹에서 찾은 실제 사례들:\n';
       results.slice(0, 5).forEach((result: any, index: number) => {
         searchResults += `${index + 1}. ${result.Text}\n`;
-        searchResults += `   링크: ${result.FirstURL}\n\n`;
+        searchResults += `   출처: ${result.FirstURL}\n\n`;
       });
       
       if (searchResults.length > 50) return searchResults;
@@ -446,7 +446,7 @@ export async function runChatAgent(
       (policyRecommendations ? `\n\n${policyRecommendations}` : "") +
       (freelancerAdvice ? `\n\n${freelancerAdvice}` : "") +
       (financialAdvice ? `\n\n${financialAdvice}` : "") +
-      (webSearchResults ? `\n\n참고할 수 있는 실제 사례들:\n${webSearchResults}\n\n위의 실제 사례들을 "찾아보니 이런 실제 케이스가 있던데 참고해봐도 좋을 것 같아"라는 식으로 자연스럽게 언급하며 답변에 포함하세요.` : "\n\n실제 사례가 필요할 때는 구체적인 상황과 수치를 포함한 현실적인 사례를 2-3개 생성해서 제시하세요. 김**씨, 박**씨, 이**씨 등으로 표현하고, 성공과 실패 사례를 균형있게 포함하세요.");
+      (webSearchResults ? `\n\n웹에서 찾은 실제 사례들:\n${webSearchResults}\n\n위의 웹 검색 결과를 바탕으로 "실제로 이런 사례들이 있어서 참고해보시면 좋을 것 같아요"라는 식으로 자연스럽게 언급하며 답변에 포함하세요. 웹에서 찾은 실제 경험담들을 구체적으로 설명해주세요.` : "\n\n실제 사례가 필요할 때는 구체적인 상황과 수치를 포함한 현실적인 사례를 2-3개 생성해서 제시하세요. 김**씨, 박**씨, 이**씨 등으로 표현하고, 성공과 실패 사례를 균형있게 포함하세요.");
 
     const completion = await openaiClient.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
