@@ -23,27 +23,22 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ---------- Helpers ----------
 
-// 최근 메시지 내용 가져오기 (맥락용) - conversations 테이블 사용
+// 최근 메시지 내용 가져오기 (맥락용) - messages 테이블 사용
 async function fetchRecentMessages(conversationId: string, limit: number = 5): Promise<Array<{ role: Role; content: string }>> {
   if (!conversationId) return [];
-  
   try {
     const { data, error } = await getSupabaseAdmin()
-      .from("conversations")
-      .select("message")
-      .eq("id", conversationId)
-      .order("kst_timestamp", { ascending: false })
+      .from("messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
       console.error("메시지 조회 실패:", error);
       return [];
     }
-
-    return Array.isArray(data) ? data.map((r: any) => ({ 
-      role: 'user' as Role, // conversations 테이블에는 role 정보가 없으므로 기본값 사용
-      content: String(r.message || '') 
-    })) : [];
+    return (data || []).map((r: any) => ({ role: r.role as Role, content: String(r.content || '') }));
   } catch (err) {
     console.error("메시지 조회 중 오류:", err);
     return [];
@@ -54,23 +49,21 @@ async function fetchRecentMessages(conversationId: string, limit: number = 5): P
 // ---------- Supabase ----------
 async function fetchConversationProfile(conversationId: string): Promise<Fields> {
   if (!conversationId) return {};
-  
   try {
     const { data, error } = await getSupabaseAdmin()
-      .from("conversations")
-      .select("fields, message")
-      .eq("id", conversationId)
-      .order("kst_timestamp", { ascending: true });
+      .from("messages")
+      .select("fields, role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
 
     if (error) {
       console.error("프로필 조회 실패:", error);
       return {};
     }
-
     let acc: Fields = {};
     for (const r of data || []) {
       if (r?.fields) acc = mergeFields(acc, r.fields);
-      if (r.message) acc = mergeFields(acc, extractFieldsFrom(r.message));
+      if (r.role === 'user') acc = mergeFields(acc, extractFieldsFrom(r.content || ''));
     }
     return acc;
   } catch (err) {
@@ -79,7 +72,7 @@ async function fetchConversationProfile(conversationId: string): Promise<Fields>
   }
 }
 
-// Supabase에 메시지 저장 - conversations 테이블 사용 (관리자 권한)
+// Supabase에 메시지 저장 - messages 테이블 사용 (관리자 권한)
 async function saveMessageToSupabase(
   conversationId: string, 
   role: Role, 
@@ -87,24 +80,16 @@ async function saveMessageToSupabase(
   fields: Fields | null = null
 ): Promise<boolean> {
   try {
-    console.log(`🔄 Supabase 저장 시도: ${role} 메시지`);
-    const now = new Date().toISOString();
-    const rowId = randomUUID();
-    const row: Record<string, any> = {
-      id: rowId,
-      message: content,
-      response_type: role,
-      account_id_text: "unknown_user",
-      kst_timestamp: now,
-      timestamp: now,
+    console.log(`🔄 Supabase 저장 시도(messages): ${role}`);
+    const payload: Record<string, any> = {
+      conversation_id: conversationId,
+      role,
+      content,
+      fields: fields && Object.keys(fields).length > 0 ? fields : null,
     };
-    if (fields && Object.keys(fields).length > 0) {
-      row.fields = fields;
-    }
-
     const { data, error } = await getSupabaseAdmin()
-      .from("conversations")
-      .insert(row)
+      .from("messages")
+      .insert(payload)
       .select();
 
     if (error) {
