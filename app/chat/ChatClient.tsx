@@ -407,12 +407,8 @@ export default function ChatClient() {
     } catch { setDailyUsed(0); }
   }, [todayKey, user?.id]);
 
-  // 사용자 변경 시 dailyUsed 초기화
-  useEffect(() => {
-    if (mounted && user?.id) {
-      setDailyUsed(0);
-    }
-  }, [user?.id, mounted]);
+  // 사용자 변경 시: 로컬 저장값을 우선 사용하므로 별도 초기화하지 않음
+  // (초기화는 날짜가 바뀔 때 키가 달라지면서 자연스럽게 0으로 시작)
 
   const effectiveProAccess = proValid || quotaDisabledInDev;
   
