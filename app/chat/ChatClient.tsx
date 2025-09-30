@@ -22,6 +22,12 @@ const STORAGE_KEYS = {
   questionCount: "reale:questionCount",
 } as const;
 
+// 사용자별 키 생성 함수
+function getUserStorageKey(baseKey: string, userId?: string | null): string {
+  if (!userId) return baseKey;
+  return `${baseKey}:${userId}`;
+}
+
 const FREE_QUESTION_LIMIT = 5;
 const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
@@ -385,16 +391,25 @@ export default function ChatClient() {
     return Date.now() < until;
   })();
 
-  // 일일 사용량(프로 전용) – 서버/클라이언트 초기 HTML 불일치 방지 위해 마운트 후 동기화
+  // 일일 사용량(프로 전용) – 사용자별로 분리하여 저장
   const todayKey = typeof window !== "undefined" ? new Date().toISOString().slice(0, 10) : "";
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!user?.id) return;
     try {
-      const raw = window.localStorage.getItem(`reale:daily:${todayKey}`);
+      const userDailyKey = getUserStorageKey(`reale:daily:${todayKey}`, user.id);
+      const raw = window.localStorage.getItem(userDailyKey);
       const v = Number(raw);
       setDailyUsed(Number.isFinite(v) ? v : 0);
     } catch { setDailyUsed(0); }
-  }, [todayKey]);
+  }, [todayKey, user?.id]);
+
+  // 사용자 변경 시 dailyUsed 초기화
+  useEffect(() => {
+    if (mounted && user?.id) {
+      setDailyUsed(0);
+    }
+  }, [user?.id, mounted]);
 
   const effectiveProAccess = proValid || quotaDisabledInDev;
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
@@ -524,11 +539,12 @@ export default function ChatClient() {
 
     await streamAssistant(text, updatedHistory);
 
-    // Pro 일일 카운트 증가
-    if (effectiveProAccess && typeof window !== "undefined") {
+    // Pro 일일 카운트 증가 (사용자별)
+    if (effectiveProAccess && typeof window !== "undefined" && user?.id) {
       try {
         const next = dailyUsed + 1;
-        window.localStorage.setItem(`reale:daily:${todayKey}`, String(next));
+        const userDailyKey = getUserStorageKey(`reale:daily:${todayKey}`, user.id);
+        window.localStorage.setItem(userDailyKey, String(next));
       } catch {}
     }
   }
