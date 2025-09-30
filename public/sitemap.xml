@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.real-e.space/</loc>
+    <priority>1.0</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url><loc>https://www.real-e.space/chat</loc></url>
+  <url><loc>https://www.real-e.space/chat/new</loc></url>
+  <url><loc>https://www.real-e.space/chat/share</loc></url>
+  <url><loc>https://www.real-e.space/product</loc></url>
+  <url><loc>https://www.real-e.space/checkout</loc></url>
+  <url><loc>https://www.real-e.space/checkout/info</loc></url>
+  <url><loc>https://www.real-e.space/checkout/success</loc></url>
+  <url><loc>https://www.real-e.space/faq</loc></url>
+  <url><loc>https://www.real-e.space/privacy</loc></url>
+  <url><loc>https://www.real-e.space/account</loc></url>
+</urlset>
+
