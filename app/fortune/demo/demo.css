@@ -1,0 +1,297 @@
+/* demo.css - 부동산 사주 데모 페이지 스타일 (심플 버전) */
+
+.demo-page {
+  min-height: 100vh;
+  background: #F9FAFB;
+  padding: 2rem 1rem;
+}
+
+.demo-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding: 2rem 1rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+}
+
+.demo-header h1 {
+  font-size: 2rem;
+  color: #1F2937;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.demo-header p {
+  font-size: 1rem;
+  color: #6B7280;
+  margin-bottom: 0.5rem;
+}
+
+.demo-subtitle {
+  font-size: 0.875rem !important;
+  color: #9CA3AF !important;
+}
+
+.demo-search-link {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  background: #5B21B6;
+  color: white;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.demo-search-link:hover {
+  background: #6D28D9;
+  transform: translateY(-1px);
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.demo-card {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+  transition: all 0.2s;
+}
+
+.demo-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #5B21B6;
+}
+
+.demo-card-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #E5E7EB;
+}
+
+.demo-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.demo-card-content {
+  padding: 1.5rem;
+}
+
+.demo-card-content h3 {
+  font-size: 1.3rem;
+  color: #1F2937;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.demo-card-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.demo-tag {
+  background: #EEF2FF;
+  color: #5B21B6;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.demo-price {
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.demo-address {
+  color: #6B7280;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.demo-card-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.demo-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.demo-btn.secondary {
+  background: #F3F4F6;
+  color: #374151;
+}
+
+.demo-btn.secondary:hover {
+  background: #E5E7EB;
+}
+
+.demo-btn.fortune {
+  background: #5B21B6;
+  color: white;
+}
+
+.demo-btn.fortune:hover {
+  background: #6D28D9;
+  transform: translateY(-1px);
+}
+
+.demo-integration {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+}
+
+.demo-integration h2 {
+  font-size: 1.25rem;
+  color: #1F2937;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.demo-code {
+  background: #1F2937;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  overflow-x: auto;
+}
+
+.demo-code pre {
+  color: #F9FAFB;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.demo-features {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+}
+
+.demo-features h2 {
+  font-size: 1.25rem;
+  color: #1F2937;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.demo-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.demo-features li {
+  padding: 0.75rem 0;
+  color: #374151;
+  font-size: 1.05rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.demo-features li:last-child {
+  border-bottom: none;
+}
+
+.demo-disclaimer {
+  background: #FFFBEB;
+  border-left: 3px solid #F59E0B;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  border: 1px solid #FDE68A;
+}
+
+.demo-disclaimer p {
+  margin: 0;
+  color: #92400E;
+  font-weight: 500;
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .demo-page {
+    padding: 1rem 0.75rem;
+  }
+
+  .demo-header {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .demo-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .demo-header p {
+    font-size: 0.9375rem;
+  }
+
+  .demo-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .demo-card-actions {
+    flex-direction: column;
+  }
+
+  .demo-btn {
+    width: 100%;
+    padding: 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .demo-integration,
+  .demo-features {
+    padding: 1.25rem;
+  }
+
+  .demo-integration h2,
+  .demo-features h2 {
+    font-size: 1.125rem;
+  }
+
+  .demo-code pre {
+    font-size: 0.8125rem;
+  }
+}
+

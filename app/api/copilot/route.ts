@@ -41,12 +41,17 @@ export async function POST(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const isUuid = (v?: string) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-      // 대시보드 의존성 제거: 헤더(conversations)에 쓰지 않고 messages만 기록
       const convId: string | null = isUuid(conversationId) ? (conversationId as string) : null;
 
-      // 메시지 적재 (convId가 없으면 NULL 허용 스키마가 아닌 경우는 skip)
-      await admin.from("messages").insert({ conversation_id: convId as any, role: "user", content: message }).throwOnError();
-      await admin.from("messages").insert({ conversation_id: convId as any, role: "assistant", content: reply }).throwOnError();
+      if (convId) {
+        // conversation이 없으면 먼저 생성
+        await admin.from("conversations").upsert({ id: convId }, { onConflict: 'id' });
+        
+        // 메시지 저장
+        await admin.from("messages").insert({ conversation_id: convId, role: "user", content: message }).throwOnError();
+        await admin.from("messages").insert({ conversation_id: convId, role: "assistant", content: reply }).throwOnError();
+        console.log('✅ Supabase 메시지 저장 성공');
+      }
     } catch (e) {
       console.warn('[copilot] supabase logging skipped:', e);
     }

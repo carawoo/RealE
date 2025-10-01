@@ -37,6 +37,9 @@ export default function Home() {
               로그인
             </Link>
           )}
+          <Link className="nav-btn fortune-btn" href="/fortune/search">
+            🔮 부동산 사주 보기
+          </Link>
         </div>
       </div>
     </section>

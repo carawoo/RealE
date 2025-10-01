@@ -9,6 +9,13 @@
 - **안전 상환형**: 부채를 최소화하는 안전한 시나리오  
 - **정책 활용형**: 정부 지원 프로그램을 활용한 시나리오
 
+### 🔮 부동산 사주/타로 콘텐츠 (NEW!)
+- **AI 운세 생성**: GPT 기반 부동산 매물별 재미있는 사주 콘텐츠
+- **타로 카드 이미지**: DALL-E로 생성한 신비로운 카드 이미지
+- **SNS 공유**: 카카오톡, 트위터 등으로 간편하게 공유
+- **바이럴 마케팅**: 재미있는 콘텐츠로 자연스러운 유입 증가
+- 🎮 [데모 페이지 바로가기](/fortune/demo)
+
 ### 📊 상세 분석 정보
 - 월 상환액 (원리금균등상환 방식)
 - 총 이자 계산
@@ -90,9 +97,18 @@ npm run dev
 
 ## 📋 API 엔드포인트
 
+### 대출 계산
 - `POST /api/compute`: 대출 시나리오 계산
 - `POST /api/share`: 결과 공유
 - `GET /api/conversations/new`: 새 대화 생성
+
+### 부동산 사주 (NEW!)
+- `POST /api/fortune/generate`: AI 운세 텍스트 생성
+- `POST /api/fortune/image`: 타로 카드 이미지 생성
+- `POST /api/fortune/share`: 공유 횟수 증가
+- `GET /api/fortune/share`: 조회수 증가
+
+자세한 사용법은 [부동산 사주 기능 문서](docs/fortune-feature.md)를 참고하세요.
 
 ## 💡 주요 특징
 

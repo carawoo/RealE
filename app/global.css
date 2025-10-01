@@ -336,7 +336,7 @@ body.app-shell {
   justify-content: center;
   gap: 8px;
   padding: 12px 26px;
-  border-radius: 999px;
+  border-radius: 24px;
   border: 1px solid #bfd3fb;
   background: #e8f0fe;
   color: #1a73e8;
@@ -366,6 +366,17 @@ body.app-shell {
 
 .nav-btn.primary:hover {
   background: linear-gradient(135deg, #1765cc, #3b78f2);
+}
+
+.nav-btn.fortune-btn {
+  background: #5B21B6;
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(91, 33, 182, 0.25);
+}
+
+.nav-btn.fortune-btn:hover {
+  background: #6D28D9;
 }
 
 .nav-btn .nav-label {

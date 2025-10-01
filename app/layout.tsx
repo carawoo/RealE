@@ -55,6 +55,16 @@ export default function RootLayout({
         {process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
           <script async src="https://js.stripe.com/v3" />
         )}
+        {/* Kakao Share SDK */}
+        <script 
+          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
+          async
+        />
+        {/* Kakao Maps SDK */}
+        <script 
+          src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=087319e261444450882a1a155abea088&autoload=false&libraries=services"
+          async
+        />
       </head>
       <body className="app-shell">
         <AuthProvider>
