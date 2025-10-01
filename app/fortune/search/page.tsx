@@ -75,7 +75,7 @@ export default function FortuneSearchPage() {
       <div className="fortune-search-container">
         <header className="fortune-search-header">
           <h1>🔮 부동산 사주</h1>
-          <p>내가 살고있는 곳, 관심있는 지역의 운세를 확인해보세요!</p>
+          <p>내가 살고있는 곳, 관심있는 건물의 운세를 확인해보세요!</p>
         </header>
 
         <div className="fortune-search-box">
@@ -83,7 +83,7 @@ export default function FortuneSearchPage() {
             <input
               type="text"
               className="search-input"
-              placeholder="예: 강남구 역삼동, 서초구 반포동, 송파구 잠실동"
+              placeholder="예: 강남구 역삼동, 래미안, 오피스텔, 상가"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -105,8 +105,9 @@ export default function FortuneSearchPage() {
             <div className="search-tags">
               <button onClick={() => setQuery("강남구 역삼동")}>강남구 역삼동</button>
               <button onClick={() => setQuery("마포구 상암동")}>마포구 상암동</button>
-              <button onClick={() => setQuery("송파구 잠실동")}>송파구 잠실동</button>
-              <button onClick={() => setQuery("서초구 반포동")}>서초구 반포동</button>
+              <button onClick={() => setQuery("송파구 오피스텔")}>송파구 오피스텔</button>
+              <button onClick={() => setQuery("서초구 빌라")}>서초구 빌라</button>
+              <button onClick={() => setQuery("래미안")}>래미안</button>
             </div>
           </div>
         </div>
@@ -160,7 +161,7 @@ export default function FortuneSearchPage() {
         {!loading && results.length === 0 && query && (
           <div className="search-empty">
             <p>🔍 검색 결과가 없습니다.</p>
-            <p className="search-empty-sub">다른 지역이나 아파트 이름으로 검색해보세요.</p>
+            <p className="search-empty-sub">다른 지역이나 건물 이름으로 검색해보세요.</p>
           </div>
         )}
 
@@ -168,7 +169,8 @@ export default function FortuneSearchPage() {
           <h3>💡 이렇게 검색해보세요</h3>
           <ul>
             <li><strong>지역으로 검색:</strong> "강남구 역삼동", "마포구 상암동"</li>
-            <li><strong>아파트로 검색:</strong> "래미안", "푸르지오", "힐스테이트"</li>
+            <li><strong>건물 이름:</strong> "래미안", "푸르지오", "힐스테이트"</li>
+            <li><strong>건물 타입:</strong> "오피스텔", "빌라", "상가"</li>
             <li><strong>동네로 검색:</strong> "잠실", "판교", "여의도"</li>
           </ul>
         </div>

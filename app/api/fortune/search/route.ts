@@ -43,9 +43,21 @@ export async function GET(request: NextRequest) {
 
     const results: any[] = [];
     
-    // 1. 키워드 검색 (아파트)
+    // 건물 타입 추출 함수
+    const extractBuildingType = (categoryName: string, placeName: string): string => {
+      if (categoryName.includes('아파트') || placeName.includes('아파트')) return '아파트';
+      if (categoryName.includes('오피스텔') || placeName.includes('오피스텔')) return '오피스텔';
+      if (categoryName.includes('빌라') || placeName.includes('빌라')) return '빌라';
+      if (categoryName.includes('주택') || placeName.includes('주택')) return '주택';
+      if (categoryName.includes('상가') || placeName.includes('상가')) return '상가';
+      if (categoryName.includes('건물') || placeName.includes('빌딩')) return '건물';
+      if (categoryName.includes('부동산')) return '부동산';
+      return '건물'; // 기본값
+    };
+
+    // 1. 키워드 검색 (모든 건물 타입)
     try {
-      const keywordUrl = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 아파트')}&size=15`;
+      const keywordUrl = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=15`;
       
       const keywordResponse = await fetch(keywordUrl, {
         headers: {
@@ -59,17 +71,30 @@ export async function GET(request: NextRequest) {
         
         console.log(`✅ 키워드 검색: ${documents.length}개 발견`);
 
-        // 아파트 결과 추가 (최대 10개) - 예측가 제거, 실거래가만 사용
-        documents.slice(0, 10).forEach((doc, idx) => {
+        // 건물 관련 결과만 필터링
+        const buildingKeywords = ['아파트', '오피스텔', '빌라', '주택', '상가', '빌딩', '단지', '타운', '캐슬', '파크', '그린빌', '푸르지오', '래미안', '힐스테이트', '자이', 'e편한세상'];
+        
+        documents.slice(0, 15).forEach((doc, idx) => {
           if (doc.place_name && doc.address_name) {
-            results.push({
-              id: `kakao-keyword-${idx}-${Date.now()}`,
-              name: doc.place_name,
-              type: '아파트',
-              address: doc.road_address_name || doc.address_name,
-              price: undefined, // 예측가 제거, 실거래가 API에서만 가격 설정
-              realAddress: true,
-            });
+            // 건물 관련 장소인지 확인
+            const isBuildingRelated = buildingKeywords.some(keyword => 
+              doc.place_name.includes(keyword) || 
+              doc.category_name?.includes(keyword) ||
+              query.includes(keyword)
+            );
+
+            if (isBuildingRelated || results.length < 5) { // 최소 5개는 보여주기
+              const buildingType = extractBuildingType(doc.category_name || '', doc.place_name);
+              
+              results.push({
+                id: `kakao-keyword-${idx}-${Date.now()}`,
+                name: doc.place_name,
+                type: buildingType,
+                address: doc.road_address_name || doc.address_name,
+                price: undefined,
+                realAddress: true,
+              });
+            }
           }
         });
       }
