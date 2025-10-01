@@ -19,15 +19,24 @@ function SignInContent() {
   const [info, setInfo] = useState<string | null>(null);
   const [isKakaoInApp, setIsKakaoInApp] = useState(false);
 
-  // 카카오톡 인앱 브라우저 감지
+  // 인앱 브라우저 감지 (KakaoTalk, LinkedIn, Facebook, Instagram 등)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userAgent = window.navigator.userAgent.toLowerCase();
-      const isKakao = userAgent.includes('kakaotalk');
-      setIsKakaoInApp(isKakao);
+      const isInAppBrowser = 
+        userAgent.includes('kakaotalk') ||
+        userAgent.includes('linkedin') ||
+        userAgent.includes('fban') ||
+        userAgent.includes('fbav') ||
+        userAgent.includes('instagram') ||
+        userAgent.includes('twitter') ||
+        userAgent.includes('line') ||
+        userAgent.includes('micromessenger');
       
-      if (isKakao) {
-        setInfo("📱 카카오톡 인앱 브라우저에서는 구글 로그인이 제한됩니다.\n💡 카카오 계정 또는 이메일 로그인을 사용하시거나, 우측 상단 (...) 메뉴에서 '외부 브라우저로 열기'를 선택해주세요.");
+      setIsKakaoInApp(isInAppBrowser);
+      
+      if (isInAppBrowser) {
+        setInfo("📱 앱 내 브라우저에서는 구글 로그인이 제한됩니다.\n💡 카카오 계정 또는 이메일 로그인을 사용하시거나, 우측 상단 메뉴에서 '외부 브라우저로 열기'를 선택해주세요.");
       }
     }
   }, []);
