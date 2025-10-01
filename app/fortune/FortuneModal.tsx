@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { initKakao } from "../lib/kakaoInit";
 import "./fortune.css";
 
 interface FortuneModalProps {
@@ -38,18 +37,12 @@ export default function FortuneModal({
   const [progress, setProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("운세를 읽고 있습니다...");
 
-  // 클라이언트 사이드에서만 Portal 사용 & Kakao SDK 초기화
+  // 클라이언트 사이드에서만 Portal 사용
   useEffect(() => {
     setMounted(true);
-    
-    // Kakao SDK 초기화 (SDK 로드 대기)
-    const initTimer = setTimeout(() => {
-      initKakao();
-    }, 1000);
 
     return () => {
       setMounted(false);
-      clearTimeout(initTimer);
     };
   }, []);
 
@@ -206,7 +199,7 @@ export default function FortuneModal({
     }
   };
 
-  const handleShare = async (platform: "kakao" | "twitter" | "copy") => {
+  const handleShare = async (platform: "twitter" | "copy") => {
     if (!result?.shareSlug) {
       alert("공유 링크가 생성되지 않았습니다.");
       return;
@@ -216,46 +209,6 @@ export default function FortuneModal({
     const shareText = `${propertyName}의 부동산 사주를 봤어요! 🔮\n${result.keywords.join(" · ")}\n\n`;
 
     switch (platform) {
-      case "kakao":
-        // Kakao SDK 초기화 확인
-        if (!initKakao()) {
-          console.error("❌ Kakao SDK 초기화 실패");
-          navigator.clipboard.writeText(shareUrl);
-          alert("카카오톡 공유 기능을 불러오는 중입니다.\n링크가 복사되었습니다!");
-          return;
-        }
-
-        try {
-          // 카카오톡 공유
-          window.Kakao.Share.sendDefault({
-            objectType: "feed",
-            content: {
-              title: `🔮 ${propertyName}의 부동산 사주`,
-              description: `${result.keywords.join(" · ")}\n\n리얼이(RealE)가 AI로 분석한 이 매물의 운세를 확인해보세요!`,
-              imageUrl: result.imageUrl || `${window.location.origin}/realE-logo.png`,
-              link: {
-                mobileWebUrl: shareUrl,
-                webUrl: shareUrl,
-              },
-            },
-            buttons: [
-              {
-                title: "사주 보러가기",
-                link: {
-                  mobileWebUrl: shareUrl,
-                  webUrl: shareUrl,
-                },
-              },
-            ],
-          });
-          console.log("✅ 카카오톡 공유 성공");
-        } catch (kakaoError) {
-          console.error("❌ 카카오톡 공유 실패:", kakaoError);
-          navigator.clipboard.writeText(shareUrl);
-          alert("카카오톡 공유에 실패했습니다.\n링크가 복사되었습니다!");
-        }
-        break;
-
       case "twitter":
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
           shareText
@@ -390,13 +343,6 @@ export default function FortuneModal({
             <div className="fortune-actions">
               <h3>친구에게 공유하기</h3>
               <div className="fortune-share-buttons">
-                <button
-                  className="fortune-share-btn kakao"
-                  onClick={() => handleShare("kakao")}
-                >
-                  <span>💬</span>
-                  <span>카카오톡</span>
-                </button>
                 <button
                   className="fortune-share-btn twitter"
                   onClick={() => handleShare("twitter")}
