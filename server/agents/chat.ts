@@ -280,15 +280,26 @@ function generateFinancialAdvice(): string {
 
 // 지역명 추출 함수 (상세 주소 포함)
 function extractLocation(message: string): string | null {
-  // 구체적인 지역 패턴 (시/구/동 포함)
-  const detailedPattern = /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)(\s?특별시|\s?광역시|\s?시|\s?도)?\s?([\w가-힣]+구)?\s?([\w가-힣]+동)?/g;
-  const match = message.match(detailedPattern);
+  // 더 구체적인 패턴: 도 + 시 + 구 + 동
+  const fullPattern = /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)(\s?도|\s?특별시|\s?광역시)?\s?([\w가-힣]+시)?\s?([\w가-힣]+구)?\s?([\w가-힣]+동)?/;
+  const fullMatch = message.match(fullPattern);
   
-  if (match && match[0]) {
-    return match[0].trim();
+  if (fullMatch) {
+    // 매치된 전체 문자열에서 불필요한 공백 제거
+    const matched = fullMatch[0].trim().replace(/\s+/g, ' ');
+    if (matched.length > 2) { // 최소 2글자 이상
+      return matched;
+    }
   }
   
-  // 간단한 지역명
+  // 간단한 시/구/동 패턴도 체크
+  const cityPattern = /([\w가-힣]+시)\s?([\w가-힣]+구)?\s?([\w가-힣]+동)?/;
+  const cityMatch = message.match(cityPattern);
+  if (cityMatch && cityMatch[0].length > 3) {
+    return cityMatch[0].trim().replace(/\s+/g, ' ');
+  }
+  
+  // 기본 광역시/도
   const simplePattern = /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/;
   const simpleMatch = message.match(simplePattern);
   
