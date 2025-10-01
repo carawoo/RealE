@@ -185,17 +185,32 @@ export default function ChatClient() {
           }
         } catch {}
 
-        // user_plan 테이블에서 직접 조회
+        // user_plan 테이블에서 직접 조회 (plan: boolean 또는 enum(plan_type) 모두 지원)
         if (plan === null) {
           const byId = await supabase
             .from("user_plan")
-            .select("plan, pro_until")
+            .select("plan, plan_label, pro_until")
             .eq("user_id", user.id)
             .maybeSingle();
-          
+
           if (byId.data) {
-            plan = !!byId.data.plan;
-            until = byId.data.pro_until ?? null;
+            const rawPlan: any = (byId.data as any).plan;
+            const rawLabel: any = (byId.data as any).plan_label;
+
+            // plan이 enum 문자열인 경우: 'RealE' | 'Plus' | 'Pro'
+            if (typeof rawPlan === "string") {
+              const planStr = rawPlan.trim();
+              plan = planStr !== "RealE"; // Plus/Pro => true, RealE => false
+            } else if (typeof rawPlan === "boolean") {
+              // 과거 스키마(BOOLEAN) 호환
+              plan = rawPlan;
+            } else if (typeof rawLabel === "string") {
+              // 최종 폴백: plan_label 기반 추론
+              const lbl = rawLabel.trim().toLowerCase();
+              plan = lbl === "plus" || lbl === "pro";
+            }
+
+            until = (byId.data as any).pro_until ?? null;
           }
         }
 
