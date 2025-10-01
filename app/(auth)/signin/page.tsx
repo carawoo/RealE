@@ -66,6 +66,9 @@ function SignInContent() {
     const oauthError = searchParams.get("error");
     const status = searchParams.get("status");
     if (!oauthError) return;
+    
+    console.log('[SignIn] OAuth error detected:', oauthError);
+    
     // 일부 브라우저/리다이렉션에서 이메일 인증 완료 뒤에도
     // error=OAuth code missing 이 붙는 사례가 있어 안전하게 무시한다.
     if (oauthError === "OAuth code missing") {
@@ -84,7 +87,18 @@ function SignInContent() {
       return;
     }
     setSubmitting(false);
-    setError(oauthError);
+    
+    // 사용자 친화적인 에러 메시지로 변환
+    let friendlyError = oauthError;
+    if (oauthError === "server_error") {
+      friendlyError = "로그인 중 오류가 발생했습니다. 다시 시도해주세요.";
+    } else if (oauthError.includes("access_denied")) {
+      friendlyError = "로그인이 취소되었습니다.";
+    } else if (oauthError.includes("disallowed_useragent")) {
+      friendlyError = "현재 브라우저에서는 이 로그인 방법을 사용할 수 없습니다. 다른 로그인 방법을 시도하거나 외부 브라우저로 열어주세요.";
+    }
+    
+    setError(friendlyError);
   }, [searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
