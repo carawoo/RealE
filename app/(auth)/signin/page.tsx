@@ -17,6 +17,20 @@ function SignInContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [isKakaoInApp, setIsKakaoInApp] = useState(false);
+
+  // 카카오톡 인앱 브라우저 감지
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isKakao = userAgent.includes('kakaotalk');
+      setIsKakaoInApp(isKakao);
+      
+      if (isKakao) {
+        setInfo("📱 카카오톡에서 구글 로그인이 제한됩니다. 외부 브라우저(크롬, 사파리)로 열어주세요.");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -170,24 +184,38 @@ function SignInContent() {
               {submitting ? "로그인 중..." : "로그인"}
             </button>
             <div className="oauth-buttons">
-              <button
-                type="button"
-                className="oauth-button"
-                onClick={() => handleOAuth("google")}
-                disabled={submitting}
-              >
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
-                Google 계정으로 로그인
-              </button>
-              <button
-                type="button"
-                className="oauth-button"
-                onClick={() => handleOAuth("kakao")}
-                disabled={submitting}
-              >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" />
-                Kakao 계정으로 로그인
-              </button>
+              {isKakaoInApp ? (
+                <a
+                  href={window.location.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="oauth-button"
+                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  🌐 외부 브라우저로 열기
+                </a>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="oauth-button"
+                    onClick={() => handleOAuth("google")}
+                    disabled={submitting}
+                  >
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+                    Google 계정으로 로그인
+                  </button>
+                  <button
+                    type="button"
+                    className="oauth-button"
+                    onClick={() => handleOAuth("kakao")}
+                    disabled={submitting}
+                  >
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" />
+                    Kakao 계정으로 로그인
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </form>
