@@ -19,20 +19,31 @@ export default function KakaoMap({ address, width = '100%', height = '300px' }: 
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
+    console.log('[KakaoMap] Rendering map for address:', address);
+    console.log('[KakaoMap] API Key:', process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ? 'present' : 'missing');
+    
     const loadKakaoMap = () => {
       if (!window.kakao || !window.kakao.maps) {
+        console.error('[KakaoMap] Kakao Maps SDK not loaded');
         setError('카카오맵 API를 불러올 수 없습니다.');
         return;
       }
 
-      if (!mapContainer.current) return;
+      if (!mapContainer.current) {
+        console.warn('[KakaoMap] Map container not found');
+        return;
+      }
 
+      console.log('[KakaoMap] Geocoding address:', address);
       const geocoder = new window.kakao.maps.services.Geocoder();
 
       // 주소로 좌표 검색
       geocoder.addressSearch(address, (result: any, status: any) => {
+        console.log('[KakaoMap] Geocoding result:', { result, status });
+        
         if (status === window.kakao.maps.services.Status.OK) {
           const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
+          console.log('[KakaoMap] Coordinates found:', result[0].y, result[0].x);
 
           // 지도 생성
           const map = new window.kakao.maps.Map(mapContainer.current, {
@@ -51,7 +62,9 @@ export default function KakaoMap({ address, width = '100%', height = '300px' }: 
             content: `<div style="padding:5px;font-size:12px;width:150px;text-align:center;">${address}</div>`,
           });
           infowindow.open(map, marker);
+          console.log('[KakaoMap] Map successfully rendered');
         } else {
+          console.error('[KakaoMap] Geocoding failed, status:', status);
           setError('주소를 찾을 수 없습니다.');
         }
       });
