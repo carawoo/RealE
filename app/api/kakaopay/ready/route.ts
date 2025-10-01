@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getSupabaseAdmin } from "@/server/supabase";
 
 export const runtime = "nodejs";
 
@@ -26,12 +27,43 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { itemName, amount } = await req.json();
-    const totalAmount = Number(amount) || 3900;
-    const name = typeof itemName === "string" && itemName.trim().length > 0 ? itemName : "RealE Plus";
+    const bodyJson = await req.json();
+    const { itemName, amount, targetPlan, userId } = bodyJson || {} as any;
+    let totalAmount = Number(amount) || 3900; // 기본: Plus 3,900원
+    let name = typeof itemName === "string" && itemName.trim().length > 0 ? itemName : "RealE Plus";
+
+    // 업그레이드 결제 분기: Plus → Pro 시 1,100원(5,000 - 3,900)만 결제
+    if (targetPlan === "pro") {
+      name = "RealE Pro";
+      try {
+        const admin = getSupabaseAdmin();
+        const uid = typeof userId === "string" && userId.length > 0 ? userId : null;
+        if (uid) {
+          const byId = await admin
+            .from("user_plan")
+            .select("plan, plan_label")
+            .eq("user_id", uid)
+            .maybeSingle();
+          const rawPlan: any = byId.data?.plan;
+          const rawLabel: any = byId.data?.plan_label;
+          const isPlus = (typeof rawPlan === "string" && rawPlan === "Plus") ||
+                         (typeof rawLabel === "string" && rawLabel.toLowerCase() === "plus");
+          if (isPlus) {
+            totalAmount = 1100; // 차액 결제
+          } else {
+            totalAmount = 5000; // 일반 Pro 결제
+          }
+        } else {
+          // 사용자 식별 불가 시 기본 Pro 가격로 처리(보수적)
+          totalAmount = 5000;
+        }
+      } catch {
+        totalAmount = 5000;
+      }
+    }
 
     const orderId = randomId();
-    const userId = "guest"; // 선택: 필요 시 세션에서 사용자 ID를 읽어 대입
+    const partnerUserId = typeof userId === "string" && userId.length > 0 ? userId : "guest";
 
     const approvalUrl = `${siteEnv}/api/kakaopay/approve`;
     const cancelUrl = `${siteEnv}/chat`;
@@ -40,7 +72,7 @@ export async function POST(req: NextRequest) {
     const body = new URLSearchParams({
       cid,
       partner_order_id: orderId,
-      partner_user_id: userId,
+      partner_user_id: partnerUserId,
       item_name: name,
       quantity: "1",
       total_amount: String(totalAmount),

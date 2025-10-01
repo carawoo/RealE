@@ -19,7 +19,7 @@ function SignInContent() {
   const [info, setInfo] = useState<string | null>(null);
   const [isKakaoInApp, setIsKakaoInApp] = useState(false);
 
-  // 인앱 브라우저 감지 (KakaoTalk, LinkedIn, Facebook, Instagram 등)
+  // 인앱 브라우저 감지 (KakaoTalk, LinkedIn, Facebook, Instagram, X(Twitter), Threads, Line, WeChat 등)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userAgent = window.navigator.userAgent.toLowerCase();
@@ -31,7 +31,8 @@ function SignInContent() {
         userAgent.includes('fban') ||
         userAgent.includes('fbav') ||
         userAgent.includes('instagram') ||
-        userAgent.includes('twitter') ||
+        userAgent.includes('twitter') || userAgent.includes('x/') ||
+        userAgent.includes('threads') ||
         userAgent.includes('line') ||
         userAgent.includes('micromessenger');
       
@@ -39,7 +40,7 @@ function SignInContent() {
       setIsKakaoInApp(isInAppBrowser);
       
       if (isInAppBrowser) {
-        setInfo("📱 앱 내 브라우저에서는 구글 로그인이 제한됩니다.\n💡 카카오 계정 또는 이메일 로그인을 사용하시거나, 우측 상단 메뉴에서 '외부 브라우저로 열기'를 선택해주세요.");
+        setInfo("📱 인앱 브라우저에서는 구글/일부 소셜 로그인이 제한될 수 있습니다.\n💡 카카오 로그인 또는 이메일 로그인은 ‘외부 브라우저로 열기’ 후 이용해 주세요.");
       }
     }
   }, []);
@@ -224,12 +225,29 @@ function SignInContent() {
               <button
                 type="button"
                 className="oauth-button"
-                onClick={() => handleOAuth("kakao")}
+                onClick={() => {
+                  if (isKakaoInApp) {
+                    setInfo("인앱 브라우저에서는 카카오 로그인이 제한될 수 있어요. 우측 메뉴에서 ‘외부 브라우저로 열기’ 후 다시 시도해 주세요.");
+                    return;
+                  }
+                  handleOAuth("kakao");
+                }}
                 disabled={submitting}
               >
                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" />
                 Kakao 계정으로 로그인
               </button>
+              {isKakaoInApp && (
+                <a
+                  href={typeof window !== 'undefined' ? window.location.href : '/signin'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="auth-secondary"
+                  style={{ textAlign: 'center', marginTop: 8 }}
+                >
+                  🌐 외부 브라우저로 열기
+                </a>
+              )}
             </div>
           </div>
         </form>
