@@ -2,6 +2,13 @@
 // Direct Mastra usage for chat.
 import OpenAI from "openai";
 import { POLICY_PROGRAMS, FREELANCER_INCOME_PROOF, FINANCIAL_INSTITUTIONS, findMatchingPrograms, UserProfile } from "../domain/policy/data";
+import { 
+  getHousingPriceTrend, 
+  getRegionalRealEstateData, 
+  getTransactionStatus,
+  formatRealEstateInfo,
+  formatRealEstateSummary 
+} from "../domain/realestate/reb-api";
 
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -271,6 +278,42 @@ function generateFinancialAdvice(): string {
   return result;
 }
 
+// 부동산 시장 정보 조회
+async function getRealEstateMarketInfo(message: string): Promise<string> {
+  try {
+    // 메시지에서 지역 정보 추출
+    const regionMatch = message.match(/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주|전국)/);
+    const region = regionMatch ? regionMatch[1] : '전국';
+    
+    // 부동산 관련 키워드 확인
+    const hasRealEstateKeywords = /부동산|아파트|집|주택|매매|전세|시세|가격|동향|시장|거래|지역/.test(message);
+    
+    if (!hasRealEstateKeywords) {
+      return "";
+    }
+    
+    let result;
+    
+    // 거래량 관련 질문인지 확인
+    if (/거래|매매량|거래량|거래현황/.test(message)) {
+      result = await getTransactionStatus();
+    } else if (region !== '전국') {
+      result = await getRegionalRealEstateData(region);
+    } else {
+      result = await getHousingPriceTrend();
+    }
+    
+    if (result.success && result.data) {
+      return `\n\n📊 최신 부동산 시장 정보:\n${formatRealEstateSummary(result.data)}\n\n상세 정보: ${formatRealEstateInfo(result.data)}`;
+    }
+    
+    return "";
+  } catch (error) {
+    console.warn('부동산 정보 조회 실패:', error);
+    return "";
+  }
+}
+
 export async function runChatAgent(
   message: string,
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
@@ -441,11 +484,15 @@ export async function runChatAgent(
       }
     }
     
+    // 부동산 시장 정보 조회
+    const realEstateInfo = await getRealEstateMarketInfo(message);
+    
     // 컨텍스트 정보를 시스템 프롬프트에 추가
     const enhancedSystemPrompt = systemPrompt + 
       (policyRecommendations ? `\n\n${policyRecommendations}` : "") +
       (freelancerAdvice ? `\n\n${freelancerAdvice}` : "") +
       (financialAdvice ? `\n\n${financialAdvice}` : "") +
+      (realEstateInfo ? `\n\n${realEstateInfo}\n\n위의 부동산 시장 정보를 바탕으로 사용자에게 현재 시장 상황을 설명하고, 대출이나 투자 결정에 도움이 되는 정보를 제공하세요.` : "") +
       (webSearchResults ? `\n\n웹에서 찾은 실제 사례들:\n${webSearchResults}\n\n위의 웹 검색 결과를 바탕으로 "실제로 이런 사례들이 있어서 참고해보시면 좋을 것 같아요"라는 식으로 자연스럽게 언급하며 답변에 포함하세요. 웹에서 찾은 실제 경험담들을 구체적으로 설명해주세요.` : "\n\n실제 사례가 필요할 때는 구체적인 상황과 수치를 포함한 현실적인 사례를 2-3개 생성해서 제시하세요. 김**씨, 박**씨, 이**씨 등으로 표현하고, 성공과 실패 사례를 균형있게 포함하세요.");
 
     const completion = await openaiClient.chat.completions.create({

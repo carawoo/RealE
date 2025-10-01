@@ -74,6 +74,8 @@ STRIPE_SECRET_KEY=sk_test_xxx
 # 웹 검색 API (우선순위 순)
 SERP_API_KEY=your_serp_api_key  # SerpAPI (Google 검색, 추천)
 BRAVE_API_KEY=your_brave_api_key  # Brave Search API
+# 한국부동산원 R-ONE API
+REB_API_KEY=c6f4cd2862dc42749698e4eeab11b059  # 부동산 통계 정보 조회용
 ```
 
 > Stripe 테스트 키를 사용하면 `https://real-e.space`에서 결제 플로우를 검증할 수 있습니다. 프로덕션 배포 시에는 실키로 교체하세요.
