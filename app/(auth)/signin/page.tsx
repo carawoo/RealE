@@ -237,17 +237,6 @@ function SignInContent() {
                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" />
                 Kakao 계정으로 로그인
               </button>
-              {isKakaoInApp && (
-                <a
-                  href={typeof window !== 'undefined' ? window.location.href : '/signin'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="auth-secondary"
-                  style={{ textAlign: 'center', marginTop: 8 }}
-                >
-                  🌐 외부 브라우저로 열기
-                </a>
-              )}
             </div>
           </div>
         </form>
