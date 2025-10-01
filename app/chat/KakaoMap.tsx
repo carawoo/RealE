@@ -2,10 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+interface Property {
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  price?: number;
+  areaSize?: number;
+  type?: string;
+  tradeType?: string;
+}
+
 interface KakaoMapProps {
   address: string;
   width?: string;
   height?: string;
+  showProperties?: boolean; // 매물 표시 여부
 }
 
 declare global {
@@ -14,13 +26,33 @@ declare global {
   }
 }
 
-export default function KakaoMap({ address, width = '100%', height = '300px' }: KakaoMapProps) {
+export default function KakaoMap({ address, width = '100%', height = '300px', showProperties = true }: KakaoMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string>('');
+  const [properties, setProperties] = useState<Property[]>([]);
 
   useEffect(() => {
     console.log('[KakaoMap] Rendering map for address:', address);
     console.log('[KakaoMap] API Key:', process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ? 'present' : 'missing');
+    console.log('[KakaoMap] Show properties:', showProperties);
+    
+    // 매물 검색
+    const fetchProperties = async () => {
+      if (!showProperties) return;
+      
+      try {
+        const response = await fetch(`/api/properties?region=${encodeURIComponent(address)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProperties(data.properties || []);
+          console.log('[KakaoMap] Properties loaded:', data.properties?.length);
+        }
+      } catch (err) {
+        console.error('[KakaoMap] Failed to fetch properties:', err);
+      }
+    };
+    
+    fetchProperties();
     
     const loadKakaoMap = () => {
       if (!window.kakao || !window.kakao.maps) {
@@ -48,20 +80,59 @@ export default function KakaoMap({ address, width = '100%', height = '300px' }: 
           // 지도 생성
           const map = new window.kakao.maps.Map(mapContainer.current, {
             center: coords,
-            level: 3, // 확대 레벨
+            level: showProperties ? 5 : 3, // 매물 표시 시 더 넓게
           });
 
-          // 마커 표시
-          const marker = new window.kakao.maps.Marker({
-            map: map,
-            position: coords,
-          });
+          // 매물이 있으면 마커들 표시
+          if (showProperties && properties.length > 0) {
+            console.log('[KakaoMap] Adding property markers:', properties.length);
+            
+            properties.forEach((property) => {
+              const markerPosition = new window.kakao.maps.LatLng(property.latitude, property.longitude);
+              const marker = new window.kakao.maps.Marker({
+                map: map,
+                position: markerPosition,
+              });
 
-          // 인포윈도우 표시
-          const infowindow = new window.kakao.maps.InfoWindow({
-            content: `<div style="padding:5px;font-size:12px;width:150px;text-align:center;">${address}</div>`,
-          });
-          infowindow.open(map, marker);
+              // 클릭 시 매물 정보 표시
+              const priceText = property.price 
+                ? `${(property.price / 100000000).toFixed(1)}억원` 
+                : '가격정보 없음';
+              const areaText = property.areaSize 
+                ? `${property.areaSize}평` 
+                : '';
+              
+              const infoContent = `
+                <div style="padding:10px;min-width:180px;">
+                  <div style="font-weight:bold;margin-bottom:5px;">${property.name}</div>
+                  <div style="font-size:12px;color:#666;margin-bottom:3px;">${property.address}</div>
+                  <div style="font-size:13px;color:#007AFF;font-weight:bold;">${priceText} ${areaText}</div>
+                </div>
+              `;
+              
+              const infowindow = new window.kakao.maps.InfoWindow({
+                content: infoContent,
+              });
+
+              window.kakao.maps.event.addListener(marker, 'click', () => {
+                infowindow.open(map, marker);
+              });
+            });
+            
+            console.log('[KakaoMap] Property markers added successfully');
+          } else {
+            // 매물이 없으면 중심 마커만 표시
+            const marker = new window.kakao.maps.Marker({
+              map: map,
+              position: coords,
+            });
+
+            const infowindow = new window.kakao.maps.InfoWindow({
+              content: `<div style="padding:5px;font-size:12px;width:150px;text-align:center;">${address}</div>`,
+            });
+            infowindow.open(map, marker);
+          }
+          
           console.log('[KakaoMap] Map successfully rendered');
         } else {
           console.error('[KakaoMap] Geocoding failed, status:', status);
@@ -83,7 +154,7 @@ export default function KakaoMap({ address, width = '100%', height = '300px' }: 
       };
       document.head.appendChild(script);
     }
-  }, [address]);
+  }, [address, properties, showProperties]);
 
   if (error) {
     return (
