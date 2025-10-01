@@ -65,3 +65,28 @@ CREATE TRIGGER on_user_plan_updated
   BEFORE UPDATE ON user_plan
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- user_plan_readonly 뷰 생성 (읽기 전용)
+CREATE OR REPLACE VIEW user_plan_readonly AS
+SELECT 
+  id,
+  user_id,
+  plan,
+  plan_label,
+  pro_until,
+  created_at,
+  updated_at
+FROM user_plan;
+
+-- user_stats_kst 뷰 생성 (이메일로 조회용)
+CREATE OR REPLACE VIEW user_stats_kst AS
+SELECT 
+  up.id,
+  au.email,
+  up.plan,
+  up.plan_label,
+  up.pro_until,
+  up.created_at,
+  up.updated_at
+FROM user_plan up
+JOIN auth.users au ON up.user_id = au.id;
+
