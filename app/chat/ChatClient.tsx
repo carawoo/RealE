@@ -732,9 +732,20 @@ export default function ChatClient() {
       setPaymentError("브라우저 환경에서만 결제가 가능합니다.");
       return;
     }
+    
+    // Plus 유저가 한도 초과했을 때는 Pro 플랜으로 업그레이드
+    const shouldUpgradeToPro = effectiveProAccess && !isProPlan && outOfQuota;
+    
     setCheckoutLoading(true);
     setPaymentError(null);
     try {
+      if (shouldUpgradeToPro) {
+        // Pro 플랜으로 업그레이드 페이지로 리다이렉트
+        console.log('[Checkout] Plus user upgrading to Pro');
+        window.location.href = '/checkout?plan=pro';
+        return;
+      }
+      
       const res = await fetch("/api/kakaopay/ready", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -810,11 +821,15 @@ export default function ChatClient() {
           <div className="chat-paywall">
             <h2 className="chat-paywall__title">추가 질문 안내</h2>
             {effectiveProAccess ? (
-              <>
+              isProPlan ? (
                 <p className="chat-paywall__body">
                   오늘의 일일 한도({dailyLimit}회)를 모두 사용했어요. 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
                 </p>
-              </>
+              ) : (
+                <p className="chat-paywall__body">
+                  RealE Plus 일일 한도({PLUS_DAILY_LIMIT}회)를 모두 사용했어요. 🎉 RealE Pro로 업그레이드하시면 일일 {PRO_DAILY_LIMIT}회까지 질문하실 수 있어요!
+                </p>
+              )
             ) : (
               <p className="chat-paywall__body">
                 무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus {PRO_DURATION_DAYS}일 이용(일일 {PLUS_DAILY_LIMIT}회)할 수 있어요.
@@ -826,7 +841,12 @@ export default function ChatClient() {
               onClick={startCheckout}
               disabled={checkoutLoading}
             >
-              {checkoutLoading ? "결제 페이지로 이동 중..." : "결제하고 계속하기"}
+              {checkoutLoading 
+                ? "페이지로 이동 중..." 
+                : (effectiveProAccess && !isProPlan) 
+                  ? "RealE Pro로 업그레이드하기" 
+                  : "결제하고 계속하기"
+              }
             </button>
             {paymentError && <p className="chat-paywall__error">{paymentError}</p>}
           </div>
