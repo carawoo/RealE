@@ -4,11 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CopilotKit } from "@copilotkit/react-core";
 import { loadStripe } from "@stripe/stripe-js";
+import dynamic from "next/dynamic";
 import "./chat.css";
 import { useAuth } from "@/app/providers/AuthProvider";
 
+const KakaoMap = dynamic(() => import("./KakaoMap"), { ssr: false });
+
 type Role = "user" | "assistant";
-type Message = { role: Role; content: string };
+type Message = { role: Role; content: string; location?: string };
 
 const INITIAL_ASSISTANT_MESSAGE =
   "안녕하세요! RealE(리얼이)입니다. 부동산, 은행, 인테리어 관련 고민을 편하게 말씀해 주세요.";
@@ -738,7 +741,14 @@ export default function ChatClient() {
         <div className="chat-messages">
           {messages.map((m, i) => (
             <div key={`${m.role}-${i}`} className={`chat-row ${m.role}`}>
-              <div className={`chat-bubble ${m.role}`}>{m.content}</div>
+              <div className={`chat-bubble ${m.role}`}>
+                {m.content}
+                {m.location && m.role === "assistant" && (
+                  <div style={{ marginTop: "12px" }}>
+                    <KakaoMap address={m.location} height="250px" />
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

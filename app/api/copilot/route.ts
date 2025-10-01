@@ -18,7 +18,22 @@ export async function POST(request: NextRequest) {
       : [];
     console.log("[/api/copilot] incoming", { message, conversationId, historyLength: baseHistory.length });
     const rawReply = await runChatAgent(message, baseHistory, { conversationId: conversationId || undefined });
-    const reply = rawReply?.trim() ? rawReply.trim() : "현재 답변을 생성하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    
+    // JSON 형식인지 확인하고 파싱
+    let reply = rawReply?.trim() ? rawReply.trim() : "현재 답변을 생성하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    let location: string | undefined;
+    
+    try {
+      const parsed = JSON.parse(reply);
+      if (parsed.content && parsed.location) {
+        reply = parsed.content;
+        location = parsed.location;
+        console.log("[/api/copilot] location detected:", location);
+      }
+    } catch {
+      // JSON이 아니면 일반 텍스트로 처리
+    }
+    
     console.log("[/api/copilot] reply", reply);
 
     // Optional logging to Supabase if env present
@@ -61,7 +76,7 @@ export async function POST(request: NextRequest) {
         for (const piece of chunkText(reply)) {
           send({ delta: piece });
         }
-        send({ done: true, content: reply });
+        send({ done: true, content: reply, location });
         controller.close();
       },
     });

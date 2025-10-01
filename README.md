@@ -76,6 +76,8 @@ SERP_API_KEY=your_serp_api_key  # SerpAPI (Google 검색, 추천)
 BRAVE_API_KEY=your_brave_api_key  # Brave Search API
 # 한국부동산원 R-ONE API
 REB_API_KEY=c6f4cd2862dc42749698e4eeab11b059  # 부동산 통계 정보 조회용
+# 카카오맵 API (JavaScript 키)
+NEXT_PUBLIC_KAKAO_MAP_KEY=your_kakao_javascript_key  # 지도 표시용
 ```
 
 > Stripe 테스트 키를 사용하면 `https://real-e.space`에서 결제 플로우를 검증할 수 있습니다. 프로덕션 배포 시에는 실키로 교체하세요.

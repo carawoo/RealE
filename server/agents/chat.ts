@@ -278,6 +278,23 @@ function generateFinancialAdvice(): string {
   return result;
 }
 
+// 지역명 추출 함수 (상세 주소 포함)
+function extractLocation(message: string): string | null {
+  // 구체적인 지역 패턴 (시/구/동 포함)
+  const detailedPattern = /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)(\s?특별시|\s?광역시|\s?시|\s?도)?\s?([\w가-힣]+구)?\s?([\w가-힣]+동)?/g;
+  const match = message.match(detailedPattern);
+  
+  if (match && match[0]) {
+    return match[0].trim();
+  }
+  
+  // 간단한 지역명
+  const simplePattern = /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/;
+  const simpleMatch = message.match(simplePattern);
+  
+  return simpleMatch ? simpleMatch[1] : null;
+}
+
 // 부동산 시장 정보 조회
 async function getRealEstateMarketInfo(message: string): Promise<string> {
   try {
@@ -507,7 +524,19 @@ export async function runChatAgent(
 
     const textRaw = completion.choices?.[0]?.message?.content?.trim();
     const text = toPlainParagraphs(textRaw);
+    
     if (text && text.length > 0) {
+      // 지역 정보 추출
+      const location = extractLocation(message);
+      
+      // 지역 정보가 있으면 응답에 포함
+      if (location) {
+        return JSON.stringify({
+          content: text,
+          location: location
+        });
+      }
+      
       return text;
     }
     console.warn("[openai] empty completion", completion);
