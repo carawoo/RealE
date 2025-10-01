@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
     }
-    const kakaoIdentity = userData.user.identities?.find((identity) => identity.provider === "kakao");
+    const identities: any[] = (userData?.user?.identities as any[]) || (session?.user?.identities as any[]) || [];
+    const kakaoIdentity = identities.find((identity: any) => identity?.provider === "kakao");
     let kakaoTargetId: string | null = null;
     if (kakaoIdentity) {
       const providerId = (kakaoIdentity as any)?.provider_id;

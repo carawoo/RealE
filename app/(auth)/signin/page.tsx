@@ -148,8 +148,8 @@ function SignInContent() {
     setError(null);
     try {
       const nextPath = searchParams.get("redirect") || "/chat";
-      const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL;
-      const origin = typeof window !== "undefined" ? window.location.origin : fallbackOrigin;
+      // 도메인 통일: 항상 환경변수 기준으로 콜백 구성(쿠키 도메인 불일치 방지)
+      const origin = process.env.NEXT_PUBLIC_SITE_URL;
       if (!origin) {
         throw new Error("리다이렉트 URL을 구성하지 못했습니다. NEXT_PUBLIC_SITE_URL을 확인하세요.");
       }
