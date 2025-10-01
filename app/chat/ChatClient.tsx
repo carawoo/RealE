@@ -399,7 +399,26 @@ export default function ChatClient() {
   })();
 
   // 일일 사용량(프로 전용) – 사용자별로 분리하여 저장
-  const todayKey = typeof window !== "undefined" ? new Date().toISOString().slice(0, 10) : "";
+  const [todayKey, setTodayKey] = useState(() => 
+    typeof window !== "undefined" ? new Date().toISOString().slice(0, 10) : ""
+  );
+  
+  // 자정이 지나면 todayKey 업데이트
+  useEffect(() => {
+    const checkMidnight = () => {
+      const newTodayKey = new Date().toISOString().slice(0, 10);
+      if (newTodayKey !== todayKey) {
+        console.log('[Daily Reset] Date changed, resetting daily count:', todayKey, '->', newTodayKey);
+        setTodayKey(newTodayKey);
+        setDailyUsed(0);
+      }
+    };
+    
+    // 1분마다 날짜 체크
+    const interval = setInterval(checkMidnight, 60000);
+    return () => clearInterval(interval);
+  }, [todayKey]);
+  
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!user?.id) return;
@@ -408,6 +427,7 @@ export default function ChatClient() {
       const raw = window.localStorage.getItem(userDailyKey);
       const v = Number(raw);
       setDailyUsed(Number.isFinite(v) ? v : 0);
+      console.log('[Daily Count] Loaded for', todayKey, ':', v);
     } catch { setDailyUsed(0); }
   }, [todayKey, user?.id]);
 
