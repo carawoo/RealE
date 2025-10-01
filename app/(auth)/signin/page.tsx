@@ -23,6 +23,8 @@ function SignInContent() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userAgent = window.navigator.userAgent.toLowerCase();
+      console.log('[SignIn] User-Agent:', userAgent);
+      
       const isInAppBrowser = 
         userAgent.includes('kakaotalk') ||
         userAgent.includes('linkedin') ||
@@ -33,6 +35,7 @@ function SignInContent() {
         userAgent.includes('line') ||
         userAgent.includes('micromessenger');
       
+      console.log('[SignIn] Is In-App Browser:', isInAppBrowser);
       setIsKakaoInApp(isInAppBrowser);
       
       if (isInAppBrowser) {
