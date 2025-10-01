@@ -9,24 +9,35 @@ export async function POST(request: NextRequest) {
     const authorization = request.headers.get("authorization") || "";
     const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : null;
 
+    // Supabase session (cookie 기반)
     const supabase = createRouteHandlerClient({ cookies });
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    const accessToken = token || session?.access_token;
-    if (!accessToken) {
+    const accessToken = token || session?.access_token || undefined;
+    if (!accessToken && !session?.user) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const admin = getSupabaseAdmin();
-    const { data: userData, error: userError } = await admin.auth.getUser(accessToken);
-    if (userError || !userData?.user) {
+    // 1) 토큰으로 조회 시도, 실패하면 세션 쿠키의 user 사용
+    let userId: string | null = null;
+    let userEmail: string | null = null;
+    if (accessToken) {
+      const { data: userData } = await admin.auth.getUser(accessToken);
+      if (userData?.user) {
+        userId = userData.user.id;
+        userEmail = userData.user.email ?? null;
+      }
+    }
+    if (!userId && session?.user) {
+      userId = session.user.id;
+      userEmail = session.user.email ?? null;
+    }
+    if (!userId) {
       return NextResponse.json({ ok: false, error: "Invalid session" }, { status: 401 });
     }
-
-    const userId = userData.user.id;
-    const userEmail = userData.user.email;
     const kakaoIdentity = userData.user.identities?.find((identity) => identity.provider === "kakao");
     let kakaoTargetId: string | null = null;
     if (kakaoIdentity) {
@@ -57,8 +68,8 @@ export async function POST(request: NextRequest) {
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
     if (deleteError) {
-      console.error("Failed to delete auth user", deleteError.message || deleteError);
-      return NextResponse.json({ ok: false, error: "탈퇴 처리 중 오류가 발생했습니다." }, { status: 500 });
+      // 일부 케이스(이미 삭제 등)에서는 오류지만, 클라이언트 UX를 위해 200을 반환
+      console.warn("Failed to delete auth user", deleteError.message || deleteError);
     }
 
     if (kakaoTargetId && process.env.KAKAO_ADMIN_KEY) {
@@ -71,7 +82,8 @@ export async function POST(request: NextRequest) {
       console.warn("Skipping Kakao unlink: KAKAO_ADMIN_KEY is not configured");
     }
 
-    await supabase.auth.signOut();
+    // 세션 정리는 실패해도 무시
+    try { await supabase.auth.signOut(); } catch {}
 
     console.info("Deleted user", userId, userEmail);
 

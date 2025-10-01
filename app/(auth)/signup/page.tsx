@@ -103,8 +103,19 @@ export default function SignUpPage() {
         router.replace("/signin");
       }, 4000);
     } catch (err: any) {
-      const message = err?.message ?? "회원가입에 실패했습니다.";
-      setError(message);
+      const raw = err?.message ?? "회원가입에 실패했습니다.";
+      // 이미 가입된 이메일에 대한 친절한 안내 메시지
+      const lower = String(raw).toLowerCase();
+      if (
+        lower.includes("user already registered") ||
+        lower.includes("already registered") ||
+        lower.includes("already exists") ||
+        lower.includes("repeated_signup")
+      ) {
+        setError("이미 가입된 계정입니다. 로그인하시거나 비밀번호를 재설정해 주세요.");
+      } else {
+        setError(raw);
+      }
     } finally {
       setSubmitting(false);
     }
