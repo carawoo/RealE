@@ -163,7 +163,7 @@ export default async function FortuneSharePage({
         </div>
 
         <div className="fortune-share-actions">
-          <Link href="/chat" className="btn primary">
+          <Link href="/fortune/search" className="btn primary">
             나도 부동산 사주 보기 🔮
           </Link>
           <Link href="/" className="btn secondary">
