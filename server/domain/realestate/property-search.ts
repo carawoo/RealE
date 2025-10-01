@@ -12,6 +12,47 @@ export interface Property {
   tradeType?: 'sale' | 'rent';
 }
 
+// 한국부동산원 R-ONE API로 실거래가 데이터 검색
+export async function searchPropertiesWithREB(region: string): Promise<Property[]> {
+  try {
+    const apiKey = 'c6f4cd2862dc42749698e4eeab11b059';
+    const REB_API_BASE = 'https://www.reb.or.kr/r-one/openapi';
+    
+    // 실거래가 데이터 조회 (예: 아파트 매매 실거래가)
+    // STATBL_ID는 실제 API 문서에서 확인한 통계표 ID 사용
+    const url = new URL(`${REB_API_BASE}/SttsApiTblData.do`);
+    url.searchParams.append('KEY', apiKey);
+    url.searchParams.append('Type', 'json');
+    url.searchParams.append('STATBL_ID', 'A_2024_00188'); // (월) 지역별 매매 평균가격_아파트
+    url.searchParams.append('pIndex', '1');
+    url.searchParams.append('pSize', '50');
+    
+    console.log('[REB API] 요청 URL:', url.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      console.error('R-ONE API 오류:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log('[REB API] 응답:', JSON.stringify(data).substring(0, 500));
+    
+    // R-ONE API 응답 파싱 및 Property 형식으로 변환
+    // 실제 데이터 구조에 맞게 파싱 필요
+    const properties: Property[] = [];
+    
+    // TODO: R-ONE API 응답 구조에 맞게 파싱
+    // 현재는 카카오 API로 대체
+    
+    return properties;
+  } catch (error) {
+    console.error('R-ONE API 오류:', error);
+    return [];
+  }
+}
+
 // 카카오 로컬 API로 부동산 검색 (무료)
 export async function searchPropertiesWithKakao(region: string): Promise<Property[]> {
   try {
@@ -101,14 +142,24 @@ export function generateMockProperties(region: string): Property[] {
 // 지역에서 매물 검색
 export async function searchProperties(region: string): Promise<Property[]> {
   try {
-    // 1. 카카오 로컬 API 시도
+    // 1. 한국부동산원 R-ONE API 시도
+    console.log('[Property Search] Trying REB API for:', region);
+    const rebResults = await searchPropertiesWithREB(region);
+    if (rebResults.length > 0) {
+      console.log('[Property Search] REB API success:', rebResults.length);
+      return rebResults;
+    }
+    
+    // 2. 카카오 로컬 API 시도
+    console.log('[Property Search] Trying Kakao API for:', region);
     const kakaoResults = await searchPropertiesWithKakao(region);
     if (kakaoResults.length > 0) {
+      console.log('[Property Search] Kakao API success:', kakaoResults.length);
       return kakaoResults;
     }
     
-    // 2. 실패 시 모의 데이터 사용
-    console.log('카카오 API 실패, 모의 데이터 사용');
+    // 3. 실패 시 모의 데이터 사용
+    console.log('[Property Search] Using mock data for:', region);
     return generateMockProperties(region);
   } catch (error) {
     console.error('매물 검색 오류:', error);
