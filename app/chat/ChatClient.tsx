@@ -513,7 +513,7 @@ export default function ChatClient() {
     });
   }
 
-  function finalizeAssistant(content: string) {
+  function finalizeAssistant(content: string, location?: string) {
     const index = assistantPointer.current;
     if (index < 0) return;
     const MAX = 500;
@@ -551,6 +551,7 @@ export default function ChatClient() {
         if (curr.length > 0 && curr.length + tail.length > MAX) {
           next[i] = { ...next[i], content: curr };
           (next as any).push(makeMessage("assistant", tail));
+          i = next.length - 1;
         } else {
           curr += tail;
           next[i] = { ...next[i], content: curr };
@@ -558,6 +559,12 @@ export default function ChatClient() {
       } else {
         next[i] = { ...next[i], content: curr };
       }
+      
+      // location이 있으면 마지막 메시지에 추가
+      if (location) {
+        next[i] = { ...next[i], location };
+      }
+      
       assistantPointer.current = -1;
       return next;
     });
@@ -585,6 +592,7 @@ export default function ChatClient() {
       const decoder = new TextDecoder();
       let buffer = "";
       let finalText = "";
+      let detectedLocation: string | undefined;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -603,6 +611,10 @@ export default function ChatClient() {
             if (typeof payload.content === "string") {
               finalText = payload.content;
             }
+            if (typeof payload.location === "string") {
+              detectedLocation = payload.location;
+              console.log("Location detected:", detectedLocation);
+            }
             if (payload.done) {
               finalText = finalText || payload.delta || "";
             }
@@ -613,7 +625,7 @@ export default function ChatClient() {
       }
 
       if (finalText.trim().length > 0) {
-        finalizeAssistant(finalText.trim());
+        finalizeAssistant(finalText.trim(), detectedLocation);
       } else {
         finalizeAssistant("현재 답변을 생성하지 못했어요. 잠시 후 다시 시도해 주세요.");
       }
