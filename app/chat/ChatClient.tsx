@@ -751,18 +751,21 @@ export default function ChatClient() {
       </header>
       <div className="chat-surface__body">
         <div className="chat-messages">
-          {messages.map((m, i) => (
-            <div key={`${m.role}-${i}`} className={`chat-row ${m.role}`}>
-              <div className={`chat-bubble ${m.role}`}>
-                {m.content}
-                {m.location && m.role === "assistant" && (
-                  <div style={{ marginTop: "12px" }}>
-                    <KakaoMap address={m.location} height="250px" />
-                  </div>
-                )}
+          {messages.map((m, i) => {
+            console.log(`[ChatClient] Message ${i}:`, { role: m.role, hasLocation: !!m.location, location: m.location });
+            return (
+              <div key={`${m.role}-${i}`} className={`chat-row ${m.role}`}>
+                <div className={`chat-bubble ${m.role}`}>
+                  {m.content}
+                  {m.location && m.role === "assistant" && (
+                    <div style={{ marginTop: "12px" }}>
+                      <KakaoMap address={m.location} height="250px" />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="chat-usage">
           <p className="chat-usage__status">
