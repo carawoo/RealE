@@ -798,6 +798,34 @@ export default function ChatClient() {
             );
           })}
         </div>
+        <div className="chat-compose">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onFocus={() => {
+              if (!ensureLoggedIn()) {
+                setDraft("");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSubmitDraft();
+              }
+            }}
+            placeholder={textareaPlaceholder}
+            className="chat-textarea"
+            disabled={loading || outOfQuota}
+          />
+          <button
+            type="button"
+            className="chat-send"
+            onClick={onSubmitDraft}
+            disabled={loading || outOfQuota}
+          >
+            {loading ? "전송 중..." : "전송"}
+          </button>
+        </div>
         <div className="chat-usage">
           <p className="chat-usage__status">
             {!user
@@ -851,34 +879,6 @@ export default function ChatClient() {
             {paymentError && <p className="chat-paywall__error">{paymentError}</p>}
           </div>
         )}
-        <div className="chat-compose">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onFocus={() => {
-              if (!ensureLoggedIn()) {
-                setDraft("");
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                onSubmitDraft();
-              }
-            }}
-            placeholder={textareaPlaceholder}
-            className="chat-textarea"
-            disabled={loading || outOfQuota}
-          />
-          <button
-            type="button"
-            className="chat-send"
-            onClick={onSubmitDraft}
-            disabled={loading || outOfQuota}
-          >
-            {loading ? "전송 중..." : "전송"}
-          </button>
-        </div>
         {false && !copilotEnabled && (
           <p className="chat-warning">CopilotKit 공개 키가 설정되지 않아 기본 입력만 표시됩니다.</p>
         )}
