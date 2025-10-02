@@ -30,12 +30,40 @@ export async function POST(req: NextRequest) {
     if (plan === null && email) {
       const byEmail = await admin
         .from("user_stats_kst")
-        .select("plan, plan_label, pro_until")
+        .select("id, plan, plan_label, pro_until")
         .eq("email", email)
         .maybeSingle();
       if (byEmail.data) {
-        plan = byEmail.data.plan ?? (byEmail.data.plan_label ? String(byEmail.data.plan_label).toLowerCase() === "plus" : null);
+        plan = byEmail.data.plan === "Pro" || byEmail.data.plan === "Plus" || byEmail.data.plan === "RealE";
         until = byEmail.data.pro_until ?? null;
+        
+        // user_plan에 자동 동기화 (기존 데이터가 없는 경우만)
+        if (byEmail.data.id && !userId) {
+          try {
+            const planLabel = byEmail.data.plan_label || (plan ? "plus" : "free");
+            let proUntil = until;
+            
+            // 만료일이 없고 Pro/Plus 사용자인 경우 기본 30일 설정
+            if (plan && !proUntil) {
+              const defaultUntil = new Date();
+              defaultUntil.setDate(defaultUntil.getDate() + 30);
+              proUntil = defaultUntil.toISOString();
+            }
+            
+            await admin
+              .from("user_plan")
+              .upsert({
+                user_id: byEmail.data.id,
+                plan: plan,
+                plan_label: planLabel,
+                pro_until: proUntil
+              }, { onConflict: 'user_id' });
+            
+            console.log(`Auto-synced user plan for ${email}`);
+          } catch (syncError) {
+            console.warn(`Failed to auto-sync user plan for ${email}:`, syncError);
+          }
+        }
       }
     }
 
