@@ -16,28 +16,38 @@ export async function POST(req: NextRequest) {
     let until: string | null = null;
 
     if (userId) {
+      // user_plan과 user_stats_kst를 JOIN하여 삭제 상태 확인
       let byId = await admin
         .from("user_plan")
-        .select("plan, plan_label, pro_until")
+        .select(`
+          plan,
+          plan_label,
+          pro_until,
+          user_stats_kst!inner(is_deleted)
+        `)
         .eq("user_id", userId)
+        .eq("user_stats_kst.is_deleted", false)
         .maybeSingle();
+      
       if (byId.data) {
-        plan = byId.data.plan ?? (byId.data.plan_label ? String(byId.data.plan_label).toLowerCase() === "plus" : null);
+        plan = byId.data.plan === "Pro" || byId.data.plan === "Plus" || byId.data.plan === "RealE";
         until = byId.data.pro_until ?? null;
       }
     }
 
     if (plan === null && email) {
-      // 먼저 user_plan에서 이메일로 조회 시도 (JOIN 사용)
+      // 먼저 user_plan에서 이메일로 조회 시도 (삭제 상태 확인)
       const byEmailInPlan = await admin
         .from("user_plan")
         .select(`
           plan,
           plan_label,
           pro_until,
-          auth.users!inner(email)
+          auth.users!inner(email),
+          user_stats_kst!inner(is_deleted)
         `)
         .eq("auth.users.email", email)
+        .eq("user_stats_kst.is_deleted", false)
         .maybeSingle();
       
       if (byEmailInPlan.data) {
