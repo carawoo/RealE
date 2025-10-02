@@ -252,10 +252,22 @@ export default function AccountPage() {
         <section className="auth-section">
           <h2 style={{ margin: 0, fontSize: 18 }}>이용 상태</h2>
           {proActive ? (
-            <p style={{ margin: "6px 0 0", color: "#056449", fontWeight: 600 }}>
-              RealE Plus 이용 중 — {proUntil ? `만료 예정: ${new Date(proUntil).toLocaleDateString("ko-KR")}` : "만료일 정보 없음"}
-              <br />일일 질문 한도 30회이며, 추가 필요 시 2025reale@gmail.com 으로 문의 주세요.
-            </p>
+            <div>
+              <p style={{ margin: "6px 0 0", color: "#056449", fontWeight: 600 }}>
+                RealE Plus 이용 중
+                {proUntil ? (
+                  <> — 만료 예정: {new Date(proUntil).toLocaleDateString("ko-KR")}</>
+                ) : (
+                  <> — 무제한 이용</>
+                )}
+              </p>
+              <p style={{ margin: "4px 0 0", color: "#5f6368", fontSize: 14 }}>
+                일일 질문 한도 30회
+                {!proUntil && (
+                  <><br />만료일 정보가 없습니다. 문의가 필요하시면 2025reale@gmail.com으로 연락해 주세요.</>
+                )}
+              </p>
+            </div>
           ) : (
             <div>
               <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
