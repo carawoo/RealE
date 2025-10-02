@@ -124,8 +124,9 @@ export default function AccountPage() {
           const data = await res.json();
           if (res.ok && data) {
             const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
+            const isPro = data?.plan_label === "pro";
             const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
-            if (inferredPlan) {
+            if (inferredPlan || isPro) {
               window.localStorage.setItem("reale:proAccess", "1");
               if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
               setProActive(true);
@@ -258,7 +259,7 @@ export default function AccountPage() {
           {proActive ? (
             <div>
               <p style={{ margin: "6px 0 0", color: "#056449", fontWeight: 600 }}>
-                RealE Plus 이용 중
+                RealE {proActive ? "Pro" : "Plus"} 이용 중
                 {proUntil ? (
                   <> — 만료 예정: {new Date(proUntil).toLocaleDateString("ko-KR")}</>
                 ) : (
