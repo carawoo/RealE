@@ -58,7 +58,6 @@ export default function AccountPage() {
           body: JSON.stringify({ userId: user.id, email: user.email }),
         });
         const data = await res.json();
-        console.log("Plan API Response:", data); // 디버깅용 로그
         if (res.ok && data) {
           const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
           const isPro = data?.plan_label === "pro";
