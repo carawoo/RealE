@@ -24,11 +24,13 @@ export async function POST(request: NextRequest) {
     // 1) 토큰으로 조회 시도, 실패하면 세션 쿠키의 user 사용
     let userId: string | null = null;
     let userEmail: string | null = null;
+    let userData: any = null;
     if (accessToken) {
-      const { data: userData } = await admin.auth.getUser(accessToken);
-      if (userData?.user) {
-        userId = userData.user.id;
-        userEmail = userData.user.email ?? null;
+      const { data } = await admin.auth.getUser(accessToken);
+      userData = data;
+      if (data?.user) {
+        userId = data.user.id;
+        userEmail = data.user.email ?? null;
       }
     }
     if (!userId && session?.user) {
