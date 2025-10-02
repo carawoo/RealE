@@ -75,7 +75,32 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const signOut = async () => {
     if (!supabase) return;
-    await supabase.auth.signOut();
+    
+    try {
+      await supabase.auth.signOut();
+    } catch (error: any) {
+      // JWT 사용자가 존재하지 않는 경우 등 로그아웃 실패 시에도
+      // 클라이언트 상태를 정리하여 사용자 경험을 보장
+      console.warn("로그아웃 중 오류 발생, 클라이언트 상태 정리 중:", error?.message);
+      
+      // 로컬 상태 정리
+      setSession(null);
+      setUser(null);
+      
+      // 로컬 스토리지 정리
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("reale:proAccess");
+          localStorage.removeItem("reale:proAccessUntil");
+          localStorage.removeItem("reale:conversationHistory");
+          localStorage.removeItem("reale:lastConversationHistory");
+          localStorage.removeItem("reale:conversationId");
+        } catch (storageError) {
+          console.warn("로컬 스토리지 정리 중 오류:", storageError);
+        }
+      }
+    }
+    
     if (pathname?.startsWith("/account")) {
       router.replace("/");
     }

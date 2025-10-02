@@ -21,8 +21,14 @@ export default function GlobalNav() {
   }, [router]);
 
   const handleSignOut = useCallback(async () => {
-    await signOut();
-    setMenuOpen(false);
+    try {
+      await signOut();
+    } catch (error) {
+      console.warn("로그아웃 처리 중 오류:", error);
+      // 에러가 발생해도 메뉴는 닫기
+    } finally {
+      setMenuOpen(false);
+    }
   }, [signOut]);
 
   useEffect(() => {
