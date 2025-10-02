@@ -63,6 +63,10 @@ export default function AccountPage() {
             if (typeof data?.plan === "boolean" || data?.pro_until) {
               plan = typeof data.plan === "boolean" ? data.plan : null;
               until = data?.pro_until ?? null;
+              // plan_label이 있으면 사용
+              if (data?.plan_label) {
+                plan = data.plan_label === "pro" || data.plan_label === "plus";
+              }
             }
           }
         } catch {}

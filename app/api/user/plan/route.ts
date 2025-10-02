@@ -108,7 +108,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ plan, pro_until: until });
+    return NextResponse.json({ 
+      plan, 
+      pro_until: until,
+      plan_label: plan ? "pro" : "free"
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Unexpected error" }, { status: 500 });
   }
