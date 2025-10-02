@@ -30,7 +30,18 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
       
       if (byId.data) {
-        plan = byId.data.plan === "Pro" || byId.data.plan === "Plus" || byId.data.plan === "RealE";
+        // plan_label을 우선 확인하고, 없으면 plan 컬럼 확인
+        const planLabel = byId.data.plan_label;
+        const planValue = byId.data.plan;
+        
+        if (planLabel === "pro" || planValue === "Pro") {
+          plan = true;
+        } else if (planLabel === "plus" || planValue === "Plus") {
+          plan = true; // Plus도 Pro로 처리
+        } else if (planValue === "RealE") {
+          plan = false; // RealE는 무료 플랜
+        }
+        
         until = byId.data.pro_until ?? null;
       }
     }
@@ -51,7 +62,18 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
       
       if (byEmailInPlan.data) {
-        plan = byEmailInPlan.data.plan === "Pro" || byEmailInPlan.data.plan === "Plus" || byEmailInPlan.data.plan === "RealE";
+        // plan_label을 우선 확인하고, 없으면 plan 컬럼 확인
+        const planLabel = byEmailInPlan.data.plan_label;
+        const planValue = byEmailInPlan.data.plan;
+        
+        if (planLabel === "pro" || planValue === "Pro") {
+          plan = true;
+        } else if (planLabel === "plus" || planValue === "Plus") {
+          plan = true; // Plus도 Pro로 처리
+        } else if (planValue === "RealE") {
+          plan = false; // RealE는 무료 플랜
+        }
+        
         until = byEmailInPlan.data.pro_until ?? null;
       } else {
         // user_plan에 없으면 user_stats_kst에서 조회
