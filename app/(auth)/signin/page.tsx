@@ -40,7 +40,7 @@ function SignInContent() {
       setIsKakaoInApp(isInAppBrowser);
       
       if (isInAppBrowser) {
-        setInfo("📱 인앱 브라우저에서는 구글/일부 소셜 로그인이 제한될 수 있습니다.\n💡 카카오 로그인 또는 이메일 로그인은 ‘외부 브라우저로 열기’ 후 이용해 주세요.");
+        setInfo("📱 인앱 브라우저에서는 구글 로그인이 제한될 수 있습니다.\n💡 카카오 로그인은 카카오톡 앱으로 자동 연결됩니다.");
       }
     }
   }, []);
@@ -172,6 +172,59 @@ function SignInContent() {
     }
   }
 
+  async function handleKakaoInApp() {
+    if (!supabase) {
+      setError("Supabase 설정이 완료되지 않았습니다. 관리자에게 문의하세요.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      const nextPath = searchParams.get("redirect") || "/chat";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL;
+      if (!origin) {
+        throw new Error("리다이렉트 URL을 구성하지 못했습니다. NEXT_PUBLIC_SITE_URL을 확인하세요.");
+      }
+      const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      
+      // 카카오 OAuth URL 생성
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: {
+          redirectTo,
+          scopes: "account_email",
+        },
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.url) {
+        // 카카오톡 앱으로 열기 시도
+        const kakaoAppUrl = `kakaotalk://oauth?url=${encodeURIComponent(data.url)}`;
+        
+        // 카카오톡 앱이 설치되어 있는지 확인
+        const startTime = Date.now();
+        window.location.href = kakaoAppUrl;
+        
+        // 2초 후에도 페이지가 그대로 있으면 카카오톡 앱이 없는 것으로 판단
+        setTimeout(() => {
+          if (Date.now() - startTime < 3000) {
+            // 외부 브라우저로 열기
+            window.open(data.url, '_blank');
+            setInfo("카카오톡 앱이 설치되어 있지 않습니다. 외부 브라우저로 열어주세요.");
+          }
+        }, 2000);
+      }
+    } catch (err: any) {
+      const message = err?.message ?? "카카오 로그인에 실패했습니다.";
+      setError(message);
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="auth-shell">
       <div className="auth-card">
@@ -227,7 +280,7 @@ function SignInContent() {
                 className="oauth-button"
                 onClick={() => {
                   if (isKakaoInApp) {
-                    setInfo("인앱 브라우저에서는 카카오 로그인이 제한될 수 있어요. 우측 메뉴에서 ‘외부 브라우저로 열기’ 후 다시 시도해 주세요.");
+                    handleKakaoInApp();
                     return;
                   }
                   handleOAuth("kakao");
