@@ -51,59 +51,25 @@ export default function AccountPage() {
         let plan: boolean | null = null;
         let until: string | null = null;
 
-        // 서버 API(서비스 롤) 먼저 시도 — 프로덕션 안정성
-        try {
-          const res = await fetch("/api/user/plan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (typeof data?.plan === "boolean" || data?.pro_until) {
-              plan = typeof data.plan === "boolean" ? data.plan : null;
-              until = data?.pro_until ?? null;
-              // plan_label이 있으면 사용
-              if (data?.plan_label) {
-                plan = data.plan_label === "pro" || data.plan_label === "plus";
-              }
-            }
-          }
-        } catch {}
-
-        let byId = await supabase
-          .from("user_plan_readonly")
-          .select("plan, pro_until")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (byId.error && (byId.error.code === "42P01" || byId.error.code === "42809")) {
-          byId = await supabase
-            .from("user_plan")
-            .select("plan, pro_until")
-            .eq("user_id", user.id)
-            .maybeSingle();
-        }
-        if (byId.data) {
-          plan = !!byId.data.plan;
-          until = byId.data.pro_until ?? null;
-        }
-
-        // 2) 보조: user_stats_kst에서 이메일 기준 조회(존재할 때)
-        if (plan === null) {
-          const byEmail = await supabase
-            .from("user_stats_kst")
-            .select("plan, pro_until")
-            .eq("email", user.email ?? "")
-            .maybeSingle();
-          if (byEmail.data) {
-            plan = !!byEmail.data.plan;
-            until = byEmail.data.pro_until ?? null;
-          }
-        }
-
-        if (plan !== null) {
-          const untilMs = until ? new Date(until).getTime() : null;
-          if (plan) {
+        // 탈퇴한 사용자 상태를 정확히 반영하기 위해 API만 사용
+        const res = await fetch("/api/user/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, email: user.email }),
+        });
+        const data = await res.json();
+        if (res.ok && data) {
+          const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
+          const isPro = data?.plan_label === "pro";
+          const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
+          
+          // API에서 null을 반환하면 무료 플랜으로 처리
+          if (data.plan === null) {
+            window.localStorage.setItem("reale:proAccess", "0");
+            window.localStorage.removeItem("reale:proAccessUntil");
+            setProActive(false);
+            setProUntil(null);
+          } else if (inferredPlan || isPro) {
             window.localStorage.setItem("reale:proAccess", "1");
             if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
             setProActive(true);
@@ -115,29 +81,12 @@ export default function AccountPage() {
             setProUntil(null);
           }
         } else {
-          // 서버 API(서비스 롤) 폴백
-          const res = await fetch("/api/user/plan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          });
-          const data = await res.json();
-          if (res.ok && data) {
-            const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
-            const isPro = data?.plan_label === "pro";
-            const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
-            if (inferredPlan || isPro) {
-              window.localStorage.setItem("reale:proAccess", "1");
-              if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
-              setProActive(true);
-              setProUntil(untilMs);
-            } else {
-              window.localStorage.setItem("reale:proAccess", "0");
-              window.localStorage.removeItem("reale:proAccessUntil");
-              setProActive(false);
-              setProUntil(null);
-            }
-          }
+          // API 오류 시 무료 플랜으로 처리
+          window.localStorage.setItem("reale:proAccess", "0");
+          window.localStorage.removeItem("reale:proAccessUntil");
+          setProActive(false);
+          setProUntil(null);
+        }
         }
       } catch (e) {
         // 무시: 권한/테이블 부재 등은 UI에 영향을 주지 않음
