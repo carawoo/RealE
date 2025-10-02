@@ -156,6 +156,130 @@ export const POLICY_PROGRAMS: PolicyProgram[] = [
              profile.isMultiChild; // 다자녀 가정
     },
     priority: 4
+  },
+  {
+    id: 'buteummok-jeonse',
+    name: '버팀목 전세자금대출',
+    description: '전세 보증금 마련을 위한 정책자금 대출 (구 중기청 전세대출 통합)',
+    maxAmount: 200000000, // 수도권 2억원, 지방 1억 6천만원
+    interestRate: 2.8,
+    termYears: 30,
+    conditions: [
+      '무주택자 (본인 및 배우자)',
+      '소득 기준: 4인 가족 기준 연소득 7천만원 이하',
+      '자산 기준: 4인 가족 기준 3억 3,700만원 이하 (2025년 기준)',
+      '신용등급 6등급 이하',
+      '전세 보증금 마련 목적',
+      '대출 잔액 1억원 이하'
+    ],
+    requiredDocuments: [
+      '소득금액증명원',
+      '가족관계증명서',
+      '주민등록등본',
+      '신용정보조회서',
+      '임대차계약서'
+    ],
+    applicationLink: 'https://www.hug.or.kr/loan/buteummok',
+    detailLink: 'https://www.hug.or.kr/loan/buteummok',
+    eligibilityCheckLink: 'https://www.hug.or.kr/loan/buteummok/eligibility',
+    eligibilityCheck: (profile) => {
+      return profile.income <= 70000000 && // 연소득 7천만원 이하
+             profile.creditScore <= 6 && // 신용등급 6등급 이하
+             profile.isFirstTime; // 무주택자
+    },
+    priority: 5
+  },
+  {
+    id: 'young-sme-jeonse',
+    name: '중소기업 취업청년 전세대출',
+    description: '중소기업 취업 청년을 위한 전세자금 대출',
+    maxAmount: 100000000, // 1억원
+    interestRate: 1.5,
+    termYears: 30,
+    conditions: [
+      '만 19세~34세 무주택 세대주',
+      '중소기업 재직자',
+      '연소득 5천만원 이하',
+      '전용면적 85㎡ 이하',
+      '보증금 2억원 이하'
+    ],
+    requiredDocuments: [
+      '소득금액증명원',
+      '가족관계증명서',
+      '주민등록등본',
+      '신용정보조회서',
+      '임대차계약서',
+      '재직증명서'
+    ],
+    applicationLink: 'https://www.hug.or.kr/loan/young-sme',
+    detailLink: 'https://www.hug.or.kr/loan/young-sme',
+    eligibilityCheckLink: 'https://www.hug.or.kr/loan/young-sme/eligibility',
+    eligibilityCheck: (profile) => {
+      return profile.age >= 19 && profile.age <= 34 && // 만 19~34세
+             profile.income <= 50000000 && // 연소득 5천만원 이하
+             profile.isFirstTime; // 무주택자
+    },
+    priority: 6
+  },
+  {
+    id: 'young-guaranteed-rent',
+    name: '청년전용 보증부 월세대출',
+    description: '청년층을 위한 보증부 월세 대출',
+    maxAmount: 45000000, // 보증금 최대 4,500만원, 월세 최대 50만원
+    interestRate: 1.3, // 보증금 1.3%, 월세 20만원 이하 0%, 초과시 1.0%
+    termYears: 30,
+    conditions: [
+      '만 19세~34세 무주택 단독 세대주',
+      '연소득 5천만원 이하',
+      '보증금 6,500만원 이하',
+      '월세 70만원 이하'
+    ],
+    requiredDocuments: [
+      '소득금액증명원',
+      '가족관계증명서',
+      '주민등록등본',
+      '신용정보조회서',
+      '임대차계약서'
+    ],
+    applicationLink: 'https://www.hug.or.kr/loan/young-guaranteed',
+    detailLink: 'https://www.hug.or.kr/loan/young-guaranteed',
+    eligibilityCheckLink: 'https://www.hug.or.kr/loan/young-guaranteed/eligibility',
+    eligibilityCheck: (profile) => {
+      return profile.age >= 19 && profile.age <= 34 && // 만 19~34세
+             profile.income <= 50000000 && // 연소득 5천만원 이하
+             profile.isFirstTime; // 무주택자
+    },
+    priority: 7
+  },
+  {
+    id: 'housing-stability-rent',
+    name: '주거안정월세대출',
+    description: '무주택자를 위한 월세 지원 대출',
+    maxAmount: 60000000, // 월세 최대 60만원
+    interestRate: 1.8, // 일반형 1.8%, 우대형 1.3%
+    termYears: 30,
+    conditions: [
+      '만 19세 이상 무주택 세대주',
+      '연소득 5천만원 이하',
+      '보증금 1억원 이하',
+      '월세 60만원 이하'
+    ],
+    requiredDocuments: [
+      '소득금액증명원',
+      '가족관계증명서',
+      '주민등록등본',
+      '신용정보조회서',
+      '임대차계약서'
+    ],
+    applicationLink: 'https://www.hug.or.kr/loan/housing-stability',
+    detailLink: 'https://www.hug.or.kr/loan/housing-stability',
+    eligibilityCheckLink: 'https://www.hug.or.kr/loan/housing-stability/eligibility',
+    eligibilityCheck: (profile) => {
+      return profile.age >= 19 && // 만 19세 이상
+             profile.income <= 50000000 && // 연소득 5천만원 이하
+             profile.isFirstTime; // 무주택자
+    },
+    priority: 8
   }
 ];
 
@@ -202,6 +326,13 @@ export const FINANCIAL_INSTITUTIONS = [
     website: 'https://www.koomco.or.kr',
     loanPage: 'https://www.koomco.or.kr/loan',
     specialties: ['정책자금', '디딤돌대출', '보금자리론']
+  },
+  {
+    name: '주택도시보증공사(HUG)',
+    phone: '1588-8111',
+    website: 'https://www.hug.or.kr',
+    loanPage: 'https://www.hug.or.kr/loan',
+    specialties: ['버팀목 전세자금대출', '전세자금대출', '정책자금']
   },
   {
     name: '국민은행',

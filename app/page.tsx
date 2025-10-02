@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import NewsletterBanner from "./components/NewsletterBanner";
 import { useCallback } from "react";
 import { useAuth } from "./providers/AuthProvider";
+import "./home.css";
 
 export default function Home() {
   const startFresh = useCallback(() => {
@@ -41,6 +43,9 @@ export default function Home() {
             🔮 부동산 사주 보기
           </Link>
         </div>
+
+        {/* Ziply Nine 뉴스레터 배너 */}
+        <NewsletterBanner variant="full" />
       </div>
     </section>
   );

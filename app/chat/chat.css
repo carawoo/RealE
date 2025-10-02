@@ -28,3 +28,149 @@
 .chat-paywall__body{margin:0;font-size:14px;line-height:1.6;color:#3c4043}
 .chat-paywall__error{margin:0;font-size:13px;color:#c5221f}
 
+/* 채팅 페이지용 뉴스레터 배너 */
+.newsletter-banner-small {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.newsletter-content-small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.newsletter-icon-small {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.newsletter-text-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.newsletter-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.newsletter-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.newsletter-preview-small {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.news-item-small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.news-category-small {
+  font-size: 10px;
+  font-weight: 600;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.news-title-small {
+  font-size: 11px;
+  color: #374151;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.newsletter-btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.newsletter-btn-small:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+@media (max-width: 768px) {
+  .newsletter-content-small {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .newsletter-btn-small {
+    width: 100%;
+  }
+  
+  .news-item-small {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .news-title-small {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+}
+
+/* 채팅 페이지용 로딩 스켈레톤 */
+.loading-skeleton-small {
+  width: 100%;
+  height: 24px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 6px;
+}
+
+.news-item-small.loading {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+

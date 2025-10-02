@@ -1,6 +1,8 @@
 import "./global.css";
 import GlobalNav from "./GlobalNav";
 import AuthProvider from "./providers/AuthProvider";
+import { NewsProvider } from "./providers/NewsProvider";
+import NewsTicker from "./components/NewsTicker";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.real-e.space";
 
@@ -59,6 +61,7 @@ export default function RootLayout({
         <script 
           src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
           async
+          crossOrigin="anonymous"
         />
         {/* Kakao Maps SDK */}
         <script 
@@ -68,8 +71,11 @@ export default function RootLayout({
       </head>
       <body className="app-shell">
         <AuthProvider>
-          <GlobalNav />
-          <main className="page-container">{children}</main>
+          <NewsProvider>
+            <GlobalNav />
+            <NewsTicker />
+            <main className="page-container">{children}</main>
+          </NewsProvider>
           <footer className="app-footer">
             <div className="app-footer__inner">
               <span>문의 : <a href="mailto:2025reale@gmail.com">2025reale@gmail.com</a></span>

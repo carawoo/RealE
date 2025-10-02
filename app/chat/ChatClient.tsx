@@ -879,6 +879,7 @@ export default function ChatClient() {
         {false && !copilotEnabled && (
           <p className="chat-warning">CopilotKit 공개 키가 설정되지 않아 기본 입력만 표시됩니다.</p>
         )}
+
       </div>
     </div>
   );
