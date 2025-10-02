@@ -88,7 +88,6 @@ export default function AccountPage() {
           setProActive(false);
           setProUntil(null);
         }
-        }
       } catch (e) {
         // 무시: 권한/테이블 부재 등은 UI에 영향을 주지 않음
       }
