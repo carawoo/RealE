@@ -28,11 +28,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (plan === null && email) {
-      // 먼저 user_plan에서 이메일로 조회 시도
+      // 먼저 user_plan에서 이메일로 조회 시도 (JOIN 사용)
       const byEmailInPlan = await admin
-        .from("user_plan_with_email")
-        .select("plan, plan_label, pro_until")
-        .eq("email", email)
+        .from("user_plan")
+        .select(`
+          plan,
+          plan_label,
+          pro_until,
+          auth.users!inner(email)
+        `)
+        .eq("auth.users.email", email)
         .maybeSingle();
       
       if (byEmailInPlan.data) {
