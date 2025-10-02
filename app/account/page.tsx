@@ -287,11 +287,8 @@ export default function AccountPage() {
           {proActive && (
             <div style={{ marginTop: 12 }}>
               <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
-                더 높은 한도가 필요하시면 Pro로 업그레이드할 수 있어요.
+                Pro 플랜을 이용 중입니다. 추가 문의사항이 있으시면 2025reale@gmail.com으로 연락해 주세요.
               </p>
-              <Link className="auth-primary" href="/checkout?plan=pro" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 8 }}>
-                5,000원에 RealE Pro 업그레이드
-              </Link>
             </div>
           )}
         </section>
