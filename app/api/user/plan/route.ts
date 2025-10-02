@@ -28,40 +28,53 @@ export async function POST(req: NextRequest) {
     }
 
     if (plan === null && email) {
-      const byEmail = await admin
-        .from("user_stats_kst")
-        .select("id, plan, plan_label, pro_until")
+      // 먼저 user_plan에서 이메일로 조회 시도
+      const byEmailInPlan = await admin
+        .from("user_plan_with_email")
+        .select("plan, plan_label, pro_until")
         .eq("email", email)
         .maybeSingle();
-      if (byEmail.data) {
-        plan = byEmail.data.plan === "Pro" || byEmail.data.plan === "Plus" || byEmail.data.plan === "RealE";
-        until = byEmail.data.pro_until ?? null;
-        
-        // user_plan에 자동 동기화 (기존 데이터가 없는 경우만)
-        if (byEmail.data.id && !userId) {
-          try {
-            const planLabel = byEmail.data.plan_label || (plan ? "plus" : "free");
-            let proUntil = until;
-            
-            // 만료일이 없고 Pro/Plus 사용자인 경우 기본 30일 설정
-            if (plan && !proUntil) {
-              const defaultUntil = new Date();
-              defaultUntil.setDate(defaultUntil.getDate() + 30);
-              proUntil = defaultUntil.toISOString();
+      
+      if (byEmailInPlan.data) {
+        plan = byEmailInPlan.data.plan === "Pro" || byEmailInPlan.data.plan === "Plus" || byEmailInPlan.data.plan === "RealE";
+        until = byEmailInPlan.data.pro_until ?? null;
+      } else {
+        // user_plan에 없으면 user_stats_kst에서 조회
+        const byEmail = await admin
+          .from("user_stats_kst")
+          .select("id, plan, plan_label, pro_until")
+          .eq("email", email)
+          .maybeSingle();
+        if (byEmail.data) {
+          plan = byEmail.data.plan === "Pro" || byEmail.data.plan === "Plus" || byEmail.data.plan === "RealE";
+          until = byEmail.data.pro_until ?? null;
+          
+          // user_plan에 자동 동기화
+          if (byEmail.data.id) {
+            try {
+              const planLabel = byEmail.data.plan_label || (plan ? "pro" : "free");
+              let proUntil = until;
+              
+              // 만료일이 없고 Pro/Plus 사용자인 경우 기본 30일 설정
+              if (plan && !proUntil) {
+                const defaultUntil = new Date();
+                defaultUntil.setDate(defaultUntil.getDate() + 30);
+                proUntil = defaultUntil.toISOString();
+              }
+              
+              await admin
+                .from("user_plan")
+                .upsert({
+                  user_id: byEmail.data.id,
+                  plan: plan ? "Pro" : "RealE",
+                  plan_label: planLabel,
+                  pro_until: proUntil
+                }, { onConflict: 'user_id' });
+              
+              console.log(`Auto-synced user plan for ${email}`);
+            } catch (syncError) {
+              console.warn(`Failed to auto-sync user plan for ${email}:`, syncError);
             }
-            
-            await admin
-              .from("user_plan")
-              .upsert({
-                user_id: byEmail.data.id,
-                plan: plan,
-                plan_label: planLabel,
-                pro_until: proUntil
-              }, { onConflict: 'user_id' });
-            
-            console.log(`Auto-synced user plan for ${email}`);
-          } catch (syncError) {
-            console.warn(`Failed to auto-sync user plan for ${email}:`, syncError);
           }
         }
       }
