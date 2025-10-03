@@ -37,7 +37,9 @@ export default function DailyFortunePage() {
         // personal 타입인 경우 userName 추출
         let userName = '';
         if (type === 'personal' && slugParts.length > 3) {
-          userName = decodeURIComponent(slugParts[3]);
+          // URL 인코딩된 사용자 이름을 올바르게 추출
+          const encodedUserName = slugParts.slice(3).join('-');
+          userName = decodeURIComponent(encodedUserName);
         }
         
         if (type !== 'daily' && type !== 'personal') {
