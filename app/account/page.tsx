@@ -64,10 +64,19 @@ export default function AccountPage() {
           body: JSON.stringify({ userId: user.id, email: user.email }),
         });
         const data = await res.json();
+        console.log('[Account] API Response:', data); // 디버깅 로그 추가
         if (res.ok && data) {
           const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
           const isPro = data?.plan_label?.toLowerCase() === "pro" || data?.plan_label?.toLowerCase() === "plus" || data?.plan === "Pro" || data?.plan === "Plus";
           const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
+          
+          console.log('[Account] Plan Detection:', { // 디버깅 로그 추가
+            inferredPlan,
+            isPro,
+            planLabel: data?.plan_label,
+            plan: data?.plan,
+            untilMs
+          });
           
           // API에서 null을 반환하면 무료 플랜으로 처리
           if (data.plan === null) {
