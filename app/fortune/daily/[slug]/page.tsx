@@ -45,7 +45,8 @@ export default function DailyFortunePage() {
             type,
             date,
             seed,
-            slug
+            slug,
+            userName: userName || undefined
           })
         });
 
