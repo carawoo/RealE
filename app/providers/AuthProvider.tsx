@@ -58,6 +58,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
+
+      // 세션이 생기면 Pro 보정 API 호출 (멱등)
+      if (nextSession?.user) {
+        try {
+          fetch('/api/user/ensure-pro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: nextSession.user.id, email: nextSession.user.email })
+          }).catch(() => {});
+        } catch {}
+      }
     });
 
     return () => {
