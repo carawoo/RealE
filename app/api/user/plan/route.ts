@@ -16,17 +16,16 @@ export async function POST(req: NextRequest) {
     let until: string | null = null;
 
     if (userId) {
-      // user_plan과 user_stats_kst를 JOIN하여 삭제 상태 확인
+      // user_plan 우선 조회 (삭제 여부 테이블이 없어도 통과하도록 LEFT JOIN)
       let byId = await admin
         .from("user_plan")
         .select(`
           plan,
           plan_label,
           pro_until,
-          user_stats_kst!inner(is_deleted)
+          user_stats_kst(is_deleted)
         `)
         .eq("user_id", userId)
-        .eq("user_stats_kst.is_deleted", false)
         .maybeSingle();
       
       if (byId.data) {
@@ -47,18 +46,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (plan === null && email) {
-      // 먼저 user_plan에서 이메일로 조회 시도 (삭제 상태 확인)
+      // user_plan에서 이메일로 조회 (LEFT JOIN으로 완화)
       const byEmailInPlan = await admin
         .from("user_plan")
         .select(`
           plan,
           plan_label,
           pro_until,
-          auth.users!inner(email),
-          user_stats_kst!inner(is_deleted)
+          auth.users(email),
+          user_stats_kst(is_deleted)
         `)
         .eq("auth.users.email", email)
-        .eq("user_stats_kst.is_deleted", false)
         .maybeSingle();
       
       if (byEmailInPlan.data) {
