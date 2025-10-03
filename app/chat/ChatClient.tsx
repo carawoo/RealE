@@ -32,6 +32,7 @@ function getUserStorageKey(baseKey: string, userId?: string | null): string {
 }
 
 const FREE_QUESTION_LIMIT = 5;
+const GUEST_QUESTION_LIMIT = 2; // 비회원 2회 상담 제한
 const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
 const PLUS_DAILY_LIMIT = 30; // RealE Plus 일일 질문 제한
@@ -141,17 +142,24 @@ export default function ChatClient() {
   const [totalQuestionsUsed, setTotalQuestionsUsed] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [dailyUsed, setDailyUsed] = useState(0);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   const makeMessage = useCallback((role: Role, content: string): Message => ({ role, content }), []);
 
   const ensureLoggedIn = useCallback(() => {
     if (authLoading) return false;
     if (!user) {
-      router.push("/signin?redirect=/chat");
-      return false;
+      // 비회원의 경우 2회 상담 후 로그인 유도
+      const guestMessagesCount = messages.filter((m) => m.role === "user").length;
+      if (guestMessagesCount >= GUEST_QUESTION_LIMIT) {
+        // 2회 상담 완료 후 회원가입 유도
+        setShowSignupPrompt(true);
+        return false;
+      }
+      return true; // 2회 미만이면 상담 허용
     }
     return true;
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, messages]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -438,10 +446,12 @@ export default function ChatClient() {
   const dailyLimit = effectiveProAccess ? (isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT) : FREE_QUESTION_LIMIT;
   const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
   
-  const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, FREE_QUESTION_LIMIT);
+  // 비회원의 경우 2회 제한, 회원의 경우 5회 제한
+  const questionLimit = !user ? GUEST_QUESTION_LIMIT : FREE_QUESTION_LIMIT;
+  const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, questionLimit);
   const questionsLeft = effectiveProAccess
     ? Math.max(dailyLimit - dailyUsed, 0)
-    : Math.max(FREE_QUESTION_LIMIT - normalizedQuestionCount, 0);
+    : Math.max(questionLimit - normalizedQuestionCount, 0);
   
   // 디버깅을 위한 콘솔 로그
   console.log('Debug - FREE_QUESTION_LIMIT:', FREE_QUESTION_LIMIT);
@@ -453,7 +463,7 @@ export default function ChatClient() {
   console.log('Debug - userMessagesCount:', userMessagesCount);
   const outOfQuota = effectiveProAccess
     ? dailyUsed >= dailyLimit
-    : normalizedQuestionCount >= FREE_QUESTION_LIMIT;
+    : normalizedQuestionCount >= questionLimit;
 
   function ensureConversationId() {
     if (!conversationId) {
@@ -660,7 +670,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!effectiveProAccess && normalizedQuestionCount >= questionLimit) {
       return;
     }
 
@@ -696,7 +706,7 @@ export default function ChatClient() {
     if (!ensureLoggedIn()) {
       return;
     }
-    if (!effectiveProAccess && normalizedQuestionCount >= FREE_QUESTION_LIMIT) {
+    if (!effectiveProAccess && normalizedQuestionCount >= questionLimit) {
       return;
     }
     setDraft("");
@@ -826,7 +836,7 @@ export default function ChatClient() {
         <div className="chat-usage">
           <p className="chat-usage__status">
             {!user
-              ? `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`
+              ? `비회원 ${GUEST_QUESTION_LIMIT}회 상담 중 ${Math.min(normalizedQuestionCount, GUEST_QUESTION_LIMIT)}회 사용 — 남은 상담 ${questionsLeft}회`
               : effectiveProAccess
               ? `${planName} 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${dailyLimit}회, 구독기간 ${PRO_DURATION_DAYS}일)`
               : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
@@ -835,10 +845,10 @@ export default function ChatClient() {
             <button
               type="button"
               className="chat-upgrade-button"
-              onClick={startCheckout}
+              onClick={!user ? () => router.push("/signin?redirect=/chat") : startCheckout}
               disabled={checkoutLoading}
             >
-              {checkoutLoading ? "결제 준비 중..." : `${UPGRADE_PRICE_DISPLAY}에 RealE Plus 이용`}
+              {checkoutLoading ? "결제 준비 중..." : !user ? "회원가입하기" : `${UPGRADE_PRICE_DISPLAY}에 RealE Plus 이용`}
             </button>
           )}
         </div>
@@ -857,17 +867,21 @@ export default function ChatClient() {
               )
             ) : (
               <p className="chat-paywall__body">
-                무료 {FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. {UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus {PRO_DURATION_DAYS}일 이용(일일 {PLUS_DAILY_LIMIT}회)할 수 있어요.
+                {!user 
+                  ? `비회원 ${GUEST_QUESTION_LIMIT}회 상담이 모두 완료되었습니다. 회원가입 후 더 많은 상담을 받아보세요!`
+                  : `무료 ${FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. ${UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus ${PRO_DURATION_DAYS}일 이용(일일 ${PLUS_DAILY_LIMIT}회)할 수 있어요.`
+                }
               </p>
             )}
             <button
               type="button"
               className="chat-upgrade-button"
-              onClick={startCheckout}
+              onClick={!user ? () => router.push("/signin?redirect=/chat") : startCheckout}
               disabled={checkoutLoading}
             >
               {checkoutLoading 
                 ? "페이지로 이동 중..." 
+                : !user ? "회원가입하기"
                 : (effectiveProAccess && !isProPlan) 
                   ? "RealE Pro로 업그레이드하기" 
                   : "결제하고 계속하기"
@@ -878,6 +892,36 @@ export default function ChatClient() {
         )}
         {false && !copilotEnabled && (
           <p className="chat-warning">CopilotKit 공개 키가 설정되지 않아 기본 입력만 표시됩니다.</p>
+        )}
+        
+        {/* 회원가입 유도 모달 */}
+        {showSignupPrompt && (
+          <div className="chat-signup-modal">
+            <div className="chat-signup-modal__overlay" onClick={() => setShowSignupPrompt(false)} />
+            <div className="chat-signup-modal__content">
+              <h2 className="chat-signup-modal__title">🎉 2회 상담 완료!</h2>
+              <p className="chat-signup-modal__body">
+                비회원 상담을 모두 이용하셨습니다.<br />
+                회원가입 후 더 많은 상담을 받아보세요!
+              </p>
+              <div className="chat-signup-modal__actions">
+                <button
+                  type="button"
+                  className="chat-signup-modal__button chat-signup-modal__button--primary"
+                  onClick={() => router.push("/signin?redirect=/chat")}
+                >
+                  회원가입하기
+                </button>
+                <button
+                  type="button"
+                  className="chat-signup-modal__button chat-signup-modal__button--secondary"
+                  onClick={() => setShowSignupPrompt(false)}
+                >
+                  나중에 하기
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

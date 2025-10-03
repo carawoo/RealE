@@ -28,6 +28,89 @@
 .chat-paywall__body{margin:0;font-size:14px;line-height:1.6;color:#3c4043}
 .chat-paywall__error{margin:0;font-size:13px;color:#c5221f}
 
+/* 회원가입 유도 모달 */
+.chat-signup-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-signup-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.chat-signup-modal__content {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.chat-signup-modal__title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a73e8;
+}
+
+.chat-signup-modal__body {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #3c4043;
+}
+
+.chat-signup-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.chat-signup-modal__button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.chat-signup-modal__button--primary {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.chat-signup-modal__button--primary:hover {
+  background: #1765cc;
+}
+
+.chat-signup-modal__button--secondary {
+  background: #f1f3f4;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+}
+
+.chat-signup-modal__button--secondary:hover {
+  background: #e8eaed;
+}
+
 /* 채팅 페이지용 뉴스레터 배너 */
 .newsletter-banner-small {
   margin-top: 16px;
