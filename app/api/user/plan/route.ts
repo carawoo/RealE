@@ -17,19 +17,15 @@ export async function POST(req: NextRequest) {
     let planLabel: string | null = null;
 
     if (userId) {
-      // user_plan 우선 조회 (삭제 여부 테이블이 없어도 통과하도록 LEFT JOIN)
+      // user_plan 우선 조회
       let byId = await admin
         .from("user_plan")
-        .select(`
-          plan,
-          plan_label,
-          pro_until,
-          user_stats_kst(is_deleted)
-        `)
+        .select("plan, plan_label, pro_until")
         .eq("user_id", userId)
         .maybeSingle();
       
       if (byId.data) {
+        console.log('[API] user_plan query result:', byId.data);
         // plan_label을 우선 확인하고, 없으면 plan 컬럼 확인
         planLabel = byId.data.plan_label;
         const planValue = byId.data.plan;
@@ -42,6 +38,7 @@ export async function POST(req: NextRequest) {
           plan = false; // RealE는 무료 플랜
         }
         until = byId.data.pro_until ?? null;
+        console.log('[API] plan detection result:', { plan, planLabel, until });
       }
     }
 
