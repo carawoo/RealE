@@ -44,18 +44,21 @@ export default function DailyFortunePage() {
           throw new Error('잘못된 운세 타입입니다.');
         }
 
-        // API에서 운세 데이터 가져오기
+        // API에서 운세 데이터 가져오기 (캐시 무효화를 위한 타임스탬프 추가)
         const response = await fetch('/api/fortune/daily', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
           body: JSON.stringify({
             type,
             date,
             seed,
             slug,
-            userName: userName || undefined
+            userName: userName || undefined,
+            timestamp: Date.now() // 캐시 무효화를 위한 타임스탬프
           })
         });
 
