@@ -183,7 +183,7 @@ JSON 형식으로 응답:
         }
       ],
       temperature: 1.2,
-      seed: seed || generateDailySeed(),
+      seed: parseInt(seed) || generateDailySeed(),
       response_format: { type: "json_object" },
     });
 
@@ -356,7 +356,8 @@ JSON 형식으로 응답:
     });
 
   } catch (error) {
-    console.error('오늘의 운세 생성 API 에러:', error);
+    console.error('❌ 오늘의 운세 생성 API 에러:', error);
+    console.error('❌ 에러 스택:', error instanceof Error ? error.stack : 'No stack');
     
     let errorMessage = '오늘의 운세를 생성하는 중 오류가 발생했습니다.';
     let details = error instanceof Error ? error.message : 'Unknown error';
@@ -384,11 +385,14 @@ JSON 형식으로 응답:
 // 개인화된 오늘의 운세 생성 또는 slug로 운세 조회
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 POST /api/fortune/daily 요청 시작');
     const body = await request.json();
+    console.log('📝 요청 본문:', JSON.stringify(body, null, 2));
     const { userName, userBirth, type, date, seed, slug } = body;
 
     // slug로 운세 조회하는 경우
     if (slug) {
+      console.log('🔗 slug로 운세 조회:', { slug, type, date, seed });
       return await getFortuneBySlug(slug, type, date, seed);
     }
 
