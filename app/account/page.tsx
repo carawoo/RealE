@@ -12,6 +12,7 @@ export default function AccountPage() {
   const { user, supabase, loading, signOut, session } = useAuth();
   const [proActive, setProActive] = useState(false);
   const [proUntil, setProUntil] = useState<number | null>(null);
+  const [planLabel, setPlanLabel] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -39,6 +40,11 @@ export default function AccountPage() {
       // plan_label이 'pro'이거나 proAccess가 '1'이면 Pro 플랜으로 설정
       if (pa === "1" || planLabel === "pro") {
         setProActive(true);
+      }
+      
+      // plan_label 저장
+      if (planLabel) {
+        setPlanLabel(planLabel);
       }
       
       if (untilRaw) {
@@ -91,6 +97,7 @@ export default function AccountPage() {
             // plan_label을 로컬 스토리지에 저장
             if (data?.plan_label) {
               window.localStorage.setItem("reale:planLabel", data.plan_label.toLowerCase());
+              setPlanLabel(data.plan_label.toLowerCase());
             }
             setProActive(true);
             setProUntil(untilMs);
@@ -100,6 +107,7 @@ export default function AccountPage() {
             window.localStorage.removeItem("reale:planLabel");
             setProActive(false);
             setProUntil(null);
+            setPlanLabel(null);
           }
         } else {
           // API 오류 시 무료 플랜으로 처리
@@ -108,6 +116,7 @@ export default function AccountPage() {
           window.localStorage.removeItem("reale:planLabel");
           setProActive(false);
           setProUntil(null);
+          setPlanLabel(null);
         }
       } catch (e) {
         // 무시: 권한/테이블 부재 등은 UI에 영향을 주지 않음
@@ -237,7 +246,7 @@ export default function AccountPage() {
                 )}
               </p>
               <p style={{ margin: "4px 0 0", color: "#5f6368", fontSize: 14 }}>
-                일일 질문 한도 30회
+                일일 질문 한도 {planLabel === "pro" ? "50회" : "30회"}
                 {!proUntil && (
                   <><br />만료일 정보가 없습니다. 문의가 필요하시면 2025reale@gmail.com으로 연락해 주세요.</>
                 )}
