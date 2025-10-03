@@ -50,10 +50,12 @@ async function getFortuneBySlug(slug: string, type: string, date: string, seed: 
 
     // slug에서 사용자 정보 추출 (개인화된 운세인 경우)
     let userName = '';
+    let userBirth = '';
     if (type === 'personal' && slug.includes('-')) {
       const parts = slug.split('-');
       if (parts.length >= 4) {
         userName = decodeURIComponent(parts[3]);
+        userBirth = '1990-01-01'; // 기본값 설정
       }
     }
 
