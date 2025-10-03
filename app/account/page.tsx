@@ -47,6 +47,11 @@ export default function AccountPage() {
     async function syncPlanFromDB() {
       if (!supabase || !user) return;
       try {
+        // 먼저 서버에 Pro 보정 요청(멱등)
+        try {
+          await fetch("/api/user/ensure-pro-self", { cache: "no-store" });
+        } catch {}
+
         // 1) 우선 user_plan_readonly를 user_id로 조회
         let plan: boolean | null = null;
         let until: string | null = null;
