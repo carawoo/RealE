@@ -53,8 +53,9 @@ async function getFortuneBySlug(slug: string, type: string, date: string, seed: 
     let userBirth = '';
     if (type === 'personal' && slug.includes('-')) {
       const parts = slug.split('-');
-      if (parts.length >= 4) {
-        userName = decodeURIComponent(parts[3]);
+      // personal-2025-10-03-1704488315-앵덕 형태
+      if (parts.length >= 6) {
+        userName = decodeURIComponent(parts[5]);
         userBirth = '1990-01-01'; // 기본값 설정
       }
     }
