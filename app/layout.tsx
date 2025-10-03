@@ -50,6 +50,7 @@ export default function RootLayout({
       <head>
         <meta name="google-site-verification" content="y6oCIZ8CC_KX6RY3XZW3wn07-lhvnsYCrbLwAayqBuI" />
         <meta name="naver-site-verification" content="c39fcbee55418ddb546b452d9ea47e98f1b1ca17" />
+        <meta name="google-adsense-account" content="ca-pub-2510776388416939" />
         {/* Fallback favicon links for browsers that don't read metadata.icons */}
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
