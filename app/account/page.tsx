@@ -34,7 +34,13 @@ export default function AccountPage() {
     try {
       const pa = window.localStorage.getItem("reale:proAccess");
       const untilRaw = window.localStorage.getItem("reale:proAccessUntil");
-      if (pa === "1") setProActive(true);
+      const planLabel = window.localStorage.getItem("reale:planLabel");
+      
+      // plan_label이 'pro'이거나 proAccess가 '1'이면 Pro 플랜으로 설정
+      if (pa === "1" || planLabel === "pro") {
+        setProActive(true);
+      }
+      
       if (untilRaw) {
         const v = Number(untilRaw);
         if (Number.isFinite(v)) setProUntil(v);
@@ -67,16 +73,22 @@ export default function AccountPage() {
           if (data.plan === null) {
             window.localStorage.setItem("reale:proAccess", "0");
             window.localStorage.removeItem("reale:proAccessUntil");
+            window.localStorage.removeItem("reale:planLabel");
             setProActive(false);
             setProUntil(null);
           } else if (inferredPlan || isPro) {
             window.localStorage.setItem("reale:proAccess", "1");
             if (untilMs) window.localStorage.setItem("reale:proAccessUntil", String(untilMs));
+            // plan_label을 로컬 스토리지에 저장
+            if (data?.plan_label) {
+              window.localStorage.setItem("reale:planLabel", data.plan_label.toLowerCase());
+            }
             setProActive(true);
             setProUntil(untilMs);
           } else {
             window.localStorage.setItem("reale:proAccess", "0");
             window.localStorage.removeItem("reale:proAccessUntil");
+            window.localStorage.removeItem("reale:planLabel");
             setProActive(false);
             setProUntil(null);
           }
@@ -84,6 +96,7 @@ export default function AccountPage() {
           // API 오류 시 무료 플랜으로 처리
           window.localStorage.setItem("reale:proAccess", "0");
           window.localStorage.removeItem("reale:proAccessUntil");
+          window.localStorage.removeItem("reale:planLabel");
           setProActive(false);
           setProUntil(null);
         }
