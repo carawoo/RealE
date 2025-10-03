@@ -24,6 +24,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   const [supabase] = useState<SupabaseClient | null>(() => {
+    // 클라이언트 사이드에서만 실행
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    
     try {
       return createSupabaseBrowserClient();
     } catch (error) {

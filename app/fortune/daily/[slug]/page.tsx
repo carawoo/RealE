@@ -78,7 +78,9 @@ export default function DailyFortunePage() {
         }
       } catch (err) {
         console.error('운세 데이터 가져오기 에러:', err);
-        setError(err instanceof Error ? err.message : '운세 데이터를 가져오는데 실패했습니다.');
+        const errorMessage = err instanceof Error ? err.message : '운세 데이터를 가져오는데 실패했습니다.';
+        console.error('상세 에러:', errorMessage);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
