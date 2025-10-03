@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/server/supabase";
 
-export async function POST(_req: NextRequest) {
-  return NextResponse.json({ ok: false, error: "Removed" }, { status: 410 });
-}
-
-export const dynamic = "force-dynamic";
-
+export async function POST(req: NextRequest) {
   try {
     const { userId, email } = await req.json();
     if (!userId && !email) {
