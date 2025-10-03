@@ -40,6 +40,12 @@ export default function DailyFortunePage() {
           // URL 인코딩된 사용자 이름을 올바르게 추출
           const encodedUserName = slugParts.slice(3).join('-');
           userName = decodeURIComponent(encodedUserName);
+          console.log('🔍 사용자 이름 추출 디버깅:', {
+            slug,
+            slugParts,
+            encodedUserName,
+            userName
+          });
         }
         
         if (type !== 'daily' && type !== 'personal') {
