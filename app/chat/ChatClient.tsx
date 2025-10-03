@@ -164,7 +164,8 @@ export default function ChatClient() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(STORAGE_KEYS.proAccess);
-    if (stored === "1") {
+    const storedLabel = window.localStorage.getItem("reale:planLabel");
+    if (stored === "1" || storedLabel === "pro") {
       setProAccess(true);
     }
   }, []);

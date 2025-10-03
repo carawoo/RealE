@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { createClient as createRealtimeClient } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "../lib/supabaseBrowser";
@@ -67,16 +66,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   // Realtime 원격 새로고침 구독 (system:reload 채널)
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !anon) return;
-    const rt = createRealtimeClient(url, anon, { realtime: { params: { eventsPerSecond: 1 } } });
-    const channel = rt.channel("system:reload");
+    if (!supabase) return;
+    
+    const channel = supabase.channel("system:reload");
     channel.on("broadcast", { event: "reload" }, (_payload) => {
       try { location.reload(); } catch {}
     }).subscribe();
     return () => { try { channel.unsubscribe(); } catch {} };
-  }, []);
+  }, [supabase]);
 
   const signOut = async () => {
     if (!supabase) return;
