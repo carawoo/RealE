@@ -29,20 +29,25 @@ export default function DailyFortunePage() {
         setError(null);
 
         // slug에서 운세 데이터 추출
+        // personal-2025-10-03-1704488315-앵덕 형태
         const slugParts = slug.split('-');
         const type = slugParts[0];
-        const date = slugParts[1];
-        const seed = slugParts[2];
+        
+        // 날짜 부분: 2025-10-03 (3개 부분)
+        const date = `${slugParts[1]}-${slugParts[2]}-${slugParts[3]}`;
+        const seed = slugParts[4];
         
         // personal 타입인 경우 userName 추출
         let userName = '';
-        if (type === 'personal' && slugParts.length > 3) {
+        if (type === 'personal' && slugParts.length > 5) {
           // URL 인코딩된 사용자 이름을 올바르게 추출
-          const encodedUserName = slugParts.slice(3).join('-');
+          const encodedUserName = slugParts.slice(5).join('-');
           userName = decodeURIComponent(encodedUserName);
           console.log('🔍 사용자 이름 추출 디버깅:', {
             slug,
             slugParts,
+            date,
+            seed,
             encodedUserName,
             userName
           });
