@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import "../fortune.css";
+import "../../fortune.css";
 
 interface FortuneData {
   fortuneText: string;
