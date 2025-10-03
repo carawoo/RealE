@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
           plan = true; // Plus도 Pro로 처리
         } else if (planValue === "RealE") {
           plan = false; // RealE는 무료 플랜
+          planLabel = "RealE"; // 무료 플랜일 때 plan_label을 RealE로 설정
         }
         until = byId.data.pro_until ?? null;
         console.log('[API] plan detection result:', { plan, planLabel, until });
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
           plan = true; // Plus도 Pro로 처리
         } else if (planValue === "RealE") {
           plan = false; // RealE는 무료 플랜
+          planLabel = "RealE"; // 무료 플랜일 때 plan_label을 RealE로 설정
         }
         until = byEmailInPlan.data.pro_until ?? null;
       } else {
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       plan,
       pro_until: until,
-      plan_label: planLabel || (plan ? "pro" : "free")
+      plan_label: planLabel || (plan ? "pro" : "RealE")
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Unexpected error" }, { status: 500 });
