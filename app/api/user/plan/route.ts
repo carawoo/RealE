@@ -30,11 +30,11 @@ export async function POST(req: NextRequest) {
         planLabel = byId.data.plan_label;
         const planValue = byId.data.plan;
         
-        if (planLabel === "pro" || planValue === "pro" || planValue === "Pro") {
+        if (planLabel === "pro" || planValue === "Pro") {
           plan = true;
-        } else if (planLabel === "plus" || planValue === "plus" || planValue === "Plus") {
+        } else if (planLabel === "plus" || planValue === "Plus") {
           plan = true; // Plus도 Pro로 처리
-        } else if (planValue === "RealE" || planValue === "reale") {
+        } else if (planValue === "RealE") {
           plan = false; // RealE는 무료 플랜
           planLabel = "RealE"; // 무료 플랜일 때 plan_label을 RealE로 설정
         }
