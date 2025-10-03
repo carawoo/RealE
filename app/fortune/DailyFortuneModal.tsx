@@ -354,12 +354,12 @@ export default function DailyFortuneModal({ onClose }: DailyFortuneModalProps) {
                   className="fortune-share-btn"
                   onClick={() => {
                     const text = `🔮 ${fortuneData.type === 'personal' ? `${fortuneData.userName}님의 ` : ''}오늘의 부동산 운세\n\n${fortuneData.fortuneText}\n\n#부동산운세 #오늘의운세 #RealE`;
-                    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
                     window.open(url, '_blank');
                   }}
                 >
                   <span>🐦</span>
-                  <span>트위터</span>
+                  <span>X (Twitter)</span>
                 </button>
                 
                 <button

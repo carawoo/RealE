@@ -210,7 +210,7 @@ export default function FortuneModal({
 
     switch (platform) {
       case "twitter":
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        const twitterUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(
           shareText
         )}&url=${encodeURIComponent(shareUrl)}&hashtags=부동산사주,realespace`;
         window.open(twitterUrl, "_blank");
@@ -348,7 +348,7 @@ export default function FortuneModal({
                   onClick={() => handleShare("twitter")}
                 >
                   <span>🐦</span>
-                  <span>트위터</span>
+                  <span>X (Twitter)</span>
                 </button>
                 <button
                   className="fortune-share-btn copy"

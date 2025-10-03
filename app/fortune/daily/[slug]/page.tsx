@@ -99,7 +99,7 @@ export default function DailyFortunePage() {
 
     switch (platform) {
       case "twitter":
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+        const twitterUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
         window.open(twitterUrl, '_blank');
         break;
       case "copy":
@@ -177,7 +177,7 @@ export default function DailyFortunePage() {
                 onClick={() => handleShare("twitter")}
               >
                 <span>🐦</span>
-                <span>트위터</span>
+                <span>X (Twitter)</span>
               </button>
               
               <button
