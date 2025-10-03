@@ -47,11 +47,6 @@ export default function AccountPage() {
     async function syncPlanFromDB() {
       if (!supabase || !user) return;
       try {
-        // 먼저 서버에 Pro 보정 요청(멱등)
-        try {
-          await fetch("/api/user/ensure-pro-self", { cache: "no-store" });
-        } catch {}
-
         // 1) 우선 user_plan_readonly를 user_id로 조회
         let plan: boolean | null = null;
         let until: string | null = null;
@@ -65,7 +60,7 @@ export default function AccountPage() {
         const data = await res.json();
         if (res.ok && data) {
           const inferredPlan = typeof data.plan === "boolean" ? data.plan : false;
-          const isPro = data?.plan_label === "pro";
+          const isPro = data?.plan_label?.toLowerCase() === "pro" || data?.plan_label?.toLowerCase() === "plus" || data?.plan === "Pro" || data?.plan === "Plus";
           const untilMs = data?.pro_until ? new Date(data.pro_until).getTime() : null;
           
           // API에서 null을 반환하면 무료 플랜으로 처리

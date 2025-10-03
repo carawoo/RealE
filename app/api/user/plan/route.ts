@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 
     let plan: boolean | null = null;
     let until: string | null = null;
+    let planLabel: string | null = null;
 
     if (userId) {
       // user_plan 우선 조회 (삭제 여부 테이블이 없어도 통과하도록 LEFT JOIN)
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       
       if (byId.data) {
         // plan_label을 우선 확인하고, 없으면 plan 컬럼 확인
-        const planLabel = byId.data.plan_label;
+        planLabel = byId.data.plan_label;
         const planValue = byId.data.plan;
         
         if (planLabel === "pro" || planValue === "Pro") {
@@ -40,7 +41,6 @@ export async function POST(req: NextRequest) {
         } else if (planValue === "RealE") {
           plan = false; // RealE는 무료 플랜
         }
-        
         until = byId.data.pro_until ?? null;
       }
     }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       
       if (byEmailInPlan.data) {
         // plan_label을 우선 확인하고, 없으면 plan 컬럼 확인
-        const planLabel = byEmailInPlan.data.plan_label;
+        planLabel = byEmailInPlan.data.plan_label;
         const planValue = byEmailInPlan.data.plan;
         
         if (planLabel === "pro" || planValue === "Pro") {
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
         } else if (planValue === "RealE") {
           plan = false; // RealE는 무료 플랜
         }
-        
         until = byEmailInPlan.data.pro_until ?? null;
       } else {
         // user_plan에 없으면 user_stats_kst에서 조회
@@ -81,67 +80,21 @@ export async function POST(req: NextRequest) {
           .eq("email", email)
           .maybeSingle();
         if (byEmail.data) {
-          plan = byEmail.data.plan === "Pro" || byEmail.data.plan === "Plus" || byEmail.data.plan === "RealE";
+          plan = byEmail.data.plan === "Pro" || byEmail.data.plan === "Plus";
+          planLabel = byEmail.data.plan_label || (plan ? "pro" : "free");
           until = byEmail.data.pro_until ?? null;
-          
-          // user_plan에 자동 동기화
-          if (byEmail.data.id) {
-            try {
-              const planLabel = byEmail.data.plan_label || (plan ? "pro" : "free");
-              let proUntil = until;
-              
-              // 만료일이 없고 Pro/Plus 사용자인 경우 기본 30일 설정
-              if (plan && !proUntil) {
-                const defaultUntil = new Date();
-                defaultUntil.setDate(defaultUntil.getDate() + 30);
-                proUntil = defaultUntil.toISOString();
-              }
-              
-              await admin
-                .from("user_plan")
-                .upsert({
-                  user_id: byEmail.data.id,
-                  plan: plan ? "Pro" : "RealE",
-                  plan_label: planLabel,
-                  pro_until: proUntil
-                }, { onConflict: 'user_id' });
-              
-              console.log(`Auto-synced user plan for ${email}`);
-            } catch (syncError) {
-              console.warn(`Failed to auto-sync user plan for ${email}:`, syncError);
-            }
-          }
+          // 더 이상 자동 동기화하지 않음 (read-only)
         }
       }
     }
 
     // Pro 사용자인데 만료일이 없는 경우 기본 만료일 설정 (30일 후)
-    if (plan === true && !until) {
-      const defaultUntil = new Date();
-      defaultUntil.setDate(defaultUntil.getDate() + 30);
-      until = defaultUntil.toISOString();
-      
-      // user_plan 테이블에 기본 만료일 업데이트
-      if (userId) {
-        try {
-          await admin
-            .from("user_plan")
-            .upsert({ 
-              user_id: userId, 
-              plan: true, 
-              plan_label: "plus",
-              pro_until: until 
-            });
-        } catch (updateError) {
-          console.warn("Failed to update default expiry date:", updateError);
-        }
-      }
-    }
+    // read-only 반환만 수행
 
     return NextResponse.json({ 
-      plan, 
+      plan,
       pro_until: until,
-      plan_label: plan ? "pro" : "free"
+      plan_label: planLabel || (plan ? "pro" : "free")
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Unexpected error" }, { status: 500 });

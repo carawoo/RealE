@@ -189,6 +189,10 @@ export default function ChatClient() {
             if (typeof data?.plan === "boolean" || data?.pro_until) {
               plan = typeof data.plan === "boolean" ? data.plan : null;
               until = data?.pro_until ?? null;
+              // plan_label을 로컬 스토리지에 저장
+              if (data?.plan_label) {
+                window.localStorage.setItem("reale:planLabel", data.plan_label.toLowerCase());
+              }
             }
           }
         } catch {}
@@ -219,6 +223,11 @@ export default function ChatClient() {
             }
 
             until = (byId.data as any).pro_until ?? null;
+            
+            // plan_label을 로컬 스토리지에 저장
+            if (typeof rawLabel === "string") {
+              window.localStorage.setItem("reale:planLabel", rawLabel.trim().toLowerCase());
+            }
           }
         }
 
@@ -442,7 +451,7 @@ export default function ChatClient() {
   const effectiveProAccess = proValid || quotaDisabledInDev;
   
   // Pro 플랜 감지 (URL 파라미터나 사용자 플랜 정보 확인)
-  const isProPlan = effectiveProAccess && (searchParams.get('plan') === 'pro' || (user && user.user_metadata?.plan === 'pro'));
+  const isProPlan = effectiveProAccess && (searchParams.get('plan') === 'pro' || (user && proAccess && typeof window !== "undefined" && window.localStorage.getItem("reale:planLabel") === 'pro'));
   const dailyLimit = effectiveProAccess ? (isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT) : FREE_QUESTION_LIMIT;
   const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
   
