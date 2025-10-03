@@ -29,7 +29,16 @@ export default function DailyFortunePage() {
         setError(null);
 
         // slug에서 운세 데이터 추출
-        const [type, date, seed] = slug.split('-');
+        const slugParts = slug.split('-');
+        const type = slugParts[0];
+        const date = slugParts[1];
+        const seed = slugParts[2];
+        
+        // personal 타입인 경우 userName 추출
+        let userName = '';
+        if (type === 'personal' && slugParts.length > 3) {
+          userName = decodeURIComponent(slugParts[3]);
+        }
         
         if (type !== 'daily' && type !== 'personal') {
           throw new Error('잘못된 운세 타입입니다.');
