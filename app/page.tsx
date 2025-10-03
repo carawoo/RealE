@@ -40,7 +40,7 @@ export default function Home() {
             </Link>
           )}
           <Link className="nav-btn fortune-btn" href="/fortune/search">
-            🔮 부동산 사주 보기
+            🔮 사주&오늘의운세
           </Link>
         </div>
 

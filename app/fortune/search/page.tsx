@@ -1,11 +1,12 @@
 // app/fortune/search/page.tsx
-// 부동산 사주 - 위치 검색 페이지
+// 부동산 사주 - 통합 페이지 (오늘의 운세 + 매물 검색)
 
 "use client";
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import FortuneButton from "../FortuneButton";
+import DailyFortuneButton from "../DailyFortuneButton";
 import "../fortune.css";
 import "./search.css";
 
@@ -22,6 +23,7 @@ interface SearchResult {
 }
 
 export default function FortuneSearchPage() {
+  const [activeTab, setActiveTab] = useState<'daily' | 'search'>('daily');
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -74,11 +76,103 @@ export default function FortuneSearchPage() {
     <main className="fortune-search-page">
       <div className="fortune-search-container">
         <header className="fortune-search-header">
-          <h1>🔮 부동산 사주</h1>
-          <p>내가 살고있는 곳, 관심있는 건물의 운세를 확인해보세요!</p>
+          <h1>🔮 부동산 사주 & 운세</h1>
+          <p>매일 다른 운세와 관심있는 건물의 사주를 확인해보세요!</p>
         </header>
 
-        <div className="fortune-search-box">
+        {/* 탭 네비게이션 */}
+        <div className="fortune-tabs">
+          <button
+            className={`fortune-tab ${activeTab === 'daily' ? 'active' : ''}`}
+            onClick={() => setActiveTab('daily')}
+          >
+            🌟 오늘의 운세
+          </button>
+          <button
+            className={`fortune-tab ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('search')}
+          >
+            🔍 매물 검색
+          </button>
+        </div>
+
+        {/* 오늘의 운세 탭 */}
+        {activeTab === 'daily' && (
+          <div className="fortune-daily-tab">
+            <div className="daily-fortune-card">
+              <div className="daily-fortune-content">
+                <h2>🌟 오늘의 운세</h2>
+                <p>매일 다른 특별한 부동산 운세를 확인해보세요</p>
+                <div className="daily-fortune-features">
+                  <div className="feature-item">
+                    <span className="feature-icon">🔮</span>
+                    <span>일반 오늘의 운세</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-icon">👤</span>
+                    <span>개인화 운세</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-icon">📅</span>
+                    <span>매일 자동 갱신</span>
+                  </div>
+                </div>
+                <DailyFortuneButton
+                  buttonClassName="daily-fortune-btn"
+                  buttonText="오늘의 운세 보기"
+                  showIcon={true}
+                />
+              </div>
+              <div className="daily-fortune-image">
+                <div className="fortune-crystal">
+                  <div className="crystal-inner">🔮</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 기능 소개 섹션 */}
+            <div className="features-section">
+              <h2>✨ 주요 기능</h2>
+              <div className="features-grid">
+                <div className="feature-card">
+                  <div className="feature-icon">🤖</div>
+                  <h3>AI 기반 운세</h3>
+                  <p>GPT를 활용한 정교한 부동산 운세 분석</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">🎨</div>
+                  <h3>타로 카드 이미지</h3>
+                  <p>DALL-E로 생성한 신비로운 카드 이미지</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">📱</div>
+                  <h3>SNS 공유</h3>
+                  <p>카카오톡, 트위터 등으로 간편하게 공유</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">👤</div>
+                  <h3>개인화 서비스</h3>
+                  <p>이름과 생년월일 기반 맞춤형 운세</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">📅</div>
+                  <h3>매일 갱신</h3>
+                  <p>매일 다른 새로운 운세 콘텐츠</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">🔗</div>
+                  <h3>고유 URL</h3>
+                  <p>공유 가능한 고유한 운세 링크 생성</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 매물 검색 탭 */}
+        {activeTab === 'search' && (
+          <div className="fortune-search-tab">
+            <div className="fortune-search-box">
           <div className="search-input-group">
             <input
               type="text"
@@ -175,9 +269,11 @@ export default function FortuneSearchPage() {
           </ul>
         </div>
 
-        <div className="fortune-disclaimer-box">
-          <p>※ 본 콘텐츠는 오직 재미용으로 제공되며 실제 투자 및 매매 판단과는 무관합니다.</p>
-        </div>
+            <div className="fortune-disclaimer-box">
+              <p>※ 본 콘텐츠는 오직 재미용으로 제공되며 실제 투자 및 매매 판단과는 무관합니다.</p>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

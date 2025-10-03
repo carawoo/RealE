@@ -56,6 +56,47 @@
   transform: translateY(-1px);
 }
 
+/* Daily Fortune Section */
+.demo-daily-fortune {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin: 2rem 0;
+  color: white;
+  text-align: center;
+}
+
+.demo-daily-fortune h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: white;
+}
+
+.demo-daily-fortune p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+}
+
+.demo-btn.daily-fortune {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  font-weight: 600;
+  padding: 0.875rem 1.5rem;
+  border-radius: 2rem;
+  transition: all 0.3s ease;
+}
+
+.demo-btn.daily-fortune:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
 .demo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

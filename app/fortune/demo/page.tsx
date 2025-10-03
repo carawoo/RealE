@@ -4,6 +4,7 @@
 "use client";
 
 import FortuneButton from "../FortuneButton";
+import DailyFortuneButton from "../DailyFortuneButton";
 import "../fortune.css";
 import "./demo.css";
 
@@ -52,6 +53,18 @@ export default function FortuneDemoPage() {
           <p className="demo-subtitle">
             AI가 각 매물의 기운을 분석하여 재미있는 운세를 알려드립니다.
           </p>
+          
+          {/* 오늘의 운세 섹션 추가 */}
+          <div className="demo-daily-fortune">
+            <h2>🌟 오늘의 운세</h2>
+            <p>매일 다른 특별한 부동산 운세를 확인해보세요</p>
+            <DailyFortuneButton
+              buttonClassName="demo-btn daily-fortune"
+              buttonText="오늘의 운세 보기"
+              showIcon={true}
+            />
+          </div>
+
           <div style={{ marginTop: "1rem" }}>
             <a href="/fortune/search" className="demo-search-link">
               🔍 내 위치/아파트로 사주 보기
