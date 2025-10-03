@@ -64,6 +64,12 @@ export default function RootLayout({
           async
           crossOrigin="anonymous"
         />
+        {/* Google AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2510776388416939"
+          crossOrigin="anonymous"
+        />
         {/* Kakao Maps SDK */}
         <script 
           src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=087319e261444450882a1a155abea088&autoload=false&libraries=services"
