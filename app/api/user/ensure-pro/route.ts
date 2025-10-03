@@ -14,11 +14,14 @@ export async function POST(req: NextRequest) {
     const until = new Date();
     until.setDate(until.getDate() + 30);
 
-    // 이메일이 주어졌고 userId가 없으면 이메일로 user_id 조회
+    // 이메일이 주어졌고 userId가 없으면 Admin API로 user_id 조회
     let finalUserId: string | null = userId || null;
     if (!finalUserId && email) {
-      const { data } = await admin.from("auth.users").select("id").eq("email", email).maybeSingle();
-      if (data?.id) finalUserId = data.id as unknown as string;
+      try {
+        const { data, error } = await admin.auth.admin.getUserByEmail(email);
+        if (error) throw error;
+        if (data?.user?.id) finalUserId = data.user.id;
+      } catch {}
     }
 
     if (!finalUserId) {
