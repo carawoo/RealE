@@ -778,7 +778,7 @@ export default function ChatClient() {
   }
 
   const textareaPlaceholder = outOfQuota
-    ? "결제를 완료하면 추가 질문을 보낼 수 있어요."
+    ? (!user ? "회원가입 후 추가 질문을 보낼 수 있어요." : "결제를 완료하면 추가 질문을 보낼 수 있어요.")
     : "궁금한 점을 물어보세요!";
 
   const chatShell = (
