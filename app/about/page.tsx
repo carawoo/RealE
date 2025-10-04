@@ -112,12 +112,6 @@ export default function AboutPage() {
               <p className="contact-note">24시간 내 답변 드립니다</p>
             </div>
             <div className="contact-card">
-              <div className="contact-icon">📱</div>
-              <h3>전화 문의</h3>
-              <p>010-2592-3007</p>
-              <p className="contact-note">평일 09:00 - 18:00</p>
-            </div>
-            <div className="contact-card">
               <div className="contact-icon">💬</div>
               <h3>실시간 상담</h3>
               <p>서비스 내 AI 상담</p>
