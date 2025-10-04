@@ -42,23 +42,10 @@ body{
 }
 .home-hero {
   text-align: center;
-  padding: 100px 60px;
-  background: var(--color-surface);
-  border-radius: 32px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-border);
+  padding: 80px 0;
+  background: transparent;
+  border: none;
   position: relative;
-  overflow: hidden;
-}
-
-.home-hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #2563eb, #3b82f6, #7c3aed);
 }
 
 .home-hero h1 {
@@ -413,8 +400,7 @@ body{
   }
   
   .home-hero {
-    padding: 80px 40px;
-    border-radius: 24px;
+    padding: 60px 0;
   }
   
   .home-hero h1 {
@@ -457,8 +443,7 @@ body{
 
 @media (max-width: 480px) {
   .home-hero {
-    padding: 60px 24px;
-    border-radius: 20px;
+    padding: 40px 0;
   }
   
   .home-hero h1 {
