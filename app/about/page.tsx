@@ -19,38 +19,6 @@ export default function AboutPage() {
           </p>
         </header>
 
-        {/* 회사 개요 */}
-        <section className="company-overview">
-          <div className="overview-content">
-            <h2>📋 회사 개요</h2>
-            <div className="company-info">
-              <div className="info-item">
-                <h3>상호명</h3>
-                <p>뚝딱컴퍼니</p>
-              </div>
-              <div className="info-item">
-                <h3>대표자</h3>
-                <p>김재환</p>
-              </div>
-              <div className="info-item">
-                <h3>사업자등록번호</h3>
-                <p>854-52-00876</p>
-              </div>
-              <div className="info-item">
-                <h3>대표전화</h3>
-                <p>010-2592-3007</p>
-              </div>
-              <div className="info-item">
-                <h3>대표이메일</h3>
-                <p>2025reale@gmail.com</p>
-              </div>
-              <div className="info-item">
-                <h3>주소</h3>
-                <p>경기도 안산시 단원구 광덕2로 17, 1316동 304호<br />(초지동, 그린빌주공13단지아파트)</p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* 서비스 소개 */}
         <section className="service-introduction">
