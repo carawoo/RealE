@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "./providers/AuthProvider";
-import ThemeToggle from "./components/ThemeToggle";
 
 const CHAT_PREFIX = "/chat";
 

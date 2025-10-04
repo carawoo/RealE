@@ -7,7 +7,6 @@ body{
   background:var(--color-background); 
   color:var(--color-text-primary); 
   font-family: var(--font-family);
-  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 .home{
@@ -18,7 +17,6 @@ body{
   background:var(--color-background);
   color:var(--color-text-primary);
   min-height:100vh;
-  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* nav */
@@ -51,7 +49,6 @@ body{
   color:var(--color-text-secondary); 
   margin: 0 0 18px; 
   font-size:18px;
-  transition: color var(--transition-normal);
 }
 .cta{ display:flex; gap:12px; flex-wrap:wrap }
 .cta.bottom{ justify-content:center; margin-top:18px }
@@ -71,7 +68,6 @@ body{
   padding: 16px 24px; 
   border-radius:var(--radius-full); 
   font-size:16px;
-  transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* features */
@@ -84,7 +80,6 @@ body{
   border:1px solid var(--color-border); 
   border-radius:var(--radius-xl); 
   padding:var(--space-6);
-  transition: transform var(--transition-fast), border-color var(--transition-normal), background-color var(--transition-normal);
 }
 .card:hover{ 
   transform: translateY(-2px); 
@@ -94,13 +89,11 @@ body{
 .card h3{ 
   margin:2px 0 8px; 
   color:var(--color-text-primary);
-  transition: color var(--transition-normal);
 }
 .card p{ 
   margin:0; 
   color:var(--color-text-secondary); 
   line-height:1.6;
-  transition: color var(--transition-normal);
 }
 
 
