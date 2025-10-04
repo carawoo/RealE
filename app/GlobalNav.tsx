@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "./providers/AuthProvider";
+import ThemeToggle from "./components/ThemeToggle";
 
 const CHAT_PREFIX = "/chat";
 
@@ -50,17 +51,38 @@ export default function GlobalNav() {
         <img src="/realE-logo.png" alt="RealE" className="brand-logo" />
       </Link>
       <nav className={`global-actions${isMobile ? " mobile" : ""}`}>
+        <ThemeToggle />
         {isMobile ? null : (
           <>
             {!onChatRoute && (
-              <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
-                <span className="nav-label">FAQ</span>
-                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
-                  <circle cx="12" cy="17" r="0.5" />
-                </svg>
-              </Link>
+              <>
+                <Link className="nav-btn ghost" href="/blog" aria-label="블로그">
+                  <span className="nav-label">블로그</span>
+                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                </Link>
+                <Link className="nav-btn ghost" href="/faq" aria-label="FAQ">
+                  <span className="nav-label">FAQ</span>
+                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" />
+                    <circle cx="12" cy="17" r="0.5" />
+                  </svg>
+                </Link>
+                <Link className="nav-btn ghost" href="/about" aria-label="회사소개">
+                  <span className="nav-label">회사소개</span>
+                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V7l8-4v18" />
+                    <path d="M19 21V11l-6-4" />
+                  </svg>
+                </Link>
+              </>
             )}
             {onChatRoute && (
               <Link className="nav-btn ghost" href="/chat/share" aria-label="대화 공유">

@@ -1,20 +1,25 @@
-/* app/home.css */
-:root{
-  --bg:#0f0f23;
-  --card:#1f2937;
-  --line:#374151;
-  --muted:#9ca3af;
-  --text:#e5e7eb;
-  --text-strong:#f9fafb;
-  --brand:#8b5cf6;
-  --brand2:#06b6d4;
-}
+/* app/home.css - Using global design system variables */
 
 *{ box-sizing:border-box }
 html,body{ height:100% }
-body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif }
+body{ 
+  margin:0; 
+  background:var(--color-background); 
+  color:var(--color-text-primary); 
+  font-family: var(--font-family);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
 
-.home{display:flex;flex-direction:column;gap:64px;padding:80px 20px 120px;background:linear-gradient(180deg,#0f172a 0%,#0b1220 40%,#10172d 100%);color:#fff;min-height:100vh}
+.home{
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-16);
+  padding:80px 20px 120px;
+  background:var(--color-background);
+  color:var(--color-text-primary);
+  min-height:100vh;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
 
 /* nav */
 .nav{
@@ -39,10 +44,15 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
 }
 
 .hero .accent{
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  background: var(--color-brand-gradient);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-.lead{ color:var(--muted); margin: 0 0 18px; font-size:18px }
+.lead{ 
+  color:var(--color-text-secondary); 
+  margin: 0 0 18px; 
+  font-size:18px;
+  transition: color var(--transition-normal);
+}
 .cta{ display:flex; gap:12px; flex-wrap:wrap }
 .cta.bottom{ justify-content:center; margin-top:18px }
 /* .cta.bottom 영역의 버튼을 가로 100% 확장 */
@@ -55,8 +65,13 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   display:flex; gap: 20px; flex-wrap:wrap; list-style:none; padding:0; margin:18px 0 0;
 }
 .chips li{
-  background: #121431; border:1px solid #20234b; color:#b2b7d7;
-  padding: 16px 24px; border-radius:999px; font-size:16px;
+  background: var(--color-surface-elevated); 
+  border:1px solid var(--color-border); 
+  color:var(--color-text-secondary);
+  padding: 16px 24px; 
+  border-radius:var(--radius-full); 
+  font-size:16px;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* features */
@@ -65,12 +80,28 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   display:grid; grid-template-columns: repeat(3,1fr); gap:14px;
 }
 .card{
-  background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px;
-  transition: transform .15s ease, border-color .2s ease;
+  background:var(--color-surface); 
+  border:1px solid var(--color-border); 
+  border-radius:var(--radius-xl); 
+  padding:var(--space-6);
+  transition: transform var(--transition-fast), border-color var(--transition-normal), background-color var(--transition-normal);
 }
-.card:hover{ transform: translateY(-2px); border-color:#4b5563 }
-.card h3{ margin:2px 0 8px; color:var(--text-strong) }
-.card p{ margin:0; color:#c7cbe0; line-height:1.6 }
+.card:hover{ 
+  transform: translateY(-2px); 
+  border-color:var(--color-text-tertiary);
+  background:var(--color-surface-elevated);
+}
+.card h3{ 
+  margin:2px 0 8px; 
+  color:var(--color-text-primary);
+  transition: color var(--transition-normal);
+}
+.card p{ 
+  margin:0; 
+  color:var(--color-text-secondary); 
+  line-height:1.6;
+  transition: color var(--transition-normal);
+}
 
 
 /* how */
@@ -138,7 +169,7 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   color:#fff; border-color:transparent;
 }
 .btn.ghost{
-  background:#11142d; border:1px solid #1d2145; color:#cdd3fb;
+  background:#ffffff; border:1px solid #d1d5db; color:#374151;
 }
 .btn.lg{ height: 56px; padding:0 24px }
 
@@ -148,6 +179,8 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
 }
 /* override: CTA height to 46px */
 .btn, .btn.lg { height: 46px; }
+
+/* 홈페이지 버튼 레이아웃 수정 - global.css에서 처리됨 */
 
 /* hero 안의 텍스트/버튼/칩을 중앙 정렬 */
 .hero{ text-align: center; }          /* 제목(h1), 설명(.lead) 가운데 */
@@ -580,4 +613,325 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* 새로 추가된 콘텐츠 섹션 스타일 */
+.service-intro,
+.policy-programs,
+.user-reviews,
+.faq-preview {
+  margin: 40px 0;
+  padding: 0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.service-intro h2,
+.policy-programs h2,
+.user-reviews h2,
+.faq-preview h2 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: #111827;
+}
+
+/* 서비스 소개 그리드 */
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.service-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  border-color: #4b5563;
+}
+
+.service-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.service-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.service-card p {
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.service-card ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+.service-card li {
+  color: #6b7280;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.service-card li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* 정책 프로그램 그리드 */
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.policy-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.policy-item:hover {
+  transform: translateY(-2px);
+}
+
+.policy-item h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.policy-item p {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 사용자 후기 그리드 */
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.review-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform 0.2s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-2px);
+}
+
+.review-content {
+  font-style: italic;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.review-author {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* FAQ 미리보기 */
+.faq-preview-list {
+  width: 100%;
+  margin: 0 0 32px 0;
+}
+
+.faq-preview-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: transform 0.2s ease;
+}
+
+.faq-preview-item:hover {
+  transform: translateY(-2px);
+}
+
+.faq-preview-item h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.faq-preview-item p {
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.faq-link {
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .service-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .service-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .service-intro,
+  .policy-programs,
+  .user-reviews,
+  .faq-preview {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 800px) {
+  .service-intro,
+  .policy-programs,
+  .user-reviews,
+  .faq-preview {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .service-grid,
+  .policy-grid,
+  .reviews-grid {
+    width: 100%;
+  }
+  
+  .service-card,
+  .policy-item,
+  .review-card {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 780px) {
+  .service-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  
+  .reviews-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .service-intro,
+  .policy-programs,
+  .user-reviews,
+  .faq-preview {
+    margin: 40px 0;
+    padding: 0;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .service-intro h2,
+  .policy-programs h2,
+  .user-reviews h2,
+  .faq-preview h2 {
+    font-size: 24px;
+    margin-bottom: 32px;
+  }
+
+  .service-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .policy-grid,
+  .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .service-card,
+  .policy-item,
+  .review-card,
+  .faq-preview-item {
+    padding: 20px;
+  }
+
+  .service-icon {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .service-grid {
+    width: 100%;
+  }
+  
+  .service-card {
+    padding: 16px;
+  }
+  
+  .service-card h3 {
+    font-size: 18px;
+  }
+  
+  .service-card p {
+    font-size: 14px;
+  }
 }
