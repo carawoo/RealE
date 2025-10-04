@@ -400,7 +400,7 @@ body.app-shell main {
   width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
-  min-height: 100vh;
+  flex: 1;
 }
 
 @media (max-width: 1200px) {
