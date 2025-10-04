@@ -221,7 +221,6 @@ body.app-shell {
 
 body.app-shell main {
   flex: 1;
-  padding-bottom: 200px; /* 푸터 높이만큼 여백 추가 */
 }
 
 .global-nav {
