@@ -3,7 +3,7 @@
   min-height: 100vh;
   background: var(--color-background);
   color: var(--color-text-primary);
-  padding: 60px 24px;
+  padding: 0 24px;
 }
 
 .blog-container {
@@ -13,7 +13,7 @@
 
 .blog-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin: 0;
 }
 
 .blog-header h1 {
