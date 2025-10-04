@@ -213,14 +213,7 @@ a:hover {
 }
 
 body.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
   background: var(--color-background);
-}
-
-body.app-shell main {
-  flex: 1;
 }
 
 .global-nav {
@@ -779,7 +772,6 @@ body.app-shell main {
   text-align: center;
   color: #4a5568;
   font-size: 14px;
-  margin-top: auto;
 }
 .app-footer__inner {
   display: inline-flex;
