@@ -13,7 +13,6 @@ export default function AboutPage() {
     <main className="about-page">
       <div className="about-container">
         <header className="about-header">
-          <h1>🏢 RealE 회사 소개</h1>
           <p className="about-subtitle">
             부동산 대출 상담의 새로운 패러다임을 제시하는 AI 비서 서비스
           </p>
@@ -86,88 +85,17 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* 기술 스택 */}
-        <section className="technology-stack">
-          <h2>🛠️ 기술 스택</h2>
-          <div className="tech-categories">
-            <div className="tech-category">
-              <h3>Frontend</h3>
-              <div className="tech-tags">
-                <span className="tech-tag">Next.js 14</span>
-                <span className="tech-tag">React 18</span>
-                <span className="tech-tag">TypeScript</span>
-                <span className="tech-tag">CSS Modules</span>
-              </div>
-            </div>
-            <div className="tech-category">
-              <h3>Backend</h3>
-              <div className="tech-tags">
-                <span className="tech-tag">Next.js API Routes</span>
-                <span className="tech-tag">Supabase</span>
-                <span className="tech-tag">OpenAI GPT</span>
-                <span className="tech-tag">Stripe</span>
-              </div>
-            </div>
-            <div className="tech-category">
-              <h3>Infrastructure</h3>
-              <div className="tech-tags">
-                <span className="tech-tag">Vercel</span>
-                <span className="tech-tag">PostgreSQL</span>
-                <span className="tech-tag">Redis</span>
-                <span className="tech-tag">CDN</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* 팀 소개 */}
-        <section className="team-introduction">
-          <h2>👥 팀 소개</h2>
-          <div className="team-content">
-            <div className="team-member">
-              <div className="member-avatar">👨‍💼</div>
-              <div className="member-info">
-                <h3>김재환 (대표)</h3>
-                <p className="member-role">CEO & Founder</p>
-                <p className="member-description">
-                  부동산 금융 분야 10년 경력의 전문가로, AI 기술과 부동산 상담을 결합한 
-                  혁신적인 서비스를 만들고 있습니다. 사용자 중심의 서비스 개발을 추구합니다.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* 연혁 */}
         <section className="company-history">
           <h2>📅 연혁</h2>
           <div className="timeline">
             <div className="timeline-item">
-              <div className="timeline-date">2024.12</div>
+              <div className="timeline-date">2025.09</div>
               <div className="timeline-content">
-                <h3>RealE 서비스 런칭</h3>
-                <p>AI 기반 부동산 대출 상담 서비스 정식 출시</p>
-              </div>
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-date">2024.11</div>
-              <div className="timeline-content">
-                <h3>베타 테스트 시작</h3>
-                <p>제한된 사용자 대상 베타 서비스 운영</p>
-              </div>
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-date">2024.10</div>
-              <div className="timeline-content">
-                <h3>기술 개발 완료</h3>
-                <p>AI 모델 학습 및 서비스 플랫폼 구축</p>
-              </div>
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-date">2024.09</div>
-              <div className="timeline-content">
-                <h3>회사 설립</h3>
-                <p>뚝딱컴퍼니 법인 설립 및 사업자 등록</p>
+                <h3>오픈베타 서비스 시작</h3>
+                <p>RealE AI 부동산 대출 상담 서비스 오픈베타 런칭</p>
               </div>
             </div>
           </div>

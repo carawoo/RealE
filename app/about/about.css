@@ -16,16 +16,6 @@
   margin-bottom: 80px;
 }
 
-.about-header h1 {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--color-text-primary);
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
 
 .about-subtitle {
   font-size: 20px;
@@ -130,109 +120,7 @@
   margin: 0;
 }
 
-/* 기술 스택 */
-.technology-stack {
-  margin-bottom: 80px;
-}
 
-.technology-stack h2 {
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: var(--color-text-primary);
-  text-align: center;
-}
-
-.tech-categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 32px;
-}
-
-.tech-category {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-sm);
-}
-
-.tech-category h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: var(--color-text-primary);
-  text-align: center;
-}
-
-.tech-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-
-.tech-tag {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* 팀 소개 */
-.team-introduction {
-  margin-bottom: 80px;
-}
-
-.team-introduction h2 {
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: var(--color-text-primary);
-  text-align: center;
-}
-
-.team-content {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.team-member {
-  display: flex;
-  gap: 32px;
-  align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: var(--shadow-sm);
-}
-
-.member-avatar {
-  font-size: 64px;
-  flex-shrink: 0;
-}
-
-.member-info h3 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--color-text-primary);
-}
-
-.member-role {
-  color: #2563eb;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-
-.member-description {
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
 
 /* 연혁 */
 .company-history {
@@ -443,9 +331,6 @@
     padding: 20px 16px;
   }
 
-  .about-header h1 {
-    font-size: 36px;
-  }
 
   .about-subtitle {
     font-size: 18px;
@@ -454,16 +339,9 @@
 
   .service-cards,
   .values-grid,
-  .tech-categories,
   .contact-cards {
     grid-template-columns: 1fr;
     gap: 24px;
-  }
-
-  .team-member {
-    flex-direction: column;
-    text-align: center;
-    gap: 20px;
   }
 
   .timeline::before {
@@ -511,9 +389,6 @@
 }
 
 @media (max-width: 480px) {
-  .about-header h1 {
-    font-size: 28px;
-  }
 
   .about-subtitle {
     font-size: 16px;
@@ -521,8 +396,6 @@
 
   .service-introduction h2,
   .core-values h2,
-  .technology-stack h2,
-  .team-introduction h2,
   .company-history h2,
   .contact-info h2 {
     font-size: 24px;
