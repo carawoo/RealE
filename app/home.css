@@ -238,7 +238,7 @@ body{
   display: flex;
   gap: 24px;
   animation: scroll-reviews 30s linear infinite;
-  width: max-content;
+  width: 200%; /* 6개 카드 (원본 3개 + 복제 3개)를 위해 200%로 설정 */
 }
 
 .reviews-track:hover {
@@ -250,7 +250,7 @@ body{
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-50%); /* 200% 너비의 절반만큼 이동 (무한 루프) */
   }
 }
 
