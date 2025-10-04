@@ -13,7 +13,7 @@ body{
   min-height: 100vh;
   background: var(--color-background);
   color: var(--color-text-primary);
-  padding: 60px 24px;
+  padding: 20px 24px;
 }
 
 .home-surface {
@@ -21,7 +21,7 @@ body{
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 80px;
+  gap: 32px;
 }
 
 /* nav */
@@ -42,7 +42,7 @@ body{
 }
 .home-hero {
   text-align: center;
-  padding: 40px 0;
+  padding: 20px 0;
   background: transparent;
   border: none;
   position: relative;
@@ -51,7 +51,7 @@ body{
 .home-hero h1 {
   font-size: 36px;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   color: var(--color-text-primary);
   line-height: 1.2;
   letter-spacing: -0.01em;
@@ -61,7 +61,7 @@ body{
   font-size: 18px;
   color: var(--color-text-secondary);
   max-width: 500px;
-  margin: 0 auto 32px;
+  margin: 0 auto 20px;
   line-height: 1.6;
   font-weight: 400;
 }
@@ -78,9 +78,9 @@ body{
 .home-actions {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   align-items: center;
-  margin-top: 40px;
+  margin-top: 20px;
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
@@ -387,26 +387,26 @@ body{
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .home-container {
-    padding: 40px 16px;
+    padding: 16px 16px;
   }
   
   .home-surface {
-    gap: 60px;
+    gap: 24px;
   }
   
   .home-hero {
-    padding: 30px 0;
+    padding: 16px 0;
   }
   
   .home-hero h1 {
     font-size: 32px;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
   
   .home-hero p {
     font-size: 16px;
     max-width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
   
   .home-actions {
@@ -438,17 +438,17 @@ body{
 
 @media (max-width: 480px) {
   .home-hero {
-    padding: 24px 0;
+    padding: 12px 0;
   }
   
   .home-hero h1 {
     font-size: 28px;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
   
   .home-hero p {
     font-size: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
   
   .service-intro h2,
