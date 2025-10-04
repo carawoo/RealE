@@ -8,8 +8,7 @@ export const metadata = {
 
 export default function ProductPage() {
   return (
-    <main className="page-container">
-      <div className="surface" style={{ width: "min(100%, 1080px)", margin: "0 auto", padding: "40px 20px" }}>
+    <div className="surface" style={{ width: "min(100%, 1080px)", margin: "0 auto", padding: "40px 20px" }}>
         <header className="home-hero">
           <h1>RealE Plus 구독 상품</h1>
           <p>전문가 수준의 부동산 상담을 무제한으로 받아보세요</p>
@@ -259,7 +258,5 @@ export default function ProductPage() {
         </div>
 
       </div>
-      
-    </main>
   );
 }

@@ -50,7 +50,6 @@ export default function GlobalNav() {
         <img src="/realE-logo.png" alt="RealE" className="brand-logo" />
       </Link>
       <nav className={`global-actions${isMobile ? " mobile" : ""}`}>
-        <ThemeToggle />
         {isMobile ? null : (
           <>
             {!onChatRoute && (

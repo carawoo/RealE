@@ -5,8 +5,7 @@ import "../global.css";
 
 export default function PrivacyPolicyPage() {
   return (
-    <section className="page-container">
-      <article className="surface privacy-surface">
+    <article className="surface privacy-surface">
         <header className="privacy-header">
           <h1>개인정보 처리방침</h1>
           <p>
@@ -77,17 +76,69 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="privacy-section">
-          <h2>8. 개인정보 처리방침의 변경</h2>
+          <h2>8. 쿠키 및 광고 관련 개인정보 처리</h2>
           <p>
-            법령 또는 서비스 정책의 변경 시, 회사는 본 개인정보 처리방침을 수정할 수 있으며 변경사항은 홈페이지 공지사항을 통해 안내합니다.
+            RealE는 서비스 개선 및 맞춤형 광고 제공을 위해 쿠키를 사용할 수 있습니다. 쿠키 사용에 대한 상세 내용은 다음과 같습니다.
+          </p>
+          <ul>
+            <li><strong>필수 쿠키</strong>: 서비스 기본 기능 제공을 위해 필요한 쿠키</li>
+            <li><strong>분석 쿠키</strong>: 서비스 이용 통계 및 개선을 위한 쿠키</li>
+            <li><strong>광고 쿠키</strong>: 맞춤형 광고 제공을 위한 쿠키 (선택적)</li>
+          </ul>
+          <p>
+            이용자는 브라우저 설정을 통해 쿠키를 차단하거나 삭제할 수 있으나, 일부 서비스 이용에 제한이 있을 수 있습니다.
           </p>
         </section>
 
-        <p className="privacy-updated">공고일자: 2025-09-27 / 시행일자: 2025-09-27</p>
+        <section className="privacy-section">
+          <h2>9. Google AdSense 및 제3자 서비스</h2>
+          <p>
+            RealE는 Google AdSense를 통한 광고 서비스를 제공할 수 있으며, 이 과정에서 Google의 개인정보 처리방침이 적용됩니다.
+          </p>
+          <ul>
+            <li>Google AdSense: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google 개인정보처리방침</a></li>
+            <li>Google Analytics: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Analytics 개인정보처리방침</a></li>
+            <li>카카오 로그인: <a href="https://www.kakao.com/policy/privacy" target="_blank" rel="noopener noreferrer">카카오 개인정보처리방침</a></li>
+          </ul>
+          <p>
+            제3자 서비스 이용 시 해당 서비스의 개인정보 처리방침을 확인하시기 바랍니다.
+          </p>
+        </section>
+
+        <section className="privacy-section">
+          <h2>10. 아동 개인정보 보호</h2>
+          <p>
+            RealE는 만 14세 미만 아동의 개인정보를 수집하지 않습니다. 만 14세 미만 아동이 서비스를 이용하고자 하는 경우, 법정대리인의 동의가 필요합니다.
+          </p>
+        </section>
+
+        <section className="privacy-section">
+          <h2>11. 개인정보 처리방침의 변경</h2>
+          <p>
+            법령 또는 서비스 정책의 변경 시, 회사는 본 개인정보 처리방침을 수정할 수 있으며 변경사항은 홈페이지 공지사항을 통해 안내합니다.
+          </p>
+          <p>
+            중요한 변경사항의 경우 서비스 내 공지 또는 이메일을 통해 별도로 안내드립니다.
+          </p>
+        </section>
+
+        <section className="privacy-section">
+          <h2>12. 개인정보 침해 신고 및 상담</h2>
+          <p>
+            개인정보 침해 신고나 상담이 필요한 경우 아래 기관에 신고하실 수 있습니다.
+          </p>
+          <ul>
+            <li><strong>개인정보보호위원회</strong>: <a href="https://privacy.go.kr" target="_blank" rel="noopener noreferrer">privacy.go.kr</a> (국번없이 182)</li>
+            <li><strong>개인정보 침해신고센터</strong>: <a href="https://privacy.go.kr" target="_blank" rel="noopener noreferrer">privacy.go.kr</a> (국번없이 182)</li>
+            <li><strong>대검찰청 사이버범죄수사단</strong>: <a href="https://www.spo.go.kr" target="_blank" rel="noopener noreferrer">www.spo.go.kr</a> (02-3480-3571)</li>
+            <li><strong>경찰청 사이버안전국</strong>: <a href="https://cyberbureau.police.go.kr" target="_blank" rel="noopener noreferrer">cyberbureau.police.go.kr</a> (국번없이 182)</li>
+          </ul>
+        </section>
+
+        <p className="privacy-updated">공고일자: 2025-01-15 / 시행일자: 2025-01-15</p>
         <p className="privacy-back">
           <Link href="/">홈으로 돌아가기</Link>
         </p>
       </article>
-    </section>
   );
 }
