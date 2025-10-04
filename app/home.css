@@ -226,20 +226,6 @@ body{
   font-size: 14px;
 }
 
-/* 사용자 후기 섹션 */
-.user-reviews {
-  text-align: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0;
-}
-
-.user-reviews h2 {
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: var(--color-text-primary);
-}
 
 .reviews-container {
   position: relative;
