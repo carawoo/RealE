@@ -15,7 +15,7 @@ const blogPosts = [
     category: "대출 가이드",
     date: "2025-01-15",
     readTime: "8분",
-    image: "/images/blog/loan-scenarios-2025.jpg",
+    image: "/images/blog/loan-scenarios-2025.svg",
     featured: true,
     content: `
 안녕하세요! 2025년이 되면서 부동산 대출 시장도 많이 바뀌었죠. 정부에서 새로운 정책들을 내놓고, 금리 상황도 달라져서 예전과는 다른 전략이 필요해졌어요. 오늘은 여러분의 상황에 맞는 대출 전략을 함께 알아보겠습니다.
@@ -42,7 +42,7 @@ const blogPosts = [
     category: "정책 분석",
     date: "2025-01-12",
     readTime: "6분",
-    image: "/images/blog/policy-loans-comparison-2025.jpg",
+    image: "/images/blog/policy-loans-comparison-2025.svg",
     featured: false,
     content: `
 생애최초로 집을 사시는 분들이라면 정부에서 지원하는 대출 상품들을 많이 들어보셨을 거예요. 그 중에서도 가장 인기 있는 두 가지가 바로 디딤돌대출과 보금자리론이에요. 2025년에 조건이 조금씩 바뀌었는데, 어떤 게 더 유리한지 함께 비교해보겠습니다.
@@ -71,7 +71,7 @@ const blogPosts = [
     category: "소득증명",
     date: "2025-01-10",
     readTime: "10분",
-    image: "/images/blog/freelancer-income-proof-2025.jpg",
+    image: "/images/blog/freelancer-income-proof-2025.svg",
     featured: false,
     content: `
 프리랜서나 자영업자 분들께서 가장 많이 하시는 질문이 바로 "우리도 대출 받을 수 있나요?"예요. 네, 충분히 가능합니다! 다만 직장인들과는 조금 다른 방법으로 소득을 증명해야 해요. 2025년 기준으로 어떻게 하면 되는지 알려드릴게요.
@@ -108,7 +108,7 @@ const blogPosts = [
     category: "대출 기초",
     date: "2025-01-08",
     readTime: "7분",
-    image: "/images/blog/ltv-dsr-calculations-2025.jpg",
+    image: "/images/blog/ltv-dsr-calculations-2025.svg",
     featured: false,
     content: `
 부동산 대출을 받으려면 LTV와 DSR이라는 말을 많이 들어보셨을 거예요. 이 두 가지는 대출을 받을 수 있는지 결정하는 가장 중요한 기준이에요. 2025년에 기준이 더 엄격해졌는데, 쉽게 설명해드릴게요.
@@ -153,7 +153,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "시장 분석",
     date: "2025-01-05",
     readTime: "12분",
-    image: "/images/blog/real-estate-market-2025.jpg",
+    image: "/images/blog/real-estate-market-2025.svg",
     featured: true,
     content: `
 2025년 부동산 시장은 어떤 모습일까요? 정부 정책도 계속 나오고, 금리 상황도 바뀌고 있어서 투자자들이 많이 고민하고 있죠. 오늘은 2025년 시장 전망과 어떤 전략으로 접근해야 할지 함께 알아보겠습니다.
@@ -196,7 +196,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "인테리어",
     date: "2025-01-03",
     readTime: "9분",
-    image: "/images/blog/interior-design-trends-2025.jpg",
+    image: "/images/blog/interior-design-trends-2025.svg",
     featured: false,
     content: `
 집을 사거나 팔 때 인테리어가 얼마나 중요한지 아시나요? 2025년에는 어떤 인테리어 트렌드가 집값에 영향을 미칠까요? 오늘은 인테리어가 집값에 미치는 영향과 투자 가치를 높이는 방법을 알아보겠습니다.
@@ -225,7 +225,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "시장 분석",
     date: "2025-01-20",
     readTime: "11분",
-    image: "/images/blog/new-town-investment-2025.jpg",
+    image: "/images/blog/new-town-investment-2025.svg",
     featured: false,
     content: `
 2025년 신도시 투자는 어떤 모습일까요? 새로운 개발 지역들이 계속 생기고 있어서 투자자들이 많이 관심을 가지고 있죠. 오늘은 신도시 투자 전략과 주목할 만한 지역들을 함께 알아보겠습니다.
@@ -248,7 +248,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "대출 가이드",
     date: "2025-01-18",
     readTime: "9분",
-    image: "/images/blog/mortgage-rate-forecast-2025.jpg",
+    image: "/images/blog/mortgage-rate-forecast-2025.svg",
     featured: false,
     content: `
 2025년 주택담보대출 금리는 어떻게 될까요? 금리 변동에 대비해서 어떤 전략을 세워야 할지 함께 알아보겠습니다.
@@ -269,7 +269,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "정책 분석",
     date: "2025-01-16",
     readTime: "13분",
-    image: "/images/blog/real-estate-tax-2025.jpg",
+    image: "/images/blog/real-estate-tax-2025.svg",
     featured: false,
     content: `
 2025년 부동산 세금 정책이 많이 바뀌었어요. 양도소득세, 종합부동산세, 취득세 등이 모두 변경되었는데, 어떻게 하면 절세할 수 있는지 함께 알아보겠습니다.
@@ -290,7 +290,7 @@ LTV와 DSR은 복잡해 보이지만, 사실 간단한 계산이에요. 미리 �
     category: "시장 분석",
     date: "2025-01-14",
     readTime: "10분",
-    image: "/images/blog/commercial-real-estate-2025.jpg",
+    image: "/images/blog/commercial-real-estate-2025.svg",
     featured: false,
     content: `
 2025년 상업용 부동산 투자는 어떤 기회와 리스크가 있을까요? 오피스, 상가, 물류시설 등 각 유형별로 분석해보겠습니다.

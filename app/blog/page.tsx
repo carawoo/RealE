@@ -15,7 +15,7 @@ const blogPosts = [
     category: "대출 가이드",
     date: "2025-01-15",
     readTime: "8분",
-    image: "/images/blog/loan-scenarios-2025.jpg",
+    image: "/images/blog/loan-scenarios-2025.svg",
     featured: true
   },
   {
@@ -25,7 +25,7 @@ const blogPosts = [
     category: "정책 분석",
     date: "2025-01-12",
     readTime: "6분",
-    image: "/images/blog/policy-loans-comparison-2025.jpg",
+    image: "/images/blog/policy-loans-comparison-2025.svg",
     featured: false
   },
   {
@@ -35,7 +35,7 @@ const blogPosts = [
     category: "소득증명",
     date: "2025-01-10",
     readTime: "10분",
-    image: "/images/blog/freelancer-income-proof-2025.jpg",
+    image: "/images/blog/freelancer-income-proof-2025.svg",
     featured: false
   },
   {
@@ -45,7 +45,7 @@ const blogPosts = [
     category: "대출 기초",
     date: "2025-01-08",
     readTime: "7분",
-    image: "/images/blog/ltv-dsr-calculations-2025.jpg",
+    image: "/images/blog/ltv-dsr-calculations-2025.svg",
     featured: false
   },
   {
@@ -55,7 +55,7 @@ const blogPosts = [
     category: "시장 분석",
     date: "2025-01-05",
     readTime: "12분",
-    image: "/images/blog/real-estate-market-2025.jpg",
+    image: "/images/blog/real-estate-market-2025.svg",
     featured: true
   },
   {
@@ -65,7 +65,7 @@ const blogPosts = [
     category: "인테리어",
     date: "2025-01-03",
     readTime: "9분",
-    image: "/images/blog/interior-design-trends-2025.jpg",
+    image: "/images/blog/interior-design-trends-2025.svg",
     featured: false
   },
   {
@@ -75,7 +75,7 @@ const blogPosts = [
     category: "시장 분석",
     date: "2025-01-20",
     readTime: "11분",
-    image: "/images/blog/new-town-investment-2025.jpg",
+    image: "/images/blog/new-town-investment-2025.svg",
     featured: false
   },
   {
@@ -85,7 +85,7 @@ const blogPosts = [
     category: "대출 가이드",
     date: "2025-01-18",
     readTime: "9분",
-    image: "/images/blog/mortgage-rate-forecast-2025.jpg",
+    image: "/images/blog/mortgage-rate-forecast-2025.svg",
     featured: false
   },
   {
@@ -95,7 +95,7 @@ const blogPosts = [
     category: "정책 분석",
     date: "2025-01-16",
     readTime: "13분",
-    image: "/images/blog/real-estate-tax-2025.jpg",
+    image: "/images/blog/real-estate-tax-2025.svg",
     featured: false
   },
   {
@@ -105,7 +105,7 @@ const blogPosts = [
     category: "시장 분석",
     date: "2025-01-14",
     readTime: "10분",
-    image: "/images/blog/commercial-real-estate-2025.jpg",
+    image: "/images/blog/commercial-real-estate-2025.svg",
     featured: false
   }
 ];
