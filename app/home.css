@@ -229,8 +229,9 @@ body{
 /* 사용자 후기 섹션 */
 .user-reviews {
   text-align: center;
-  overflow: hidden;
-  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .user-reviews h2 {
@@ -243,14 +244,15 @@ body{
 .reviews-container {
   position: relative;
   overflow: hidden;
-  white-space: nowrap;
+  width: 100%;
+  max-width: 100%;
 }
 
 .reviews-track {
-  display: inline-flex;
+  display: flex;
   gap: 24px;
   animation: scroll-reviews 30s linear infinite;
-  padding: 0 24px;
+  width: max-content;
 }
 
 .reviews-track:hover {
@@ -266,12 +268,6 @@ body{
   }
 }
 
-.reviews-grid {
-  display: inline-flex;
-  gap: 24px;
-  margin-top: 40px;
-}
-
 .review-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -279,11 +275,8 @@ body{
   padding: 24px;
   text-align: left;
   box-shadow: var(--shadow-sm);
-  min-width: 300px;
-  max-width: 350px;
-  white-space: normal;
-  display: inline-block;
-  vertical-align: top;
+  min-width: 280px;
+  max-width: 320px;
   flex-shrink: 0;
 }
 
@@ -453,14 +446,30 @@ body{
     gap: 20px;
   }
   
+  .user-reviews {
+    padding: 0 16px;
+  }
+  
   .reviews-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .reviews-container::-webkit-scrollbar {
+    display: none;
   }
   
   .reviews-track {
     animation: none;
     padding: 0 16px;
+  }
+  
+  .review-card {
+    min-width: 260px;
+    max-width: 280px;
+    padding: 20px;
   }
   
   .service-card,
@@ -493,9 +502,31 @@ body{
     margin-bottom: 12px;
   }
   
+  .user-reviews {
+    padding: 0 12px;
+  }
+  
+  .user-reviews h2 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+  
+  .review-card {
+    min-width: 240px;
+    max-width: 260px;
+    padding: 16px;
+  }
+  
+  .review-content {
+    font-size: 14px;
+  }
+  
+  .review-author {
+    font-size: 12px;
+  }
+  
   .service-intro h2,
   .policy-programs h2,
-  .user-reviews h2,
   .faq-preview h2 {
     font-size: 20px;
   }
@@ -1061,26 +1092,8 @@ body{
   line-height: 1.5;
 }
 
-/* 사용자 후기 그리드 */
-.reviews-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  width: 100%;
-  box-sizing: border-box;
-}
 
-.review-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 24px;
-  transition: transform 0.2s ease;
-}
 
-.review-card:hover {
-  transform: translateY(-2px);
-}
 
 .review-content {
   font-style: italic;
@@ -1169,8 +1182,7 @@ body{
   }
   
   .service-grid,
-  .policy-grid,
-  .reviews-grid {
+  .policy-grid {
     width: 100%;
   }
   
@@ -1189,10 +1201,6 @@ body{
     gap: 12px;
   }
   
-  .reviews-grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1221,8 +1229,7 @@ body{
     padding: 0 16px;
   }
 
-  .policy-grid,
-  .reviews-grid {
+  .policy-grid {
     grid-template-columns: 1fr;
     gap: 20px;
     width: 100%;
