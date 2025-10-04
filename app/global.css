@@ -221,6 +221,7 @@ body.app-shell {
 
 body.app-shell main {
   flex: 1;
+  padding-bottom: 200px; /* 푸터 높이만큼 여백 추가 */
 }
 
 .global-nav {
@@ -772,14 +773,19 @@ body.app-shell main {
 }
 
 .app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   padding: 32px 24px;
   border-top: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(248, 249, 251, 0.9);
+  background: rgba(248, 249, 251, 0.95);
   text-align: center;
   color: #4a5568;
   font-size: 14px;
-  margin-top: auto;
+  backdrop-filter: blur(10px);
+  z-index: 10;
 }
 .app-footer__inner {
   display: inline-flex;
