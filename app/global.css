@@ -219,6 +219,10 @@ body.app-shell {
   background: var(--color-background);
 }
 
+body.app-shell main {
+  flex: 1;
+}
+
 .global-nav {
   position: sticky;
   top: 0;
@@ -775,6 +779,7 @@ body.app-shell {
   text-align: center;
   color: #4a5568;
   font-size: 14px;
+  margin-top: auto;
 }
 .app-footer__inner {
   display: inline-flex;
