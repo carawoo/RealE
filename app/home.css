@@ -42,33 +42,28 @@ body{
 }
 .home-hero {
   text-align: center;
-  padding: 80px 0;
+  padding: 40px 0;
   background: transparent;
   border: none;
   position: relative;
 }
 
 .home-hero h1 {
-  font-size: 56px;
-  font-weight: 800;
-  margin-bottom: 32px;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 20px;
   color: var(--color-text-primary);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #1e293b, #334155);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .home-hero p {
-  font-size: 22px;
+  font-size: 18px;
   color: var(--color-text-secondary);
-  max-width: 700px;
-  margin: 0 auto 48px;
-  line-height: 1.7;
+  max-width: 500px;
+  margin: 0 auto 32px;
+  line-height: 1.6;
   font-weight: 400;
-  letter-spacing: -0.01em;
 }
 
 .hero .accent{
@@ -400,18 +395,18 @@ body{
   }
   
   .home-hero {
-    padding: 60px 0;
+    padding: 30px 0;
   }
   
   .home-hero h1 {
-    font-size: 42px;
-    margin-bottom: 24px;
+    font-size: 32px;
+    margin-bottom: 16px;
   }
   
   .home-hero p {
-    font-size: 20px;
+    font-size: 16px;
     max-width: 100%;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
   }
   
   .home-actions {
@@ -443,17 +438,17 @@ body{
 
 @media (max-width: 480px) {
   .home-hero {
-    padding: 40px 0;
+    padding: 24px 0;
   }
   
   .home-hero h1 {
-    font-size: 32px;
-    margin-bottom: 20px;
+    font-size: 28px;
+    margin-bottom: 12px;
   }
   
   .home-hero p {
-    font-size: 18px;
-    margin-bottom: 32px;
+    font-size: 15px;
+    margin-bottom: 20px;
   }
   
   .service-intro h2,
