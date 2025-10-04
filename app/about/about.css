@@ -3,7 +3,7 @@
   min-height: 100vh;
   background: var(--color-background);
   color: var(--color-text-primary);
-  padding: 60px 24px;
+  padding: 0 24px;
 }
 
 .about-container {
@@ -34,7 +34,7 @@
 .service-introduction h2 {
   font-size: 32px;
   font-weight: 700;
-  margin-bottom: 40px;
+  margin: 0 0 40px 0;
   color: var(--color-text-primary);
   text-align: center;
 }
@@ -328,7 +328,7 @@
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .about-page {
-    padding: 20px 16px;
+    padding: 0 16px;
   }
 
 

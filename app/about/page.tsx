@@ -13,9 +13,6 @@ export default function AboutPage() {
     <main className="about-page">
       <div className="about-container">
         <header className="about-header">
-          <p className="about-subtitle">
-            부동산 대출 상담의 새로운 패러다임을 제시하는 AI 비서 서비스
-          </p>
         </header>
 
 

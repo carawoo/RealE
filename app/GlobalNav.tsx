@@ -139,9 +139,17 @@ export default function GlobalNav() {
             </button>
             <div className={`nav-menu${menuOpen ? " open" : ""}`}>
               {!onChatRoute && (
-                <Link href="/faq" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
-                  FAQ
-                </Link>
+                <>
+                  <Link href="/blog" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                    블로그
+                  </Link>
+                  <Link href="/faq" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                    FAQ
+                  </Link>
+                  <Link href="/about" className="nav-menu__item" onClick={() => setMenuOpen(false)}>
+                    회사소개
+                  </Link>
+                </>
               )}
               {user ? (
                 <>

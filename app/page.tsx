@@ -107,8 +107,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 사용자 후기 섹션 */}
-        <section className="user-reviews">
+        {/* 사용자 후기 */}
+        <div className="user-reviews">
           <h2>💬 사용자 후기</h2>
           <div className="reviews-container">
             <div className="reviews-track">
@@ -151,7 +151,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
         {/* FAQ 미리보기 섹션 */}
         <section className="faq-preview">

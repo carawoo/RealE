@@ -127,7 +127,7 @@
 .featured-card .post-content h3 {
   font-size: 20px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin: 0;
   color: var(--color-text-primary);
   line-height: 1.4;
 }
@@ -274,25 +274,11 @@
 
 .newsletter-form {
   display: flex;
-  gap: 16px;
+  justify-content: center;
   max-width: 400px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
-}
-
-.newsletter-form input {
-  flex: 1;
-  padding: 16px 20px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #1f2937;
-}
-
-.newsletter-form input::placeholder {
-  color: #6b7280;
 }
 
 .subscribe-btn {
