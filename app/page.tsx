@@ -110,24 +110,45 @@ export default function Home() {
         {/* 사용자 후기 섹션 */}
         <section className="user-reviews">
           <h2>💬 사용자 후기</h2>
-          <div className="reviews-grid">
-            <div className="review-card">
-              <div className="review-content">
-                "월소득과 자본금만 입력했는데 3가지 대출 시나리오를 한눈에 비교할 수 있어서 정말 유용했어요!"
+          <div className="reviews-container">
+            <div className="reviews-track">
+              <div className="review-card">
+                <div className="review-content">
+                  "월소득과 자본금만 입력했는데 3가지 대출 시나리오를 한눈에 비교할 수 있어서 정말 유용했어요!"
+                </div>
+                <div className="review-author">김○○님 (30대, 신혼부부)</div>
               </div>
-              <div className="review-author">김○○님 (30대, 신혼부부)</div>
-            </div>
-            <div className="review-card">
-              <div className="review-content">
-                "프리랜서 소득증명 방법을 상세히 알려주셔서 대출 신청이 훨씬 수월해졌습니다."
+              <div className="review-card">
+                <div className="review-content">
+                  "프리랜서 소득증명 방법을 상세히 알려주셔서 대출 신청이 훨씬 수월해졌습니다."
+                </div>
+                <div className="review-author">이○○님 (20대, 프리랜서)</div>
               </div>
-              <div className="review-author">이○○님 (20대, 프리랜서)</div>
-            </div>
-            <div className="review-card">
-              <div className="review-content">
-                "부동산 사주 기능이 재미있고, 실제로 매물을 검색해서 사주를 볼 수 있어서 신기해요!"
+              <div className="review-card">
+                <div className="review-content">
+                  "부동산 사주 기능이 재미있고, 실제로 매물을 검색해서 사주를 볼 수 있어서 신기해요!"
+                </div>
+                <div className="review-author">박○○님 (40대, 투자자)</div>
               </div>
-              <div className="review-author">박○○님 (40대, 투자자)</div>
+              {/* 복제된 카드들 (무한 스크롤을 위해) */}
+              <div className="review-card">
+                <div className="review-content">
+                  "월소득과 자본금만 입력했는데 3가지 대출 시나리오를 한눈에 비교할 수 있어서 정말 유용했어요!"
+                </div>
+                <div className="review-author">김○○님 (30대, 신혼부부)</div>
+              </div>
+              <div className="review-card">
+                <div className="review-content">
+                  "프리랜서 소득증명 방법을 상세히 알려주셔서 대출 신청이 훨씬 수월해졌습니다."
+                </div>
+                <div className="review-author">이○○님 (20대, 프리랜서)</div>
+              </div>
+              <div className="review-card">
+                <div className="review-content">
+                  "부동산 사주 기능이 재미있고, 실제로 매물을 검색해서 사주를 볼 수 있어서 신기해요!"
+                </div>
+                <div className="review-author">박○○님 (40대, 투자자)</div>
+              </div>
             </div>
           </div>
         </section>
