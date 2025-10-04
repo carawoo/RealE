@@ -1,9 +1,9 @@
 /* app/about/about.css */
 .about-page {
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
-  padding: 40px 20px;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  padding: 60px 24px;
 }
 
 .about-container {
@@ -20,8 +20,8 @@
   font-size: 48px;
   font-weight: 700;
   margin-bottom: 20px;
-  color: var(--text-strong);
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  color: var(--color-text-primary);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -29,7 +29,7 @@
 
 .about-subtitle {
   font-size: 20px;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
@@ -44,7 +44,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -52,16 +52,17 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 40px;
+  box-shadow: var(--shadow-sm);
 }
 
 .info-item h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--brand);
+  color: #2563eb;
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -69,7 +70,7 @@
 
 .info-item p {
   font-size: 18px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   margin: 0;
   line-height: 1.5;
 }
@@ -83,7 +84,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -94,17 +95,18 @@
 }
 
 .service-card {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 32px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .service-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .service-icon {
@@ -117,11 +119,11 @@
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
 }
 
 .service-card p {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
 }
@@ -135,7 +137,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -148,14 +150,16 @@
 .value-item {
   text-align: center;
   padding: 32px 24px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   transition: transform 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .value-item:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
 }
 
 .value-icon {
@@ -168,11 +172,11 @@
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
 }
 
 .value-item p {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
 }
@@ -186,7 +190,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -197,17 +201,18 @@
 }
 
 .tech-category {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 32px;
+  box-shadow: var(--shadow-sm);
 }
 
 .tech-category h3 {
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -219,7 +224,7 @@
 }
 
 .tech-tag {
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
   padding: 8px 16px;
   border-radius: 20px;
@@ -236,7 +241,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -249,10 +254,11 @@
   display: flex;
   gap: 32px;
   align-items: center;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 40px;
+  box-shadow: var(--shadow-sm);
 }
 
 .member-avatar {
@@ -264,17 +270,17 @@
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
 }
 
 .member-role {
-  color: var(--brand);
+  color: #2563eb;
   font-weight: 500;
   margin-bottom: 16px;
 }
 
 .member-description {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
 }
@@ -288,7 +294,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -305,7 +311,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   transform: translateX(-50%);
 }
 
@@ -325,7 +331,7 @@
 }
 
 .timeline-date {
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
   padding: 12px 24px;
   border-radius: 24px;
@@ -337,24 +343,25 @@
 }
 
 .timeline-content {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 24px;
   margin: 0 32px;
   flex: 1;
   max-width: 300px;
+  box-shadow: var(--shadow-sm);
 }
 
 .timeline-content h3 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
 }
 
 .timeline-content p {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.5;
 }
@@ -368,7 +375,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 40px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   text-align: center;
 }
 
@@ -379,16 +386,18 @@
 }
 
 .contact-card {
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 32px;
   text-align: center;
   transition: transform 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .contact-card:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
 }
 
 .contact-icon {
@@ -401,30 +410,31 @@
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
 }
 
 .contact-card p {
   font-size: 18px;
-  color: var(--text-strong);
+  color: var(--color-text-primary);
   margin-bottom: 8px;
 }
 
 .contact-note {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
 /* CTA 섹션 */
 .about-cta {
-  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
   padding: 80px 40px;
   border-radius: 24px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
 .about-cta::before {
@@ -475,7 +485,7 @@
 
 .cta-btn.primary {
   background: white;
-  color: var(--brand);
+  color: #2563eb;
 }
 
 .cta-btn.secondary {
