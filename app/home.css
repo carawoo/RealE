@@ -9,14 +9,19 @@ body{
   font-family: var(--font-family);
 }
 
-.home{
-  display:flex;
-  flex-direction:column;
-  gap:var(--space-16);
-  padding:80px 20px 120px;
-  background:var(--color-background);
-  color:var(--color-text-primary);
-  min-height:100vh;
+.home-container {
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  padding: 60px 24px;
+}
+
+.home-surface {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
 }
 
 /* nav */
@@ -35,10 +40,29 @@ body{
   margin: 0 auto;        /* 가운데 정렬 */
   padding: 56px 20px 24px; /* 위/좌우/아래 패딩 */
 }
-.hero{
-  max-width: 960px;      /* 컨텐츠 최대폭 */
-  margin: 0 auto;        /* 가운데 정렬 */
-  padding: 56px 20px 24px; /* 위/좌우/아래 패딩 */
+.home-hero {
+  text-align: center;
+  padding: 80px 0;
+  background: var(--color-surface);
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.home-hero h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.home-hero p {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
 }
 
 .hero .accent{
@@ -50,13 +74,12 @@ body{
   margin: 0 0 18px; 
   font-size:18px;
 }
-.cta{ display:flex; gap:12px; flex-wrap:wrap }
-.cta.bottom{ justify-content:center; margin-top:18px }
-/* .cta.bottom 영역의 버튼을 가로 100% 확장 */
-.cta.bottom > .btn {
-  flex: 1 1 100%;
-  width: 100%;
-  max-width: none;
+.home-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 40px;
 }
 .chips{
   display:flex; gap: 20px; flex-wrap:wrap; list-style:none; padding:0; margin:18px 0 0;
@@ -70,30 +93,200 @@ body{
   font-size:16px;
 }
 
-/* features */
-.features{
-  max-width:960px; width:100%; margin:24px auto; padding:0 20px;
-  display:grid; grid-template-columns: repeat(3,1fr); gap:14px;
+/* 서비스 소개 섹션 */
+.service-intro {
+  text-align: center;
 }
-.card{
-  background:var(--color-surface); 
-  border:1px solid var(--color-border); 
-  border-radius:var(--radius-xl); 
-  padding:var(--space-6);
+
+.service-intro h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--color-text-primary);
 }
-.card:hover{ 
-  transform: translateY(-2px); 
-  border-color:var(--color-text-tertiary);
-  background:var(--color-surface-elevated);
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 32px;
+  margin-top: 40px;
 }
-.card h3{ 
-  margin:2px 0 8px; 
-  color:var(--color-text-primary);
+
+.service-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
 }
-.card p{ 
-  margin:0; 
-  color:var(--color-text-secondary); 
-  line-height:1.6;
+
+.service-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.service-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-text-primary);
+}
+
+.service-card p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.service-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.service-card li {
+  color: var(--color-text-secondary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.service-card li:last-child {
+  border-bottom: none;
+}
+
+/* 정책 프로그램 섹션 */
+.policy-programs {
+  text-align: center;
+}
+
+.policy-programs h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--color-text-primary);
+}
+
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.policy-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.policy-item h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text-primary);
+}
+
+.policy-item p {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 사용자 후기 섹션 */
+.user-reviews {
+  text-align: center;
+}
+
+.user-reviews h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--color-text-primary);
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.review-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+
+.review-content {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.review-author {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* FAQ 미리보기 섹션 */
+.faq-preview {
+  text-align: center;
+}
+
+.faq-preview h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--color-text-primary);
+}
+
+.faq-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 40px;
+  text-align: left;
+}
+
+.faq-preview-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.faq-preview-item h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text-primary);
+}
+
+.faq-preview-item p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  font-size: 14px;
+}
+
+.faq-link {
+  margin-top: 32px;
 }
 
 
@@ -166,9 +359,70 @@ body{
 }
 .btn.lg{ height: 56px; padding:0 24px }
 
-@media (max-width:960px){
-  .features{ grid-template-columns:1fr }
-  .hero h1{ font-size:32px }
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 40px 16px;
+  }
+  
+  .home-surface {
+    gap: 60px;
+  }
+  
+  .home-hero {
+    padding: 60px 20px;
+  }
+  
+  .home-hero h1 {
+    font-size: 36px;
+  }
+  
+  .home-hero p {
+    font-size: 18px;
+  }
+  
+  .home-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .service-grid,
+  .policy-grid,
+  .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .service-card,
+  .policy-item,
+  .review-card,
+  .faq-preview-item {
+    padding: 20px;
+  }
+  
+  .service-intro h2,
+  .policy-programs h2,
+  .user-reviews h2,
+  .faq-preview h2 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero h1 {
+    font-size: 28px;
+  }
+  
+  .home-hero p {
+    font-size: 16px;
+  }
+  
+  .service-intro h2,
+  .policy-programs h2,
+  .user-reviews h2,
+  .faq-preview h2 {
+    font-size: 20px;
+  }
 }
 /* override: CTA height to 46px */
 .btn, .btn.lg { height: 46px; }
