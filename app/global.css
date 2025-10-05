@@ -382,6 +382,26 @@ body.app-shell {
   display: none;
 }
 
+/* 모바일 블로그 버튼 - 레이아웃 유지하면서 작은 버튼으로 표시 */
+.mobile-blog-btn {
+  padding: 8px 12px !important;
+  min-width: auto;
+  border-radius: 50px !important;
+  font-size: 12px !important;
+}
+
+.mobile-blog-btn .nav-icon {
+  display: block !important;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+}
+
+.mobile-blog-btn .nav-label {
+  display: inline-block !important;
+}
+
+
 .page-container {
   display: flex;
   flex-direction: column;
