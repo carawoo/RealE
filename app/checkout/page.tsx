@@ -11,55 +11,53 @@ function CheckoutForm() {
   
   const isPro = plan === 'pro';
   const [formData, setFormData] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    birthDate: "",
-    cardPassword: "",
+    name: "",
+    phone: "",
+    address: "",
+    addressDetail: "",
+    paymentMethod: "credit",
     agreeTerms: false,
     agreePrivacy: false,
+    agreeRefund: false,
     agreeMarketing: false
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
 
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 16) value = value.slice(0, 16);
-    value = value.replace(/(\d{4})(?=\d)/g, '$1-');
-    setFormData(prev => ({ ...prev, cardNumber: value }));
-  };
-
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 4) value = value.slice(0, 4);
-    if (value.length > 2) {
-      value = value.slice(0, 2) + '/' + value.slice(2);
+    if (value.length > 11) value = value.slice(0, 11);
+    if (value.length > 6) {
+      value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
+    } else if (value.length > 3) {
+      value = value.slice(0, 3) + '-' + value.slice(3);
     }
-    setFormData(prev => ({ ...prev, expiryDate: value }));
-  };
-
-  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 6) value = value.slice(0, 6);
-    setFormData(prev => ({ ...prev, birthDate: value }));
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 2) value = value.slice(0, 2);
-    setFormData(prev => ({ ...prev, cardPassword: value }));
+    setFormData(prev => ({ ...prev, phone: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // 실제 결제 로직은 카카오페이 심사 완료 후 구현
-    alert("카카오페이 심사 진행 중입니다. 실제 결제는 심사 완료 후 가능합니다.");
+    
+    // 필수 약관 동의 확인
+    if (!formData.agreeTerms || !formData.agreePrivacy || !formData.agreeRefund) {
+      alert("필수 약관에 모두 동의해주세요.");
+      return;
+    }
+
+    // 실제 결제 로직은 KCP 연동 후 구현
+    // 여기서 KCP 결제창을 띄우거나 결제 API를 호출합니다
+    alert("결제 대행사(KCP) 연동 후 결제 진행됩니다.\n\n입력하신 정보:\n" + 
+          `이름: ${formData.name}\n` +
+          `연락처: ${formData.phone}\n` +
+          `주소: ${formData.address} ${formData.addressDetail}\n` +
+          `결제수단: ${formData.paymentMethod === 'credit' ? '신용카드' : '체크카드'}`);
   };
 
   return (
@@ -88,63 +86,80 @@ function CheckoutForm() {
         </div>
 
         <form className="payment-form" onSubmit={handleSubmit}>
-          <h2>카드 정보 입력</h2>
+          <h2>주문자 정보</h2>
           
           <div className="form-group">
-            <label htmlFor="cardNumber">카드번호</label>
+            <label htmlFor="name">성함 (필수)</label>
             <input
               type="text"
-              id="cardNumber"
-              name="cardNumber"
-              value={formData.cardNumber}
-              onChange={handleCardNumberChange}
-              placeholder="1234-5678-9012-3456"
-              maxLength={19}
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="홍길동"
               required
             />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="expiryDate">유효기간 (MM/YY)</label>
-              <input
-                type="text"
-                id="expiryDate"
-                name="expiryDate"
-                value={formData.expiryDate}
-                onChange={handleExpiryChange}
-                placeholder="MM/YY"
-                maxLength={5}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="birthDate">생년월일 6자리</label>
-              <input
-                type="text"
-                id="birthDate"
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleBirthDateChange}
-                placeholder="YYMMDD"
-                maxLength={6}
-                required
-              />
-            </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="cardPassword">카드 비밀번호 앞 두자리</label>
+            <label htmlFor="phone">연락처 (필수)</label>
             <input
-              type="password"
-              id="cardPassword"
-              name="cardPassword"
-              value={formData.cardPassword}
-              onChange={handlePasswordChange}
-              placeholder="**"
-              maxLength={2}
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              placeholder="010-1234-5678"
+              maxLength={13}
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address">주소 (필수)</label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="서울시 강남구 테헤란로 123"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="addressDetail">상세주소</label>
+            <input
+              type="text"
+              id="addressDetail"
+              name="addressDetail"
+              value={formData.addressDetail}
+              onChange={handleInputChange}
+              placeholder="101동 101호"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="paymentMethod">결제 수단 선택 (필수)</label>
+            <select
+              id="paymentMethod"
+              name="paymentMethod"
+              value={formData.paymentMethod}
+              onChange={handleInputChange}
+              className="payment-select"
+              required
+            >
+              <option value="credit">신용카드</option>
+              <option value="check">체크카드</option>
+              <option value="kakaopay">카카오페이</option>
+              <option value="naverpay">네이버페이</option>
+            </select>
+          </div>
+
+          <div className="payment-notice">
+            <p>💳 결제 버튼 클릭 시 KCP 결제창이 열립니다.</p>
+            <p>선택하신 결제 수단으로 안전하게 결제가 진행됩니다.</p>
           </div>
 
           <div className="agreement-section">
@@ -158,7 +173,9 @@ function CheckoutForm() {
                   onChange={handleInputChange}
                   required
                 />
-                <span>이용약관 및 개인정보처리방침에 동의합니다 (필수)</span>
+                <span>
+                  <Link href="/terms" target="_blank" className="terms-link">이용약관</Link> 및 <Link href="/privacy" target="_blank" className="terms-link">개인정보처리방침</Link>에 동의합니다 (필수)
+                </span>
               </label>
               <label className="checkbox-label">
                 <input
@@ -173,6 +190,18 @@ function CheckoutForm() {
               <label className="checkbox-label">
                 <input
                   type="checkbox"
+                  name="agreeRefund"
+                  checked={formData.agreeRefund}
+                  onChange={handleInputChange}
+                  required
+                />
+                <span>
+                  <Link href="/terms" target="_blank" className="terms-link">환불 및 구독 운영 규정</Link>을 확인하였으며 이에 동의합니다 (필수)
+                </span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
                   name="agreeMarketing"
                   checked={formData.agreeMarketing}
                   onChange={handleInputChange}
@@ -183,9 +212,32 @@ function CheckoutForm() {
           </div>
 
           <button type="submit" className="payment-button">
-            결제 요청
+            {formData.paymentMethod === 'credit' && '신용카드로 결제하기'}
+            {formData.paymentMethod === 'check' && '체크카드로 결제하기'}
+            {formData.paymentMethod === 'kakaopay' && '카카오페이로 결제하기'}
+            {formData.paymentMethod === 'naverpay' && '네이버페이로 결제하기'}
           </button>
         </form>
+
+        <div className="checkout-footer">
+          <div className="footer-notice">
+            <p>결제 전 필독사항</p>
+            <ul>
+              <li>디지털 콘텐츠 특성상 서비스 이용 후 환불이 제한됩니다</li>
+              <li>구독 기간 중 해지 시 잔여 기간에 대한 환불은 불가능합니다</li>
+              <li>자동 갱신되며, 해지 시 차기 결제일 최소 1일 전까지 신청하셔야 합니다</li>
+            </ul>
+          </div>
+          
+          <div className="footer-actions">
+            <Link href="/terms" target="_blank" className="terms-button">
+              📋 환불 및 구독 운영 규정 자세히 보기
+            </Link>
+            <Link href="/privacy" target="_blank" className="privacy-button">
+              🔒 개인정보처리방침 보기
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
