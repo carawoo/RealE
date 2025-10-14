@@ -17,7 +17,22 @@ function SignInContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [isKakaoInApp, setIsKakaoInApp] = useState(false);
+
+  // 회원가입 완료 메시지 표시
+  useEffect(() => {
+    const fromSignup = searchParams.get('from');
+    if (fromSignup === 'signup') {
+      setSignupSuccess(true);
+      setInfo("회원가입이 완료되었습니다! 아래 정보로 로그인해 주세요.");
+      // 5초 후 메시지 자동 제거
+      setTimeout(() => {
+        setSignupSuccess(false);
+        setInfo(null);
+      }, 5000);
+    }
+  }, [searchParams]);
 
   // 인앱 브라우저 감지 (KakaoTalk, LinkedIn, Facebook, Instagram, X(Twitter), Threads, Line, WeChat 등)
   useEffect(() => {

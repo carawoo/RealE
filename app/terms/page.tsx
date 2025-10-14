@@ -127,25 +127,7 @@ export default function TermsPage() {
         </section>
 
         <section className="terms-section">
-          <h2>제4조 (자동 갱신 및 해지)</h2>
-          <div className="subsection">
-            <h3>1. 자동 갱신</h3>
-            <p>
-              구독 서비스는 30일 단위로 자동 갱신됩니다. 자동 갱신을 원하지 않는 경우, 구독 종료일 <strong>최소 1일 전까지</strong> 해지를 신청하셔야 합니다.
-            </p>
-          </div>
-          <div className="subsection">
-            <h3>2. 해지 방법</h3>
-            <ul>
-              <li>마이페이지에서 직접 해지</li>
-              <li>고객센터 이메일(2025reale@gmail.com)로 해지 요청</li>
-              <li>해지 즉시 차기 결제가 중단되나, 현재 구독 기간은 유지됨</li>
-            </ul>
-          </div>
-        </section>
-
-        <section className="terms-section">
-          <h2>제5조 (환불 처리 절차)</h2>
+          <h2>제4조 (환불 처리 절차)</h2>
           <div className="subsection">
             <h3>1. 환불 신청</h3>
             <ul>
@@ -165,7 +147,7 @@ export default function TermsPage() {
         </section>
 
         <section className="terms-section">
-          <h2>제6조 (이용 제한)</h2>
+          <h2>제5조 (이용 제한)</h2>
           <p>다음 각 호에 해당하는 경우 서비스 이용이 제한될 수 있으며, 환불이 불가능합니다:</p>
           <ul>
             <li>타인의 정보를 도용하여 서비스를 이용한 경우</li>
@@ -176,14 +158,14 @@ export default function TermsPage() {
         </section>
 
         <section className="terms-section">
-          <h2>제7조 (개인정보 처리)</h2>
+          <h2>제6조 (개인정보 처리)</h2>
           <p>
             회사는 구독 서비스 제공을 위해 최소한의 개인정보를 수집합니다. 자세한 내용은 <Link href="/privacy" className="link">개인정보처리방침</Link>을 참조하시기 바랍니다.
           </p>
         </section>
 
         <section className="terms-section">
-          <h2>제8조 (고객센터)</h2>
+          <h2>제7조 (고객센터)</h2>
           <ul>
             <li>이메일: 2025reale@gmail.com</li>
             <li>전화: 1544-8662</li>
@@ -193,7 +175,7 @@ export default function TermsPage() {
         </section>
 
         <section className="terms-section">
-          <h2>제9조 (사업자 정보)</h2>
+          <h2>제8조 (사업자 정보)</h2>
           <ul>
             <li>상호명: 뚝딱컴퍼니</li>
             <li>대표자: 김재환</li>
@@ -205,7 +187,7 @@ export default function TermsPage() {
         </section>
 
         <section className="terms-section">
-          <h2>제10조 (약관의 변경)</h2>
+          <h2>제9조 (약관의 변경)</h2>
           <p>
             회사는 필요한 경우 본 약관을 변경할 수 있으며, 변경 시 시행일 7일 전에 공지합니다. 변경된 약관은 공지 후 시행일부터 효력이 발생합니다.
           </p>

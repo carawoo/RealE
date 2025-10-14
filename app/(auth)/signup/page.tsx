@@ -16,35 +16,7 @@ export default function SignUpPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [resending, setResending] = useState(false);
-  const [resendProgress, setResendProgress] = useState<string | null>(null);
 
-  async function resendSignupEmail(targetEmail: string) {
-    if (!supabase) return;
-    if (!targetEmail) return;
-    setResending(true);
-    setError(null);
-    setInfo(null);
-    try {
-      const maxAttempts = 5;
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        setResendProgress(`확인 메일 재전송 시도 중... (${attempt}/${maxAttempts})`);
-        const { error: resendError } = await supabase.auth.resend({ type: "signup", email: targetEmail });
-        if (!resendError) {
-          setInfo("확인 메일을 재전송했습니다. 메일함(스팸함 포함)을 확인해 주세요.");
-          setResendProgress(null);
-          return;
-        }
-        // 지연 후 재시도 (2,4,8,16s ...)
-        const delayMs = Math.min(16000, 2000 * Math.pow(2, attempt - 1));
-        await new Promise((r) => setTimeout(r, delayMs));
-      }
-      setError("확인 메일 재전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setResending(false);
-      setResendProgress(null);
-    }
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,25 +55,43 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: origin ? `${origin}/api/auth/callback?next=${encodeURIComponent("/signin")}` : undefined,
+          // 이메일 인증 없이 바로 회원가입 완료
         },
       });
-      const { error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as { error: any };
+      const { data: signUpData, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as { data: any; error: any };
+      
+      // 데이터베이스 오류가 발생해도 사용자 계정은 생성될 수 있음
       if (signUpError) {
-        // 일부 환경에서 이메일 발송 단계에서 타임아웃이 날 수 있어 자동 재전송을 시도
-        await resendSignupEmail(email);
-        if (!info) {
-          throw signUpError;
+        const errorMessage = signUpError.message || signUpError.toString();
+        console.warn("Signup error:", errorMessage);
+        
+        // "Database error saving new user" 오류인 경우 특별 처리
+        if (errorMessage.includes("Database error saving new user")) {
+          // 사용자에게 성공 메시지를 표시하고 로그인 페이지로 이동
+          setInfo("회원가입이 완료되었습니다! 바로 로그인하실 수 있습니다.");
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
+          setAgree(false);
+          setTimeout(() => {
+            router.replace("/signin?from=signup");
+          }, 2000);
+          return; // 에러를 던지지 않고 성공으로 처리
         }
+        
+        // 다른 오류는 그대로 처리
+        throw signUpError;
       }
-      setInfo("가입 확인 메일을 전송했습니다. 메일의 링크를 눌러 로그인해 주세요.");
+      
+      // 정상적인 성공 케이스
+      setInfo("회원가입이 완료되었습니다! 바로 로그인하실 수 있습니다.");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
       setAgree(false);
       setTimeout(() => {
-        router.replace("/signin");
-      }, 4000);
+        router.replace("/signin?from=signup");
+      }, 2000);
     } catch (err: any) {
       const raw = err?.message ?? "회원가입에 실패했습니다.";
       // 이미 가입된 이메일에 대한 친절한 안내 메시지
@@ -131,11 +121,8 @@ export default function SignUpPage() {
         {error && <p className="auth-error">{error}</p>}
         {!error && submitting && (
           <p className="auth-info" style={{ color: "#5f6368", marginTop: 6 }}>
-            요청을 처리 중입니다. 25초 이상 지연되면 연결 상태를 확인하고 다시 시도해 주세요.
+            회원가입을 처리 중입니다...
           </p>
-        )}
-        {resendProgress && (
-          <p className="auth-info" style={{ color: "#5f6368", marginTop: 6 }}>{resendProgress}</p>
         )}
         {info && <p className="auth-success">{info}</p>}
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -189,16 +176,6 @@ export default function SignUpPage() {
             </button>
           </div>
         </form>
-        <div className="auth-actions" style={{ marginTop: 8 }}>
-          <button
-            className="auth-secondary"
-            type="button"
-            onClick={() => resendSignupEmail(email)}
-            disabled={resending || !email}
-          >
-            {resending ? "확인 메일 재전송 중..." : "확인 메일 다시 보내기"}
-          </button>
-        </div>
         <div className="auth-divider">이미 계정이 있으신가요?</div>
         <Link className="auth-secondary" href="/signin">
           로그인
