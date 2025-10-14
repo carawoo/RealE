@@ -139,15 +139,24 @@ function SignInContent() {
       router.replace(nextPath);
     } catch (err: any) {
       const code = err?.status ?? err?.code;
-      if (code === "invalid_credentials" || err?.message === "Invalid login credentials") {
+      const message = err?.message ?? "";
+      
+      // 영문 에러 메시지를 한글로 번역
+      if (code === "invalid_credentials" || message === "Invalid login credentials") {
         setError("이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.");
-      } else if (code === "email_not_confirmed") {
-        setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인하거나 인증 메일을 다시 요청해 주세요.");
-      } else if (code === 429) {
+      } else if (code === "email_not_confirmed" || message.toLowerCase().includes("email not confirmed")) {
+        setError("이메일 인증이 완료되지 않았습니다. 메일함을 확인하여 인증을 완료해 주세요.");
+      } else if (code === 429 || message.toLowerCase().includes("too many requests")) {
         setError("로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+      } else if (message.toLowerCase().includes("user not found")) {
+        setError("등록되지 않은 이메일입니다. 회원가입을 먼저 진행해 주세요.");
+      } else if (message.toLowerCase().includes("invalid password")) {
+        setError("비밀번호가 올바르지 않습니다. 다시 확인해 주세요.");
+      } else if (message.toLowerCase().includes("email address") && message.toLowerCase().includes("invalid")) {
+        setError("유효하지 않은 이메일 주소입니다. 실제 사용 가능한 이메일 주소를 입력해 주세요.");
       } else {
-        const message = err?.message ?? "로그인에 실패했습니다.";
-        setError(message);
+        const finalMessage = message || "로그인에 실패했습니다.";
+        setError(finalMessage);
       }
     } finally {
       setSubmitting(false);

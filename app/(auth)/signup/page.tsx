@@ -55,28 +55,113 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          // 이메일 인증 없이 바로 회원가입 완료
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/signin?from=signup`
         },
       });
       const { data: signUpData, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as { data: any; error: any };
       
-      // 데이터베이스 오류가 발생해도 사용자 계정은 생성될 수 있음
+      // 데이터베이스 오류가 발생한 경우 재시도 로직
       if (signUpError) {
         const errorMessage = signUpError.message || signUpError.toString();
         console.warn("Signup error:", errorMessage);
         
-        // "Database error saving new user" 오류인 경우 특별 처리
+        // "Database error saving new user" 오류인 경우 여러 번 재시도
         if (errorMessage.includes("Database error saving new user")) {
-          // 사용자에게 성공 메시지를 표시하고 로그인 페이지로 이동
-          setInfo("회원가입이 완료되었습니다! 바로 로그인하실 수 있습니다.");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
-          setAgree(false);
-          setTimeout(() => {
-            router.replace("/signin?from=signup");
-          }, 2000);
-          return; // 에러를 던지지 않고 성공으로 처리
+          console.log("Database error detected, attempting multiple retries...");
+          
+          let retrySuccess = false;
+          const maxRetries = 3;
+          
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`Retry attempt ${attempt}/${maxRetries}`);
+            
+            // 점진적 대기 시간 (1초, 2초, 3초)
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+            
+            try {
+              // 재시도 (이메일 인증 사용)
+              const retryResult = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                  emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/signin?from=signup`
+                }
+              });
+              
+              if (!retryResult.error) {
+                console.log(`Retry attempt ${attempt} successful!`);
+                retrySuccess = true;
+                
+                // user_plan 수동 생성 시도
+                try {
+                  const fixResponse = await fetch('/api/user/fix-signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                  });
+                  
+                  if (fixResponse.ok) {
+                    console.log("User plan created successfully");
+                  } else {
+                    console.warn("Failed to create user plan, but signup succeeded");
+                  }
+                } catch (fixError) {
+                  console.warn("Fix signup API error:", fixError);
+                }
+                
+                setInfo("회원가입이 완료되었습니다! 이메일을 확인하여 인증을 완료해 주세요.");
+                setEmail("");
+                setPassword("");
+                setConfirmPassword("");
+                setAgree(false);
+                setTimeout(() => {
+                  router.replace("/signin?from=signup");
+                }, 4000);
+                return;
+              } else {
+                console.warn(`Retry attempt ${attempt} failed:`, retryResult.error.message);
+              }
+              
+            } catch (retryError) {
+              console.warn(`Retry attempt ${attempt} error:`, retryError);
+            }
+          }
+          
+          // 모든 재시도 실패 - Admin API로 최종 시도
+          if (!retrySuccess) {
+            console.log("All retries failed, trying admin API...");
+            
+            try {
+              const adminResponse = await fetch('/api/auth/create-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+              });
+              
+              const adminResult = await adminResponse.json();
+              
+              if (adminResponse.ok && adminResult.success) {
+                console.log("Admin API successful:", adminResult);
+                setInfo("회원가입이 완료되었습니다! 이메일을 확인하여 인증을 완료해 주세요.");
+                setEmail("");
+                setPassword("");
+                setConfirmPassword("");
+                setAgree(false);
+                setTimeout(() => {
+                  router.replace("/signin?from=signup");
+                }, 4000);
+                return;
+              } else {
+                console.error("Admin API failed:", adminResult);
+                setError("회원가입 중 일시적인 문제가 발생했습니다. 다른 이메일 주소로 시도해 보시거나 잠시 후 다시 시도해 주세요.");
+                return;
+              }
+            } catch (adminError) {
+              console.error("Admin API error:", adminError);
+              setError("회원가입 중 일시적인 문제가 발생했습니다. 다른 이메일 주소로 시도해 보시거나 잠시 후 다시 시도해 주세요.");
+              return;
+            }
+          }
         }
         
         // 다른 오류는 그대로 처리
@@ -84,6 +169,23 @@ export default function SignUpPage() {
       }
       
       // 정상적인 성공 케이스
+      // user_plan 수동 생성 시도
+      try {
+        const fixResponse = await fetch('/api/user/fix-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        
+        if (fixResponse.ok) {
+          console.log("User plan created successfully");
+        } else {
+          console.warn("Failed to create user plan, but signup succeeded");
+        }
+      } catch (fixError) {
+        console.warn("Fix signup API error:", fixError);
+      }
+      
       setInfo("회원가입이 완료되었습니다! 바로 로그인하실 수 있습니다.");
       setEmail("");
       setPassword("");
@@ -94,7 +196,7 @@ export default function SignUpPage() {
       }, 2000);
     } catch (err: any) {
       const raw = err?.message ?? "회원가입에 실패했습니다.";
-      // 이미 가입된 이메일에 대한 친절한 안내 메시지
+      // 친절한 한글 에러 메시지
       const lower = String(raw).toLowerCase();
       if (
         lower.includes("user already registered") ||
@@ -103,6 +205,11 @@ export default function SignUpPage() {
         lower.includes("repeated_signup")
       ) {
         setError("이미 가입된 계정입니다. 로그인하시거나 비밀번호를 재설정해 주세요.");
+      } else if (
+        lower.includes("email_address_invalid") ||
+        lower.includes("email address") && lower.includes("invalid")
+      ) {
+        setError("유효하지 않은 이메일 주소입니다. 실제 사용 가능한 이메일 주소를 입력해 주세요.");
       } else {
         setError(raw);
       }
