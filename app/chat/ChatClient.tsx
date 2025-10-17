@@ -849,7 +849,7 @@ export default function ChatClient() {
               ? `비회원 ${GUEST_QUESTION_LIMIT}회 상담 중 ${Math.min(normalizedQuestionCount, GUEST_QUESTION_LIMIT)}회 사용 — 남은 상담 ${questionsLeft}회`
               : effectiveProAccess
               ? `${planName} 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${dailyLimit}회, 구독기간 ${PRO_DURATION_DAYS}일)`
-              : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
+              : `일일 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
           {/* {!proAccess && !outOfQuota && (
             <button
@@ -879,7 +879,7 @@ export default function ChatClient() {
               <p className="chat-paywall__body">
                 {!user 
                   ? `비회원 ${GUEST_QUESTION_LIMIT}회 상담이 모두 완료되었습니다. 회원가입 후 더 많은 상담을 받아보세요!`
-                  : `무료 ${FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. ${UPGRADE_PRICE_DISPLAY} 결제로 RealE Plus ${PRO_DURATION_DAYS}일 이용(일일 ${PLUS_DAILY_LIMIT}회)할 수 있어요.`
+                  : `오늘의 ${FREE_QUESTION_LIMIT}회 질문이 모두 사용되었습니다. 내일 다시 이용해 주세요!`
                 }
               </p>
             )}
