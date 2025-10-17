@@ -255,7 +255,7 @@ export default function AccountPage() {
           ) : (
             <div>
               <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
-                RealE 체험(무료 5회 질문) 사용 중입니다.
+                RealE 무료 계정(일일 10회 질문) 사용 중입니다.
               </p>
               {/* <button className="auth-primary" type="button" onClick={startCheckout} disabled={checkoutLoading}>
                 {checkoutLoading ? "결제 준비 중..." : "3,900원에 RealE Plus 시작"}

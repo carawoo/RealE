@@ -31,8 +31,8 @@ function getUserStorageKey(baseKey: string, userId?: string | null): string {
   return `${baseKey}:${userId}`;
 }
 
-const FREE_QUESTION_LIMIT = 5;
-const GUEST_QUESTION_LIMIT = 2; // 비회원 2회 상담 제한
+const FREE_QUESTION_LIMIT = 10;
+const GUEST_QUESTION_LIMIT = 10; // 비회원 10회 상담 제한
 const UPGRADE_PRICE_DISPLAY = "3,900원";
 const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
 const PLUS_DAILY_LIMIT = 30; // RealE Plus 일일 질문 제한
@@ -149,14 +149,14 @@ export default function ChatClient() {
   const ensureLoggedIn = useCallback(() => {
     if (authLoading) return false;
     if (!user) {
-      // 비회원의 경우 2회 상담 후 로그인 유도
+      // 비회원의 경우 10회 상담 후 로그인 유도
       const guestMessagesCount = messages.filter((m) => m.role === "user").length;
       if (guestMessagesCount >= GUEST_QUESTION_LIMIT) {
-        // 2회 상담 완료 후 회원가입 유도
+        // 10회 상담 완료 후 회원가입 유도
         setShowSignupPrompt(true);
         return false;
       }
-      return true; // 2회 미만이면 상담 허용
+      return true; // 10회 미만이면 상담 허용
     }
     return true;
   }, [authLoading, user, router, messages]);
@@ -456,7 +456,7 @@ export default function ChatClient() {
   const dailyLimit = effectiveProAccess ? (isProPlan ? PRO_DAILY_LIMIT : PLUS_DAILY_LIMIT) : FREE_QUESTION_LIMIT;
   const planName = isProPlan ? 'RealE Pro' : 'RealE Plus';
   
-  // 비회원의 경우 2회 제한, 회원의 경우 5회 제한
+  // 비회원의 경우 10회 제한, 회원의 경우 10회 제한
   const questionLimit = !user ? GUEST_QUESTION_LIMIT : FREE_QUESTION_LIMIT;
   const normalizedQuestionCount = effectiveProAccess ? userMessagesCount : Math.min(totalQuestionsUsed, questionLimit);
   const questionsLeft = effectiveProAccess
@@ -909,7 +909,7 @@ export default function ChatClient() {
           <div className="chat-signup-modal">
             <div className="chat-signup-modal__overlay" onClick={() => setShowSignupPrompt(false)} />
             <div className="chat-signup-modal__content">
-              <h2 className="chat-signup-modal__title">🎉 2회 상담 완료!</h2>
+              <h2 className="chat-signup-modal__title">🎉 10회 상담 완료!</h2>
               <p className="chat-signup-modal__body">
                 비회원 상담을 모두 이용하셨습니다.<br />
                 회원가입 후 더 많은 상담을 받아보세요!
