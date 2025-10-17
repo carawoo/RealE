@@ -132,7 +132,6 @@ export default function TermsPage() {
             <h3>1. 환불 신청</h3>
             <ul>
               <li>이메일: 2025reale@gmail.com</li>
-              <li>고객센터 전화: 1544-8662</li>
               <li>필수 제공 정보: 주문번호, 결제일, 환불 사유</li>
             </ul>
           </div>
@@ -168,7 +167,6 @@ export default function TermsPage() {
           <h2>제7조 (고객센터)</h2>
           <ul>
             <li>이메일: 2025reale@gmail.com</li>
-            <li>전화: 1544-8662</li>
             <li>운영시간: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)</li>
             <li>응답 시간: 영업일 기준 24시간 이내</li>
           </ul>
@@ -177,12 +175,7 @@ export default function TermsPage() {
         <section className="terms-section">
           <h2>제8조 (사업자 정보)</h2>
           <ul>
-            <li>상호명: 뚝딱컴퍼니</li>
-            <li>대표자: 김재환</li>
-            <li>사업자등록번호: 854-52-00876</li>
-            <li>주소: 경기도 안산시 단원구 광덕2로 17, 1316동 304호</li>
             <li>이메일: 2025reale@gmail.com</li>
-            <li>전화: 1544-8662</li>
           </ul>
         </section>
 

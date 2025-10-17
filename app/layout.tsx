@@ -89,9 +89,6 @@ export default function RootLayout({
                   개인정보 처리방침
                 </a>
               </div>
-              <div className="business-meta">
-                상호명 뚝딱컴퍼니 · 대표자 김재환 · 주소 경기도 안산시 단원구 광덕2로 17, 1316동 304호(초지동, 그린빌주공13단지아파트) · 사업자등록번호 854-52-00876 · 대표전화번호 01025923007 · 대표이메일 2025reale@gmail.com
-              </div>
             </footer>
           </NewsProvider>
         </AuthProvider>
