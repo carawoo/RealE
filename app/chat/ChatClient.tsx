@@ -851,7 +851,7 @@ export default function ChatClient() {
               ? `${planName} 활성화 — 남은 일일 질문 ${questionsLeft}회 (일일 ${dailyLimit}회, 구독기간 ${PRO_DURATION_DAYS}일)`
               : `무료 ${FREE_QUESTION_LIMIT}회 질문 중 ${Math.min(normalizedQuestionCount, FREE_QUESTION_LIMIT)}회 사용 — 남은 질문 ${questionsLeft}회`}
           </p>
-          {!proAccess && !outOfQuota && (
+          {/* {!proAccess && !outOfQuota && (
             <button
               type="button"
               className="chat-upgrade-button"
@@ -860,7 +860,7 @@ export default function ChatClient() {
             >
               {checkoutLoading ? "결제 준비 중..." : !user ? "회원가입하기" : `${UPGRADE_PRICE_DISPLAY}에 RealE Plus 이용`}
             </button>
-          )}
+          )} */}
         </div>
         {outOfQuota && (
           <div className="chat-paywall">
@@ -883,7 +883,7 @@ export default function ChatClient() {
                 }
               </p>
             )}
-            <button
+            {/* <button
               type="button"
               className="chat-upgrade-button"
               onClick={!user ? () => router.push("/signin?redirect=/chat") : startCheckout}
@@ -896,7 +896,7 @@ export default function ChatClient() {
                   ? "RealE Pro로 업그레이드하기" 
                   : "결제하고 계속하기"
               }
-            </button>
+            </button> */}
             {paymentError && <p className="chat-paywall__error">{paymentError}</p>}
           </div>
         )}

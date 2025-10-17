@@ -28,9 +28,9 @@ export default function Home() {
           <button className="nav-btn primary" type="button" onClick={startFresh}>
             상담 시작하기
           </button>
-          <Link className="nav-btn" href="/product">
+          {/* <Link className="nav-btn" href="/product">
             요금제 살펴보기
-          </Link>
+          </Link> */}
           <Link className="nav-btn" href="/chat/share">
             최근 상담 공유하기
           </Link>

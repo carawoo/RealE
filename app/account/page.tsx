@@ -255,12 +255,12 @@ export default function AccountPage() {
           ) : (
             <div>
               <p style={{ margin: "6px 0 12px", color: "#3c4043" }}>
-                RealE 체험(무료 5회 질문) 사용 중입니다. 결제 후 Plus(30일, 일일 30회)로 이용할 수 있어요.
+                RealE 체험(무료 5회 질문) 사용 중입니다.
               </p>
-              <button className="auth-primary" type="button" onClick={startCheckout} disabled={checkoutLoading}>
+              {/* <button className="auth-primary" type="button" onClick={startCheckout} disabled={checkoutLoading}>
                 {checkoutLoading ? "결제 준비 중..." : "3,900원에 RealE Plus 시작"}
               </button>
-              {paymentError && <p className="auth-error" style={{ marginTop: 8 }}>{paymentError}</p>}
+              {paymentError && <p className="auth-error" style={{ marginTop: 8 }}>{paymentError}</p>} */}
             </div>
           )}
           {proActive && (
